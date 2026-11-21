@@ -22,6 +22,14 @@ Desafío: *Campus sin barreras: movilidad y orientación para todos*.
 
 La Casa Central está en la ladera del cerro: desde Av. España hay escaleras, pendientes y desniveles entre edificios. Los ascensores no informan si funcionan. Eso afecta a estudiantes con **movilidad reducida** (silla de ruedas, muletas o una lesión temporal) y con **baja visión**, que hoy dependen de preguntar o de probar caminos.
 
+## Relación con el desafío y los ODS
+
+Responde a *Campus sin barreras* con movilidad (rutas por perfil) y orientación (guía para baja visión y para quien no conoce el campus).
+
+- **ODS 4 · Educación de calidad** (meta 4.a): instalaciones educativas que tengan en cuenta a las personas con discapacidad. Que llegar a clases no dependa de poder subir escaleras.
+- **ODS 10 · Reducción de las desigualdades** (meta 10.2): inclusión de todas las personas, independientemente de su discapacidad.
+- **ODS 11 · Ciudades y comunidades sostenibles** (meta 11.7): espacios públicos seguros, inclusivos y accesibles, en particular para personas con discapacidad.
+
 ## Solución
 
 Una misma app y un mismo flujo con dos ajustes:
@@ -50,7 +58,26 @@ Implementadas y verificables hoy:
 
 Detalle de inclusión y código de vibraciones: [docs/INCLUSION.md](docs/INCLUSION.md).
 
-## Demo sugerida
+## Instalación y configuración
+
+Requisitos: Node LTS y **Expo Go** en el teléfono.
+
+```bash
+npm install
+npx expo start
+```
+
+Escanea el QR con Expo Go (teléfono y PC en la misma red). No requiere variables de entorno, cuentas ni backend: los datos vienen en `src/data/`.
+
+Alternativa por USB (Android):
+
+```bash
+adb reverse tcp:8081 tcp:8081
+```
+
+y abre `exp://127.0.0.1:8081` en Expo Go.
+
+## Cómo ejecutar y probar la demo
 
 Historia de Camila Rojas, estudiante en silla de ruedas (perfil por defecto):
 
@@ -61,25 +88,6 @@ Historia de Camila Rojas, estudiante en silla de ruedas (perfil por defecto):
 5. Pulsar **Ya me ayudaron**: el ticket se cierra, la ruta se recalcula desde el piso 1 de P y Camila llega sola al Edificio C (73 m, 0 escalones).
 6. Opcional: abrir **Mapa del campus** desde el inicio, tocar un edificio y recorrer sus pisos, ascensores y salas.
 7. Opcional: cambiar a **Baja visión** y repetir: alto contraste, voz y vibraciones distintas por giro.
-
-## Cómo ejecutar
-
-Requisitos: Node LTS y **Expo Go** en el teléfono.
-
-```bash
-npm install
-npx expo start
-```
-
-Escanea el QR con Expo Go (teléfono y PC en la misma red).
-
-Alternativa por USB (Android):
-
-```bash
-adb reverse tcp:8081 tcp:8081
-```
-
-y abre `exp://127.0.0.1:8081` en Expo Go.
 
 ## Tecnologías
 
@@ -100,7 +108,7 @@ src/
 docs/           enunciado, presentación, plano e INCLUSION.md
 ```
 
-## Datos, supuestos y limitaciones
+## Limitaciones conocidas, datos y supuestos
 
 - El plano de Casa Central (`docs/casa-central-1.jpg`) es real y se trazó a mano a vectores.
 - **Edificios C y F dibujados por el equipo** (C: piso 1 real y sin ascensor; F: piso 1 y subterráneo).
@@ -111,14 +119,14 @@ docs/           enunciado, presentación, plano e INCLUSION.md
 - Sin backend: los reportes son locales al dispositivo.
 - El **ticket de apoyo** (folio, "portal de atención USM", apoyo en terreno de la DAE y sus estados) es **simulado**: no hay integración real con la universidad.
 
-## Recursos externos
+## Recursos externos y atribuciones
 
 - Plano de Casa Central: material del desafío / USM.
 - Antecedente: tesis USM 2024 *Aplicación móvil de mapa universitario, enfocado en accesibilidad, flexibilidad y eficiencia* (E. Carrillo Naranjo).
 - Inspiración de UX: guía del Museo del Louvre para Nintendo 3DS (solo el patrón de interacción, sin assets).
 - Skills de Claude Code para UI/UX y accesibilidad (MIT, de Anthropic, Vercel, Next Level Builder, Bencium y AccessLint): ver [`.claude/skills/SOURCES.md`](.claude/skills/SOURCES.md).
 
-## Uso de IA
+## Uso de herramientas de IA
 
 Desarrollo asistido con **Claude Code**: Claude Opus como arquitecto y revisor, y subagentes Claude Sonnet y Haiku para implementación, búsqueda y chequeos. El equipo definió el problema, el alcance y el diseño de interacción (boceto en pizarra), y validó en dispositivo. Todo el código fue revisado y probado en Expo Go en un Android real.
 
@@ -133,7 +141,7 @@ El logo de Ruta Libre fue generado con **Google Gemini** (`docs/Gemini_Generated
 - Validación con usuarios con discapacidad.
 - Soporte para ceguera total.
 
-## Integrantes
+## Equipo e integrantes
 
 Equipo **Stop y los Bets**:
 
