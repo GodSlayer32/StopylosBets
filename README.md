@@ -8,15 +8,13 @@ Desafío: *Campus sin barreras: movilidad y orientación para todos*.
 > ¿Cómo podemos utilizar la tecnología para reducir las dificultades de orientación y
 > desplazamiento que enfrentan estudiantes con distintas necesidades dentro de un campus?
 
-## El desafío en cinco decisiones
+## Equipo
 
-| | Nuestra decisión |
-|---|---|
-| **Barrera** | El campus está en un cerro: escaleras, pendientes sobre el 6 % y pisos sin ascensor cortan recorridos que en el plano parecen directos. Y cuando no hay camino, nadie te dice qué hacer. |
-| **Personas** | Estudiantes con movilidad reducida (silla de ruedas, muletas, lesión temporal) y con baja visión. |
-| **Mejora** | Que la ruta se calcule con las reglas de cada cuerpo, que la guía se pueda seguir sin mirar la pantalla, y que *no haya ruta* deje de ser un callejón sin salida. |
-| **Tecnología** | Grafo del campus con Dijkstra y costos por perfil, guía por voz y vibraciones, y reportes de la comunidad que recalculan la ruta en vivo. Todo offline en el teléfono. |
-| **Demo** | Un recorrido real en el teléfono, con los tres perfiles y los casos límite: ascensor caído, piso sin ascensor y destino inalcanzable. |
+Equipo **Stop y los Bets**:
+
+- Eduardo Pacheco
+- Alex Domínguez
+- Catalina Yáñez
 
 ## Problema
 
@@ -29,6 +27,16 @@ Responde a *Campus sin barreras* con movilidad (rutas por perfil) y orientación
 - **ODS 4 · Educación de calidad** (meta 4.a): instalaciones educativas que tengan en cuenta a las personas con discapacidad. Que llegar a clases no dependa de poder subir escaleras.
 - **ODS 10 · Reducción de las desigualdades** (meta 10.2): inclusión de todas las personas, independientemente de su discapacidad.
 - **ODS 11 · Ciudades y comunidades sostenibles** (meta 11.7): espacios públicos seguros, inclusivos y accesibles, en particular para personas con discapacidad.
+
+## El desafío en cinco decisiones
+
+| | Nuestra decisión |
+|---|---|
+| **Barrera** | El campus está en un cerro: escaleras, pendientes sobre el 6 % y pisos sin ascensor cortan recorridos que en el plano parecen directos. Y cuando no hay camino, nadie te dice qué hacer. |
+| **Personas** | Estudiantes con movilidad reducida (silla de ruedas, muletas, lesión temporal) y con baja visión. |
+| **Mejora** | Que la ruta se calcule con las reglas de cada cuerpo, que la guía se pueda seguir sin mirar la pantalla, y que *no haya ruta* deje de ser un callejón sin salida. |
+| **Tecnología** | Grafo del campus con Dijkstra y costos por perfil, guía por voz y vibraciones, y reportes de la comunidad que recalculan la ruta en vivo. Todo offline en el teléfono. |
+| **Demo** | Un recorrido real en el teléfono, con los tres perfiles y los casos límite: ascensor caído, piso sin ascensor y destino inalcanzable. |
 
 ## Solución
 
@@ -57,6 +65,25 @@ Implementadas y verificables hoy:
 - **Servicios en ruta y modo lluvia**.
 
 Detalle de inclusión y código de vibraciones: [docs/INCLUSION.md](docs/INCLUSION.md).
+
+## Tecnologías
+
+Expo SDK 58, React Native, Expo Router, TypeScript, react-native-svg, react-native-gesture-handler, react-native-reanimated, expo-speech, expo-haptics, expo-image-picker (foto opcional en reportes) y @expo/vector-icons. Sin backend: estado en Context y datos en JSON locales.
+
+## Estructura del proyecto
+
+```
+src/
+  app/          pantallas (Expo Router): perfil, inicio, mapa, Mi día, ruta, navegación, reporte
+  components/   UI reutilizable (mapas, tarjetas, selector de pisos, ascensores)
+  constants/    theme.ts (colores, tipografía, espaciado, radios)
+  context/      estado global (perfil, reportes, accesibilidad)
+  data/         JSON: nodos, aristas, lugares, ascensores, plantas, horario
+  hooks/        tema y simulación de ruta
+  lib/          routing (Dijkstra), maniobras, vibraciones, edificios, tiempo
+  types/        tipos compartidos
+docs/           enunciado, presentación, plano e INCLUSION.md
+```
 
 ## Instalación y configuración
 
@@ -89,36 +116,6 @@ Historia de Camila Rojas, estudiante en silla de ruedas (perfil por defecto):
 6. Opcional: abrir **Mapa del campus** desde el inicio, tocar un edificio y recorrer sus pisos, ascensores y salas.
 7. Opcional: cambiar a **Baja visión** y repetir: alto contraste, voz y vibraciones distintas por giro.
 
-## Tecnologías
-
-Expo SDK 58, React Native, Expo Router, TypeScript, react-native-svg, react-native-gesture-handler, react-native-reanimated, expo-speech, expo-haptics, expo-image-picker (foto opcional en reportes) y @expo/vector-icons. Sin backend: estado en Context y datos en JSON locales.
-
-## Estructura del proyecto
-
-```
-src/
-  app/          pantallas (Expo Router): perfil, inicio, mapa, Mi día, ruta, navegación, reporte
-  components/   UI reutilizable (mapas, tarjetas, selector de pisos, ascensores)
-  constants/    theme.ts (colores, tipografía, espaciado, radios)
-  context/      estado global (perfil, reportes, accesibilidad)
-  data/         JSON: nodos, aristas, lugares, ascensores, plantas, horario
-  hooks/        tema y simulación de ruta
-  lib/          routing (Dijkstra), maniobras, vibraciones, edificios, tiempo
-  types/        tipos compartidos
-docs/           enunciado, presentación, plano e INCLUSION.md
-```
-
-## Limitaciones conocidas, datos y supuestos
-
-- El plano de Casa Central (`docs/casa-central-1.jpg`) es real y se trazó a mano a vectores.
-- **Edificios C y F dibujados por el equipo** (C: piso 1 real y sin ascensor; F: piso 1 y subterráneo).
-- **Edificio P**: esquema simple de 5 pisos (-1 a 4) con ascensor y túnel bajo Av. Placeres; los nombres de los pisos 1 y -1 vienen de la tesis USM 2024 y el resto es simulado.
-- **Simulados** (resto de edificios): escalones, pendientes, ascensores, plantas interiores, referencias físicas y horario.
-- Sin GPS ni posicionamiento interior: la posición es simulada.
-- El enfoque es baja visión, no ceguera total.
-- Sin backend: los reportes son locales al dispositivo.
-- El **ticket de apoyo** (folio, "portal de atención USM", apoyo en terreno de la DAE y sus estados) es **simulado**: no hay integración real con la universidad.
-
 ## Recursos externos y atribuciones
 
 - Plano de Casa Central: material del desafío / USM.
@@ -132,6 +129,17 @@ Desarrollo asistido con **Claude Code**: Claude Opus como arquitecto y revisor, 
 
 El logo de Ruta Libre fue generado con **Google Gemini** (`docs/Gemini_Generated_Image_gqe186gqe186gqe1.jpg`) y elegido por el equipo.
 
+## Limitaciones conocidas, datos y supuestos
+
+- El plano de Casa Central (`docs/casa-central-1.jpg`) es real y se trazó a mano a vectores.
+- **Edificios C y F dibujados por el equipo** (C: piso 1 real y sin ascensor; F: piso 1 y subterráneo).
+- **Edificio P**: esquema simple de 5 pisos (-1 a 4) con ascensor y túnel bajo Av. Placeres; los nombres de los pisos 1 y -1 vienen de la tesis USM 2024 y el resto es simulado.
+- **Simulados** (resto de edificios): escalones, pendientes, ascensores, plantas interiores, referencias físicas y horario.
+- Sin GPS ni posicionamiento interior: la posición es simulada.
+- El enfoque es baja visión, no ceguera total.
+- Sin backend: los reportes son locales al dispositivo.
+- El **ticket de apoyo** (folio, "portal de atención USM", apoyo en terreno de la DAE y sus estados) es **simulado**: no hay integración real con la universidad.
+
 ## Trabajo futuro
 
 - Backend para reportes compartidos entre usuarios.
@@ -140,14 +148,6 @@ El logo de Ruta Libre fue generado con **Google Gemini** (`docs/Gemini_Generated
 - Panel para la universidad.
 - Validación con usuarios con discapacidad.
 - Soporte para ceguera total.
-
-## Equipo e integrantes
-
-Equipo **Stop y los Bets**:
-
-- Eduardo Pacheco
-- Alex Domínguez
-- Catalina Yáñez
 
 ## Licencia
 
