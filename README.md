@@ -1,56 +1,121 @@
-# Welcome to your Expo app 👋
+# Ruta Libre
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Rutas accesibles y guía no visual para moverse por la USM Casa Central.
 
-## Get started
+Proyecto del **Hackathon LYOSS USM 2026** (21 nov 2026, Casa Central, Valparaíso). Desafío: *Campus sin barreras: movilidad y orientación para todos*.
 
-1. Install dependencies
+## Problema
 
-   ```bash
-   npm install
-   ```
+La Casa Central está en la ladera del cerro: desde Av. España hay escaleras, pendientes y desniveles entre edificios. Los ascensores no informan si funcionan. Eso afecta a estudiantes con **movilidad reducida** (silla de ruedas, muletas o una lesión temporal) y con **baja visión**, que hoy dependen de preguntar o de probar caminos.
 
-2. Start the app
+## Solución
 
-   ```bash
-   npx expo start
-   ```
+Una misma app y un mismo flujo con dos ajustes:
 
-In the output, you'll find options to open the app in a
+> **La movilidad cambia la ruta; la visión cambia cómo te la contamos.**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Movilidad reducida: la app evita escaleras y pendientes fuertes y usa rampas y ascensores.
+- Baja visión: voz, vibraciones, referencias físicas, alto contraste y texto grande.
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Funcionalidades
 
-## Get a fresh project
+Implementadas y verificables hoy:
 
-When you're ready, run:
+- **Perfil de movilidad** (sin restricciones, muletas, silla de ruedas, baja visión).
+- **Rutas por perfil**: Dijkstra con restricciones de escaleras y pendiente.
+- **Vista previa** de la ruta con los escalones evitados.
+- **Modo navegación en pantalla dividida**, inspirado en la guía del Louvre para Nintendo 3DS: mapa macro o planta por piso con selector de pisos arriba, vista cercana que gira según el rumbo abajo, y mapa superior explorable.
+- **Instrucciones por maniobra** paso a paso.
+- **Reportes de barreras** con recálculo de ruta en vivo.
+- **Estado de ascensores** con frescura ("hace 12 min") y confirmaciones de la comunidad.
+- **Baja visión**: alto contraste, texto grande, voz, referencias físicas, dirección horaria ("hacia las 3"), vibraciones distintas por maniobra, botón **Repetir** y compatibilidad con TalkBack.
+- **Horario inteligente "Mi día"** (en desarrollo).
+- **Servicios en ruta y modo lluvia** (en desarrollo).
+
+Detalle de inclusión y código de vibraciones: [docs/INCLUSION.md](docs/INCLUSION.md).
+
+## Demo sugerida
+
+1. Elegir el perfil **Muletas**.
+2. Pedir ruta a **C-210**.
+3. Ver la vista previa y pulsar **Simular** para recorrerla.
+4. **Reportar** el ascensor del edificio C como caído.
+5. La app **recalcula** la ruta por el edificio B.
+6. Cambiar a **Baja visión** y repetir: alto contraste, voz y vibraciones.
+
+## Cómo ejecutar
+
+Requisitos: Node LTS y **Expo Go** en el teléfono.
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Escanea el QR con Expo Go (teléfono y PC en la misma red).
 
-### Other setup steps
+Alternativa por USB (Android):
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+adb reverse tcp:8081 tcp:8081
+```
 
-## Learn more
+y abre `exp://127.0.0.1:8081` en Expo Go.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Tecnologías
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Expo SDK 58, React Native, Expo Router, TypeScript, react-native-svg, react-native-gesture-handler, react-native-reanimated, expo-speech, expo-haptics y @expo/vector-icons. Sin backend: estado en Context y datos en JSON locales.
 
-## Join the community
+## Estructura del proyecto
 
-Join our community of developers creating universal apps.
+```
+src/
+  app/          pantallas (Expo Router): inicio, ruta, navegación, reporte
+  components/   UI reutilizable (mapas, tarjetas, selector de pisos, ascensores)
+  constants/    theme.ts (colores, tipografía, espaciado, radios)
+  context/      estado global (perfil, reportes, accesibilidad)
+  data/         JSON: nodos, aristas, lugares, ascensores, plantas, horario
+  hooks/        tema y simulación de ruta
+  lib/          routing (Dijkstra), maniobras, vibraciones, edificios, tiempo
+  types/        tipos compartidos
+docs/           enunciado, presentación, plano e INCLUSION.md
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Datos, supuestos y limitaciones
+
+- El plano de Casa Central (`docs/casa-central-1.jpg`) es real y se trazó a mano a vectores.
+- **Simulados**: escalones, pendientes, ascensores, plantas interiores, referencias físicas y horario.
+- Sin GPS ni posicionamiento interior: la posición es simulada.
+- El enfoque es baja visión, no ceguera total.
+- Sin backend: los reportes son locales al dispositivo.
+
+## Recursos externos
+
+- Plano de Casa Central: material del desafío / USM.
+- Antecedente: tesis USM 2024 *Aplicación móvil de mapa universitario, enfocado en accesibilidad, flexibilidad y eficiencia* (E. Carrillo Naranjo).
+- Inspiración de UX: guía del Museo del Louvre para Nintendo 3DS (solo el patrón de interacción, sin assets).
+
+## Uso de IA
+
+Desarrollo asistido con **Claude Code**: Claude Opus como arquitecto y revisor, y subagentes Claude Sonnet y Haiku para implementación, búsqueda y chequeos. El equipo definió el problema, el alcance y el diseño de interacción (boceto en pizarra), y validó en dispositivo. Todo el código fue revisado y probado en Expo Go en un Android real.
+
+## Trabajo futuro
+
+- Backend para reportes compartidos entre usuarios.
+- Posicionamiento interior con balizas o QR.
+- Datos oficiales de Infraestructura.
+- Panel para la universidad.
+- Validación con usuarios con discapacidad.
+- Soporte para ceguera total.
+
+## Integrantes
+
+| Nombre | Rol |
+|--------|-----|
+| TODO: [Nombre Apellido] | TODO: [Rol] |
+| TODO: [Nombre Apellido] | TODO: [Rol] |
+| TODO: [Nombre Apellido] | TODO: [Rol] |
+
+## Licencia
+
+[MIT](LICENSE)
