@@ -84,7 +84,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           status: stale ? ('unconfirmed' as const) : ('down' as const),
           source: e.officialSource ?? 'comunidad',
           freshness: `Reportado ${formatAgo(inc.reportedAt)}`,
-          incidentId: inc.id, reportedAt: inc.reportedAt, lastConfirmedAt: lastSeen,
+          incidentId: inc.id, photoUri: inc.photoUri, reportedAt: inc.reportedAt, lastConfirmedAt: lastSeen,
           confirmations: inc.confirmations, denials: inc.denials,
         };
       }),

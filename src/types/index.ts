@@ -71,6 +71,8 @@ export interface Elevator {
   /** Texto de frescura ("Reportado hace 12 min"), derivado */
   freshness?: string;
   incidentId?: string;
+  /** Foto adjunta al reporte vigente */
+  photoUri?: string;
   reportedAt?: string;
   lastConfirmedAt?: string;
   confirmations?: number;
@@ -88,6 +90,8 @@ export interface Incident {
   nodeId?: string;
   elevatorId?: string;
   description: string;
+  /** Foto de evidencia (URI local) */
+  photoUri?: string;
   reportedBy: string;
   minutesAgo: number;
   reportedAt: string;

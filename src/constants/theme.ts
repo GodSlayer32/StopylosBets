@@ -187,6 +187,8 @@ export const iconSize = { sm: 20, md: 24, lg: 32 } as const;
 export const radius = { sm: 8, md: 12, lg: 16, pill: 999 } as const;
 
 export const minTouch = 52;
+/** Lado de las miniaturas de foto (reporte y estado de ascensor) */
+export const thumbSize = 64;
 
 export const shadow = {
   shadowColor: '#0F172A',

@@ -26,6 +26,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ruta Libre usa tus fotos para adjuntarlas a un reporte de accesibilidad.",
+          "cameraPermission": "Ruta Libre usa la cámara para fotografiar un ascensor o un obstáculo que reportas."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#1747D1",
