@@ -210,6 +210,7 @@ export default function NavigateScreen() {
               destRoomId={topRoomId}
               height={topH}
               insetRight={56}
+              insetTop={exploring ? 92 : 40}
               camera={explore.camera}
               onCameraChange={onCamera}
               onBuildingPress={onBuildingPress}

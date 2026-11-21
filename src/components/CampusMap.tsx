@@ -36,6 +36,8 @@ export type CampusMapProps = {
   title?: string;
   /** floor: px del borde derecho tapados (p. ej. FloorRail) */
   insetRight?: number;
+  /** floor: px del borde superior tapados (rótulo, botones) */
+  insetTop?: number;
   /** Cámara manual (sobrescribe el encuadre automático en macro/floor). zoom 1 = todo el campus */
   camera?: MapCamera | null;
   /** Si se pasa, el mapa acepta pan/pinch y reporta la cámara al terminar el gesto */
@@ -98,7 +100,7 @@ const shortLabel = (b: Building) => (b.id.length <= 2 ? b.id : b.name.charAt(0))
 export function CampusMap(props: CampusMapProps) {
   const {
     mode, routePoints, donePoints, position, heading = 0, origin, destination, barriers,
-    activeBuildingId, level, destRoomId, height, anchorY = 0.6, title, insetRight = 0,
+    activeBuildingId, level, destRoomId, height, anchorY = 0.6, title, insetRight = 0, insetTop = 0,
     camera, onCameraChange, onBuildingPress, accessibilityLabel,
   } = props;
   const t = useTheme();
@@ -137,9 +139,9 @@ export function CampusMap(props: CampusMapProps) {
     if (mode === 'floor' && activeB) {
       const box = bboxPts(activeB.polygon.map(toPlan));
       const usableW = width - insetRight;
-      const s = Math.min((usableW * 0.7) / (box.maxX - box.minX || 1), (height * 0.8) / (box.maxY - box.minY || 1));
+      const s = Math.min((usableW * 0.7) / (box.maxX - box.minX || 1), ((height - insetTop) * 0.8) / (box.maxY - box.minY || 1));
       const c = centerOf(box);
-      return { cx: c.cx + insetRight / (2 * s), cy: c.cy, s, rot: 0 };
+      return { cx: c.cx + insetRight / (2 * s), cy: c.cy - insetTop / (2 * s), s, rot: 0 };
     }
     if (routePoints.length >= 2) {
       const box = bboxPts(routePoints.map(toPlan));
@@ -151,7 +153,7 @@ export function CampusMap(props: CampusMapProps) {
     }
     return { ...centerOf(macroBox), s: macroFit * 0.85, rot: 0 };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, width, height, insetRight, camera?.cx, camera?.cy, camera?.zoom, activeB, posXY?.[0], posXY?.[1], heading, routePoints.length]);
+  }, [mode, width, height, insetRight, insetTop, camera?.cx, camera?.cy, camera?.zoom, activeB, posXY?.[0], posXY?.[1], heading, routePoints.length]);
 
   // ---- Transición suave del encuadre
   const [view, setView] = useState<View3 | undefined>(undefined);
@@ -452,7 +454,7 @@ export function CampusMap(props: CampusMapProps) {
               <Circle r={8} fill={m.routeCasing} stroke={m.route} strokeWidth={3.5} />
             </G>
           )}
-          {destination && !destRoomPin && pin('dest', ptPlan(destination), m.pin)}
+          {destination && !destRoomPin && !indoorB && pin('dest', ptPlan(destination), m.pin)}
           {destRoomPin}
           {position && mode !== 'closeup' &&
             posMarker(`translate(${posXY![0]},${posXY![1]}) scale(${k})`, heading, 'pos')}
