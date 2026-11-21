@@ -29,7 +29,8 @@ export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Pr
   const router = useRouter();
   const { resolveTicket } = useApp();
   const [openDetail, setOpenDetail] = useState(false);
-  const asignado = ticket.status === 'assigned';
+  const llego = ticket.status === 'arrived';
+  const asignado = ticket.status === 'assigned' || llego;
 
   return (
     <Card style={styles.card}>
@@ -54,7 +55,9 @@ export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Pr
         accessible
         accessibilityLiveRegion="polite"
         accessibilityLabel={
-          asignado
+          llego
+            ? 'El apoyo llegó, te ayudan a bajar'
+            : asignado
             ? `Ticket asignado a ${ticket.assignee}, llega en unos ${ticket.etaMin} minutos`
             : 'Ticket enviado, esperando asignación'
         }
@@ -65,7 +68,9 @@ export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Pr
           color={asignado ? t.colors.success : t.colors.primary}
         />
         <AppText variant="caption" style={styles.flex} color={asignado ? 'success' : 'primary'}>
-          {asignado
+          {llego
+            ? 'El apoyo llegó · te ayudan a bajar'
+            : asignado
             ? `${ticket.assignee} va en camino · llega en ~${ticket.etaMin} min a ${ticket.reachedLabel}`
             : 'Enviado · esperando asignación'}
         </AppText>
@@ -80,6 +85,7 @@ export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Pr
       <Button
         label="Ya me ayudaron"
         icon="checkmark-circle"
+        variant={llego ? 'primary' : 'secondary'}
         fullWidth
         accessibilityLabel="Ya me ayudaron: cerrar el ticket y continuar la ruta"
         onPress={() => {

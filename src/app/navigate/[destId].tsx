@@ -19,7 +19,8 @@ import { useRouteSimulation } from '@/hooks/use-route-simulation';
 import { HAPTIC_CODE, HAPTIC_LEGEND_SHORT, playManeuverHaptic, playPreAlert } from '@/lib/haptics';
 import { getBuilding, floorLabel } from '@/lib/buildings';
 import { CAMPUS_MAP, FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
-import { EDGES, getNode, getPlace } from '@/lib/routing';
+import { EDGES, getNode, getPlace, NODES } from '@/lib/routing';
+import { STUDENT } from '@/lib/schedule';
 import { remainingText } from '@/lib/support-ticket';
 import type { RouteResult } from '@/types';
 import type { LayoutChangeEvent } from 'react-native';
@@ -35,7 +36,7 @@ export default function NavigateScreen() {
   const { destId, partial } = useLocalSearchParams<{ destId: string; partial?: string }>();
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const { getRoute, getNearestReachable, setOrigin, resolveTicket, tickets, accessibleMode, profile, incidents, elevators, confirmIncident, denyIncident } = useApp();
+  const { getRoute, getNearestReachable, setOrigin, resolveTicket, tickets, accessibleMode, profile, incidents, elevators, confirmIncident, denyIncident, addIncident } = useApp();
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -219,6 +220,45 @@ export default function NavigateScreen() {
     say(`¿El ascensor del edificio ${promptElevator.building} sigue fuera de servicio? Responde sí o ya funciona.`);
   }, [promptElevator, say]);
 
+  // Acción "El ascensor no funciona": maniobra actual/siguiente de ascensor, o ≤20 m de uno de la ruta
+  const routeElevators = useMemo(() => {
+    if (!route) return [];
+    const ids = [...new Set(route.edgeIds.map((id) => EDGES.find((e) => e.id === id)?.elevatorId).filter((id): id is string => !!id))];
+    return ids
+      .filter((id) => elevators.find((el) => el.id === id)?.status === 'ok')
+      .map((id) => ({
+        id,
+        pts: EDGES.filter((e) => e.elevatorId === id).flatMap((e) => [getNode(e.from), getNode(e.to)]).filter((n): n is NonNullable<typeof n> => !!n),
+      }));
+  }, [route, elevators]);
+  const elevatorTarget = useMemo(() => {
+    if (!route || sim.finished || esParcial || !routeElevators.length) return undefined;
+    const dist = (pts: { x: number; y: number }[]) => Math.min(...pts.map((n) => Math.hypot(n.x - sim.point.x, n.y - sim.point.y) * mPerPct));
+    const nearest = routeElevators.reduce((b, c) => (dist(c.pts) < dist(b.pts) ? c : b));
+    const maneuverNear = sim.currentManeuver?.type === 'elevator' || sim.nextManeuver?.type === 'elevator';
+    return maneuverNear || dist(nearest.pts) <= 20 ? nearest.id : undefined;
+  }, [route, sim.finished, sim.point, sim.currentManeuver, sim.nextManeuver, esParcial, routeElevators, mPerPct]);
+  const reportElevatorDown = useCallback(() => {
+    if (!elevatorTarget || !destId) return;
+    sim.pause();
+    Speech.stop();
+    // Nodo de la red más cercano a la posición actual, en el mismo piso (p. ej. el hall del ascensor)
+    const cur = getNode(sim.nodeId);
+    const pool = NODES.filter((n) => (n.floor ?? 1) === (cur?.floor ?? 1) && n.building === cur?.building);
+    const nearestNode = (pool.length ? pool : cur ? [cur] : []).reduce<typeof cur>(
+      (b, n) => (!b || Math.hypot(n.x - sim.point.x, n.y - sim.point.y) < Math.hypot(b.x - sim.point.x, b.y - sim.point.y) ? n : b),
+      undefined,
+    );
+    addIncident({
+      type: 'elevator',
+      description: 'Ascensor fuera de servicio',
+      reportedBy: STUDENT.name.split(' ')[0],
+      elevatorId: elevatorTarget,
+    });
+    if (nearestNode) setOrigin(nearestNode.id);
+    router.replace({ pathname: '/route/[destId]', params: { destId } } as Href);
+  }, [elevatorTarget, destId, sim, addIncident, setOrigin, router]);
+
   const turnPoint = route && sim.currentManeuver && !sim.finished ? route.polyline[sim.currentManeuver.atIndex] : undefined;
   const avoidStairs = profile === 'wheelchair' || profile === 'crutches';
   const originB = route ? getNode(route.nodeIds[0])?.building : undefined;
@@ -338,6 +378,14 @@ export default function NavigateScreen() {
             </AppText>
           ) : null}
         </View>
+        <Pressable
+          onPress={() => router.push({ pathname: '/report', params: { edgeIds: route.edgeIds.join(','), dest: destId ?? '' } } as Href)}
+          accessibilityRole="button"
+          accessibilityLabel="Reportar barrera"
+          accessibilityHint="Abre el reporte de barreras con los tramos de tu ruta"
+          style={styles.iconBtn}>
+          <Ionicons name="flag-outline" size={26} color={t.colors.text} />
+        </Pressable>
         <Pressable
           onPress={() => setHelpOpen(true)}
           accessibilityRole="button"
@@ -476,7 +524,8 @@ export default function NavigateScreen() {
           reachedLabel: nearest.reachedLabel,
           remainingM: nearest.remainingM,
           remainingText: remainingText(nearest.reachedNodeId, place, nearest.remainingM),
-          assignee: ticket?.status === 'assigned' ? ticket.assignee : undefined,
+          assignee: ticket?.status === 'assigned' || ticket?.status === 'arrived' ? ticket.assignee : undefined,
+          arrived: ticket?.status === 'arrived',
           etaMin: ticket?.etaMin,
           onViewTicket: close,
           onHelped: () => {
@@ -486,6 +535,7 @@ export default function NavigateScreen() {
             router.replace((resume === place.nodeId ? '/home' : { pathname: '/route/[destId]', params: { destId: place.id, resumed: '1' } }) as Href);
           },
         } : undefined}
+        onElevatorDown={elevatorTarget ? reportElevatorDown : undefined}
         onLayout={onCardLayout}
       />
 

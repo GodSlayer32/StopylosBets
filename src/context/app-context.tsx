@@ -11,6 +11,8 @@ export const DEFAULT_ORIGIN = 'c_labs';
 const LATENCY_MS = 400;
 /** Demo: cuanto tarda el portal en asignar el ticket a alguien. */
 const ASSIGN_MS = 3500;
+/** Demo: el apoyo llega a este tiempo de haberse asignado. */
+const ARRIVE_MS = 15000;
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export type NewIncident = Omit<
@@ -205,6 +207,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             prev.map((x) => (x.id === nuevo.id && x.status === 'sent' ? { ...x, status: 'assigned' as const, assignee: SUPPORT_TEAM } : x)),
           );
         }, ASSIGN_MS),
+        setTimeout(() => {
+          setTickets((prev) =>
+            prev.map((x) => (x.id === nuevo.id && x.status === 'assigned' ? { ...x, status: 'arrived' as const } : x)),
+          );
+        }, ASSIGN_MS + ARRIVE_MS),
       );
       return nuevo;
     },

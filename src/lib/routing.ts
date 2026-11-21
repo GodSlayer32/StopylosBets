@@ -248,13 +248,16 @@ export function findNearestReachable(
   const dest = place.nodeId;
   const b = buildBlocks(incidents, elevators, raining, assisted);
   const { dist, prev } = explore(origin, profile, b);
-  let best: string | null = null;
-  let bestM = Infinity;
+  // El origen es el punto por defecto: moverse unos pocos metros no cambia nada
+  // para quien espera apoyo (p. ej. el hall del ascensor caído y su escalera contigua).
+  let best: string | null = dist.has(origin) && origin !== dest ? origin : null;
+  let bestM = best ? straightMeters(origin, dest) : Infinity;
+  const MIN_GAIN_M = 3;
   for (const id of dist.keys()) {
-    if (id === dest) continue;
+    if (id === dest || id === origin) continue;
     const m = straightMeters(id, dest);
     const mejorCamino = (dist.get(id) ?? Infinity) < (best ? dist.get(best) ?? Infinity : Infinity);
-    if (m < bestM - 0.5 || (m < bestM + 0.5 && mejorCamino)) {
+    if (m < bestM - MIN_GAIN_M || (best === null && m < bestM - 0.5) || (m < bestM + 0.5 && mejorCamino && best !== origin)) {
       best = id;
       bestM = m;
     }

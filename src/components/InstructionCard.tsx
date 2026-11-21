@@ -35,7 +35,11 @@ type Props = {
     etaMin?: number;
     onViewTicket: () => void;
     onHelped: () => void;
+    /** El apoyo ya llegó: "Ya me ayudaron" pasa a ser la acción principal */
+    arrived?: boolean;
   };
+  /** Acción "El ascensor no funciona", visible cuando la maniobra actual o siguiente es de ascensor */
+  onElevatorDown?: () => void;
 };
 
 /** Frase corta para "Luego: …" */
@@ -48,7 +52,7 @@ function split(m: Maneuver, dist: number, meet: boolean): { strong: string; rest
   return { strong: dist < 5 ? 'Ahora' : `En ${dist} m`, rest: m.verb };
 }
 
-function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onToggleVoice, onHome, onRepeat, onLayout, partial }: Props) {
+function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onToggleVoice, onHome, onRepeat, onLayout, partial, onElevatorDown }: Props) {
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const compact = !accessibleMode;
@@ -58,9 +62,11 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
   const wrapStyle = [styles.card, { bottom: t.spacing.md + insets.bottom }];
 
   if (sim.finished && partial) {
-    const status = partial.assignee
-      ? `${partial.assignee} va en camino · llega en ~${partial.etaMin} min`
-      : 'Pedimos apoyo, espera aquí';
+    const status = partial.arrived
+      ? 'El apoyo llegó · te ayudan a bajar'
+      : partial.assignee
+        ? `${partial.assignee} va en camino · llega en ~${partial.etaMin} min`
+        : 'Pedimos apoyo, espera aquí';
     return (
       <View style={wrapStyle} onLayout={onLayout}>
         <View style={styles.arrived}>
@@ -76,12 +82,13 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
             <AppText color="textMuted">Faltan {partial.remainingText} hasta {place.name}</AppText>
           </View>
           <View style={[styles.statusRow, { backgroundColor: t.colors.successSoft }]}>
-            <Ionicons name={partial.assignee ? 'person-circle' : 'hourglass'} size={t.iconSize.sm} color={t.colors.success} />
+            <Ionicons name={partial.arrived ? 'checkmark-circle' : partial.assignee ? 'person-circle' : 'hourglass'} size={t.iconSize.sm} color={t.colors.success} />
             <AppText variant="caption" color="success" style={styles.flex}>{status}</AppText>
           </View>
-          <Button label="Volver al inicio" variant="secondary" fullWidth onPress={onHome} />
-          <Button label="Ya me ayudaron" icon="checkmark-circle" fullWidth onPress={partial.onHelped} />
+          {partial.arrived ? null : <Button label="Volver al inicio" variant="secondary" fullWidth onPress={onHome} />}
+          <Button label="Ya me ayudaron" icon="checkmark-circle" variant={partial.arrived ? 'primary' : 'secondary'} fullWidth onPress={partial.onHelped} />
           <Button label="Ver mi ticket" variant="secondary" fullWidth onPress={partial.onViewTicket} />
+          {partial.arrived ? <Button label="Volver al inicio" variant="ghost" fullWidth onPress={onHome} /> : null}
         </View>
       </View>
     );
@@ -167,6 +174,17 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
           </>
         )}
       </View>
+      {onElevatorDown ? (
+        <Pressable
+          onPress={onElevatorDown}
+          accessibilityRole="button"
+          accessibilityLabel="El ascensor no funciona: reportarlo y pedir apoyo"
+          accessibilityHint="Reporta el ascensor y pide apoyo para continuar"
+          style={({ pressed }) => [styles.elevDown, pressed && { opacity: 0.85 }]}>
+          <MaterialCommunityIcons name="elevator-passenger-outline" size={t.iconSize.sm} color={t.colors.danger} />
+          <AppText variant="label" color="danger">El ascensor no funciona</AppText>
+        </Pressable>
+      ) : null}
       {!compact && onRepeat ? (
         <Pressable
           onPress={onRepeat}
@@ -281,6 +299,17 @@ const makeStyles = (t: Theme, compact: boolean) =>
       justifyContent: 'center',
       gap: t.spacing.md,
       paddingHorizontal: t.spacing.lg,
+    },
+    elevDown: {
+      minHeight: Math.max(48, t.minTouch),
+      borderRadius: t.radius.md,
+      borderWidth: 1.5,
+      borderColor: t.colors.danger,
+      backgroundColor: t.colors.dangerSoft,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: t.spacing.sm,
     },
     statusRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, padding: t.spacing.md, borderRadius: t.radius.md },
     arrived: { gap: t.spacing.md },

@@ -188,7 +188,7 @@ export interface PartialRoute {
   remainingM: number;
 }
 
-export type TicketStatus = 'sent' | 'assigned' | 'resolved';
+export type TicketStatus = 'sent' | 'assigned' | 'arrived' | 'resolved';
 
 /**
  * Ticket de apoyo. Se levanta solo cuando no hay ruta: nadie deberia tener que
