@@ -25,6 +25,14 @@ type Props = {
   /** Repite la instrucción actual por voz + háptico */
   onRepeat?: () => void;
   onLayout?: (e: LayoutChangeEvent) => void;
+  /** Ruta parcial: la llegada es al punto alcanzable, no al destino */
+  partial?: {
+    reachedLabel: string;
+    remainingM: number;
+    assignee?: string;
+    etaMin?: number;
+    onViewTicket: () => void;
+  };
 };
 
 /** Frase corta para "Luego: …" */
@@ -37,7 +45,7 @@ function split(m: Maneuver, dist: number): { strong: string; rest: string } {
   return { strong: dist < 5 ? 'Ahora' : `En ${dist} m`, rest: m.verb };
 }
 
-function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onToggleVoice, onHome, onRepeat, onLayout }: Props) {
+function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onToggleVoice, onHome, onRepeat, onLayout, partial }: Props) {
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const compact = !accessibleMode;
@@ -45,6 +53,35 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
   const styles = useMemo(() => makeStyles(t, compact), [t, compact]);
   const m = sim.currentManeuver;
   const wrapStyle = [styles.card, { bottom: t.spacing.md + insets.bottom }];
+
+  if (sim.finished && partial) {
+    const status = partial.assignee
+      ? `${partial.assignee} va en camino · llega en ~${partial.etaMin} min`
+      : 'Pedimos apoyo, espera aquí';
+    return (
+      <View style={wrapStyle} onLayout={onLayout}>
+        <View style={styles.arrived}>
+          <View style={[styles.check, { backgroundColor: t.colors.successSoft }]}>
+            <Ionicons name="checkmark-circle" size={40} color={t.colors.success} />
+          </View>
+          <View
+            style={styles.flex}
+            accessible
+            accessibilityRole="header"
+            accessibilityLabel={`Llegaste a ${partial.reachedLabel}. Faltan ${partial.remainingM} metros hasta ${place.name}. ${status}`}>
+            <AppText variant="title">Llegaste a {partial.reachedLabel}</AppText>
+            <AppText color="textMuted">Faltan {partial.remainingM} m hasta {place.name}</AppText>
+          </View>
+          <View style={[styles.statusRow, { backgroundColor: t.colors.successSoft }]}>
+            <Ionicons name={partial.assignee ? 'person-circle' : 'hourglass'} size={t.iconSize.sm} color={t.colors.success} />
+            <AppText variant="caption" color="success" style={styles.flex}>{status}</AppText>
+          </View>
+          <Button label="Volver al inicio" fullWidth onPress={onHome} />
+          <Button label="Ver mi ticket" variant="secondary" fullWidth onPress={partial.onViewTicket} />
+        </View>
+      </View>
+    );
+  }
 
   if (sim.finished) {
     return (
@@ -241,6 +278,7 @@ const makeStyles = (t: Theme, compact: boolean) =>
       gap: t.spacing.md,
       paddingHorizontal: t.spacing.lg,
     },
+    statusRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, padding: t.spacing.md, borderRadius: t.radius.md },
     arrived: { gap: t.spacing.md },
     check: { width: 64, height: 64, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' },
   });

@@ -258,41 +258,6 @@ export default function RouteScreen() {
     );
   }
 
-  const noElevator = status === 'error' && !!place && (profile === 'crutches' || profile === 'wheelchair') && lacksElevatorAccess(place);
-  if (noElevator && place) {
-    const reqCourse = courseAt(place.id);
-    return (
-      <Screen scroll contentStyle={styles.noRouteScreen}>
-        <Stack.Screen options={{ title: place.name }} />
-        <View style={styles.noRoute}>
-          <View style={styles.noRouteIcon}>
-            <MaterialCommunityIcons name="elevator-passenger-outline" size={t.iconSize.lg + 8} color={t.colors.danger} />
-          </View>
-          <AppText variant="title" accessibilityRole="header" style={styles.center}>{place.name} no tiene ruta accesible</AppText>
-          <AppText color="textMuted" style={styles.center}>
-            Está en el {floorLabel(place.floor ?? 1).toLowerCase()} del Edificio {place.building}, que no tiene ascensor.
-          </AppText>
-        </View>
-        <View style={styles.noRouteActions}>
-          <Button
-            label="Solicitar sala accesible"
-            icon="share-outline"
-            fullWidth
-            accessibilityLabel={`Solicitar sala accesible en lugar de ${place.name}`}
-            onPress={() => { Share.share({ message: accessibleRoomRequest(profile, place, reqCourse) }).catch(() => {}); }}
-          />
-          <Button
-            label="Ver salas accesibles cercanas"
-            icon="map-outline"
-            variant="secondary"
-            fullWidth
-            onPress={() => router.push({ pathname: '/map', params: { building: place.building ?? '', level: '1' } })}
-          />
-          <Button label="Volver" variant="ghost" fullWidth onPress={() => router.back()} />
-        </View>
-      </Screen>
-    );
-  }
 
   const diagnosis = status === 'error' && profile === 'wheelchair' && destId ? getNoRouteReason(destId) : null;
   const autoPlan = partial && place ? (
@@ -301,13 +266,13 @@ export default function RouteScreen() {
         <View style={styles.planHead}>
           <MaterialCommunityIcons name="map-marker-distance" size={t.iconSize.md} color={t.colors.primary} />
           <AppText variant="heading" style={styles.flex}>
-            {partial.route.steps.length ? 'Te llevamos lo mas cerca posible' : 'Desde aqui no puedes avanzar'}
+            {partial.route.steps.length ? 'Te llevamos lo más cerca posible' : 'Desde aquí no puedes avanzar'}
           </AppText>
         </View>
         {partial.route.steps.length ? (
           <>
             <AppText color="textMuted">
-              Lo mas cerca que puedes llegar por tu cuenta es {partial.reachedLabel}.
+              Lo más cerca que puedes llegar por tu cuenta es {partial.reachedLabel}.
             </AppText>
             <View style={styles.planStats}>
               <View style={styles.stat}>
@@ -333,7 +298,7 @@ export default function RouteScreen() {
           </>
         ) : (
           <AppText color="textMuted">
-            Con este perfil todas las salidas de {getNode(origin)?.label ?? 'tu origen'} estan bloqueadas,
+            Con este perfil todas las salidas de {getNode(origin)?.label ?? 'tu origen'} están bloqueadas,
             asi que el apoyo tiene que venir hasta aqui.
           </AppText>
         )}
@@ -343,6 +308,44 @@ export default function RouteScreen() {
       ) : null}
     </View>
   ) : null;
+
+  const noElevator = status === 'error' && !!place && (profile === 'crutches' || profile === 'wheelchair') && lacksElevatorAccess(place);
+  if (noElevator && place) {
+    const reqCourse = courseAt(place.id);
+    return (
+      <Screen scroll contentStyle={autoPlan ? undefined : styles.noRouteScreen}>
+        <Stack.Screen options={{ title: place.name }} />
+        <View style={styles.noRoute}>
+          <View style={styles.noRouteIcon}>
+            <MaterialCommunityIcons name="elevator-passenger-outline" size={t.iconSize.lg + 8} color={t.colors.danger} />
+          </View>
+          <AppText variant="title" accessibilityRole="header" style={styles.center}>{place.name} no tiene ruta accesible</AppText>
+          <AppText color="textMuted" style={styles.center}>
+            Está en el {floorLabel(place.floor ?? 1).toLowerCase()} del Edificio {place.building}, que no tiene ascensor.
+          </AppText>
+        </View>
+        {autoPlan}
+        <View style={styles.noRouteActions}>
+          <Button
+            label="Solicitar sala accesible"
+            icon="share-outline"
+            variant={autoPlan ? 'secondary' : 'primary'}
+            fullWidth
+            accessibilityLabel={`Solicitar sala accesible en lugar de ${place.name}`}
+            onPress={() => { Share.share({ message: accessibleRoomRequest(profile, place, reqCourse) }).catch(() => {}); }}
+          />
+          <Button
+            label="Ver salas accesibles cercanas"
+            icon="map-outline"
+            variant="secondary"
+            fullWidth
+            onPress={() => router.push({ pathname: '/map', params: { building: place.building ?? '', level: '1' } })}
+          />
+          <Button label="Volver" variant="ghost" fullWidth onPress={() => router.back()} />
+        </View>
+      </Screen>
+    );
+  }
 
   if (diagnosis && diagnosis.kind !== 'other' && place) {
     const originName = getNode(origin)?.zone ?? getNode(origin)?.label ?? 'tu origen';
@@ -420,7 +423,7 @@ export default function RouteScreen() {
                 No hay ruta hasta {place?.name ?? 'el destino'}
               </AppText>
               <AppText color="textMuted" style={styles.center}>
-                Con tu perfil no existe ningun camino completo: puede haber un ascensor fuera de
+                Con tu perfil no existe ningún camino completo: puede haber un ascensor fuera de
                 servicio o un tramo bloqueado.
               </AppText>
             </View>

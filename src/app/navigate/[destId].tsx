@@ -34,7 +34,7 @@ export default function NavigateScreen() {
   const { destId, partial } = useLocalSearchParams<{ destId: string; partial?: string }>();
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const { getRoute, getNearestReachable, accessibleMode, profile, incidents, elevators, confirmIncident, denyIncident } = useApp();
+  const { getRoute, getNearestReachable, tickets, accessibleMode, profile, incidents, elevators, confirmIncident, denyIncident } = useApp();
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -46,6 +46,11 @@ export default function NavigateScreen() {
   );
   /** Hasta donde guia esta navegacion de verdad. */
   const destLabel = nearest ? nearest.reachedLabel : place?.name ?? 'tu destino';
+
+  const ticket = useMemo(
+    () => (esParcial && place ? tickets.find((x) => x.placeId === place.id) ?? null : null),
+    [esParcial, place, tickets],
+  );
 
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [status, setStatus] = useState<Status>('loading');
@@ -112,7 +117,7 @@ export default function NavigateScreen() {
     lastSpoken.current = key;
     if (sim.finished) {
       playManeuverHaptic('arrive');
-      say(esParcial ? `Llegaste a ${destLabel}. Aqui te espera el apoyo` : `Llegaste a ${destLabel}`);
+      say(esParcial ? `Llegaste a ${destLabel}. Aquí te espera el apoyo` : `Llegaste a ${destLabel}`);
       return;
     }
     playManeuverHaptic(m.type);
@@ -319,7 +324,7 @@ export default function NavigateScreen() {
         </Pressable>
         <View style={styles.flex}>
           <AppText variant="caption" color="textMuted">
-            {nearest ? 'Lo mas cerca que puedes llegar' : 'Navegando hacia'}
+            {nearest ? 'Lo más cerca que puedes llegar' : 'Navegando hacia'}
           </AppText>
           <AppText variant="heading" numberOfLines={1} accessibilityRole="header" style={accessibleMode ? undefined : { fontSize: 17, lineHeight: 22 }}>{destLabel}</AppText>
           {nearest ? (
@@ -462,6 +467,13 @@ export default function NavigateScreen() {
         onToggleVoice={toggleVoice}
         onRepeat={repeat}
         onHome={goHome}
+        partial={nearest ? {
+          reachedLabel: nearest.reachedLabel,
+          remainingM: nearest.remainingM,
+          assignee: ticket?.status === 'assigned' ? ticket.assignee : undefined,
+          etaMin: ticket?.etaMin,
+          onViewTicket: close,
+        } : undefined}
         onLayout={onCardLayout}
       />
 
