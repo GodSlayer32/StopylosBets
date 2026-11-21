@@ -69,9 +69,9 @@ const bboxPts = (pts: XY[]): Box => {
   return { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
 };
 
-const polyD = (polys: XY[][]) =>
+const polyD = (polys: XY[][], dx = 0, dy = 0) =>
   polys
-    .map((poly) => 'M' + poly.map((p) => toPlan(p).map((n) => n.toFixed(1)).join(' ')).join('L') + 'Z')
+    .map((poly) => 'M' + poly.map((p) => { const q = toPlan(p); return `${(q[0] + dx).toFixed(1)} ${(q[1] + dy).toFixed(1)}`; }).join('L') + 'Z')
     .join('');
 
 const inPoly = (pt: XY, poly: XY[]) => {
@@ -287,7 +287,7 @@ export function CampusMap(props: CampusMapProps) {
   const label = (key: string, x: number, y: number, text: string, size: number, fill: string, weight: '600' | '800' = '600') => (
     <G key={key} transform={unrot(x, y)}>
       <SvgText x={x} y={y + px(size) * 0.35} fontSize={px(size)} fontWeight={weight} textAnchor="middle"
-        fill={m.halo} stroke={m.halo} strokeWidth={px(3.5)} strokeLinejoin="round">{text}</SvgText>
+        fill={m.halo} stroke={m.halo} strokeWidth={px(3)} strokeLinejoin="round">{text}</SvgText>
       <SvgText x={x} y={y + px(size) * 0.35} fontSize={px(size)} fontWeight={weight} textAnchor="middle" fill={fill}>{text}</SvgText>
     </G>
   );
@@ -301,9 +301,15 @@ export function CampusMap(props: CampusMapProps) {
   const layers: React.ReactNode[] = [];
 
   // Áreas
-  AREAS.forEach((a) =>
-    layers.push(<Path key={`a-${a.id}`} d={polyD([a.polygon])} fill={areaFill(a.kind)} opacity={dim ? 0.6 : 1} />),
-  );
+  AREAS.forEach((a) => {
+    const isStreet = a.kind === 'street';
+    const isCourt = a.kind === 'court';
+    layers.push(
+      <Path key={`a-${a.id}`} d={polyD([a.polygon])} fill={areaFill(a.kind)} opacity={dim ? 0.6 : 1}
+        stroke={isStreet ? m.streetEdge : isCourt ? m.courtLine : undefined}
+        strokeWidth={isStreet ? px(1.5) : isCourt ? px(1.5) : 0} strokeLinejoin="round" />,
+    );
+  });
 
   // ---- Detalle exterior (solo closeup en exterior)
   const topLayers: React.ReactNode[] = [];
@@ -334,9 +340,9 @@ export function CampusMap(props: CampusMapProps) {
         if (!near(lx, ly)) return;
         topLayers.push(
           <G key={`sn-${st.a.id}-${i}`} transform={`rotate(${loc},${lx},${ly})`}>
-            <SvgText x={lx} y={ly + px(12) * 0.35} fontSize={px(12)} fontWeight="700" textAnchor="middle" fill={m.roomText} opacity={0.75}
+            <SvgText x={lx} y={ly + px(12) * 0.35} fontSize={px(12)} fontWeight="600" fontStyle="italic" textAnchor="middle" fill={m.street}
               stroke={m.street} strokeWidth={px(3)} strokeLinejoin="round">{st.a.name}</SvgText>
-            <SvgText x={lx} y={ly + px(12) * 0.35} fontSize={px(12)} fontWeight="700" textAnchor="middle" fill={m.roomText} opacity={0.75}>{st.a.name}</SvgText>
+            <SvgText x={lx} y={ly + px(12) * 0.35} fontSize={px(12)} fontWeight="600" fontStyle="italic" textAnchor="middle" fill={m.streetText}>{st.a.name}</SvgText>
           </G>,
         );
       });
@@ -425,13 +431,39 @@ export function CampusMap(props: CampusMapProps) {
   }
 
   // Edificios
+  // Relieve 2.5D: sombra suave (2 capas) + cara extruida, todo en capas estáticas
+  const N = mode === 'macro' ? 3.5 : 7;
+  const sn = Math.sin((rotQ * Math.PI) / 180), cs = Math.cos((rotQ * Math.PI) / 180);
+  // desplazamiento vertical en pantalla -> coordenadas de plano
+  const off = (n: number): [number, number] => [px(n) * sn, px(n) * cs];
+  const isAct = (b: Building) => b.id === activeBuildingId && !dim;
+  const dFor = (list: Building[], n: number) => {
+    const [ox, oy] = off(n);
+    return list.map((b) => polyD([b.polygon, ...(b.holes ?? [])], ox, oy)).join('');
+  };
+  const shadowD1 = dFor(BUILDINGS, N + 3);
+  const shadowD2 = dFor(BUILDINGS, N + 1.5);
+  layers.push(
+    <Path key="sh2" d={shadowD1} fillRule="evenodd" fill={m.shadow} opacity={0.04} stroke={m.shadow} strokeWidth={px(5)} strokeLinejoin="round" />,
+    <Path key="sh1" d={shadowD2} fillRule="evenodd" fill={m.shadow} opacity={0.06} stroke={m.shadow} strokeWidth={px(2.5)} strokeLinejoin="round" />,
+  );
+  const plainB = BUILDINGS.filter((b) => !isAct(b));
+  const actB = BUILDINGS.filter(isAct);
+  const extr = (key: string, list: Building[], color: string) =>
+    list.length ? (
+      <G key={key}>
+        <Path d={dFor(list, N / 2)} fillRule="evenodd" fill={color} stroke={color} strokeWidth={px(1)} strokeLinejoin="round" />
+        <Path d={dFor(list, N)} fillRule="evenodd" fill={color} stroke={color} strokeWidth={px(1)} strokeLinejoin="round" />
+      </G>
+    ) : null;
+  layers.push(extr('ex', plainB, m.extrude), extr('exa', actB, m.buildingActiveExtrude));
   BUILDINGS.forEach((b) => {
-    const isActive = b.id === activeBuildingId;
+    const isActive = isAct(b);
     const isIndoor = indoorB?.id === b.id;
     const fill = isIndoor ? m.building : dim ? m.buildingDim : isActive ? m.buildingActive : m.building;
     layers.push(
       <Path key={`b-${b.id}`} d={polyD([b.polygon, ...(b.holes ?? [])])} fillRule="evenodd" fill={fill}
-        stroke={m.outline} strokeWidth={px(isIndoor ? 2 : 1)} strokeLinejoin="round" />,
+        stroke={isActive ? m.buildingActiveEdge : m.outline} strokeWidth={px(isIndoor ? 2 : isActive ? 1.5 : 1)} strokeLinejoin="round" />,
     );
   });
 
@@ -450,7 +482,7 @@ export function CampusMap(props: CampusMapProps) {
       layers.push(
         <Path key={`r-${r.id}`} d={polyD([r.polygon])} strokeLinejoin="round"
           fill={isDest ? m.roomActive : kindFill[r.kind as RoomKind] ?? m.room}
-          stroke={isDest ? m.buildingActive : m.outline} strokeWidth={px(isDest ? 2.5 : 1)} />,
+          stroke={isDest ? m.roomActiveEdge : m.roomEdge} strokeWidth={px(isDest ? 2.5 : 1)} />,
       );
     });
     plan.rooms.forEach((r) => {
@@ -501,10 +533,12 @@ export function CampusMap(props: CampusMapProps) {
       const rect: R = { l: x * sK - w / 2 - 2, t: y * sK - size / 2 - 2, r: x * sK + w / 2 + 2, b: y * sK + size / 2 + 2 };
       if (placed.some((q) => hit(rect, q))) return;
       placed.push(rect);
-      const isActive = b.id === activeBuildingId;
+      const isActive = b.id === activeBuildingId && !dim;
       layers.push(
         <G key={`bl-${b.id}`} transform={unrot(x, y)}>
-          <SvgText x={x} y={y + px(size) * 0.35} fontSize={px(size)} fontWeight="800" textAnchor="middle"
+          <SvgText x={x} y={y + px(size) * 0.35} fontSize={px(size)} fontWeight="700" textAnchor="middle"
+            fill={m.halo} stroke={m.halo} strokeWidth={px(3)} strokeLinejoin="round">{txt}</SvgText>
+          <SvgText x={x} y={y + px(size) * 0.35} fontSize={px(size)} fontWeight="700" textAnchor="middle"
             fill={isActive ? m.buildingActiveText : m.buildingText}>{txt}</SvgText>
         </G>,
       );
@@ -581,17 +615,17 @@ export function CampusMap(props: CampusMapProps) {
   // Marcadores en el grupo del plano
   const pin = (key: string, p: XY, color: string) => (
     <G key={key} transform={`translate(${p[0]},${p[1]}) scale(${k}) rotate(${-view.rot})`}>
+      <Circle r={6} fill={m.shadow} opacity={0.25} transform="scale(1 0.4)" />
       <Path d="M0 0C-3-8-9-12-9-19A9 9 0 1 1 9-19C9-12 3-8 0 0Z" fill={color} stroke={m.routeCasing} strokeWidth={2} />
-      <Circle cx={0} cy={-19} r={3.5} fill={m.routeCasing} />
+      <Circle cx={0} cy={-19} r={3.5} fill={m.pinDot} />
     </G>
   );
 
   const posMarker = (transform: string, angle: number, key: string) => (
     <G key={key} transform={transform}>
-      <Circle r={18} fill={m.position} opacity={0.22} />
+      <Circle r={22} fill={m.positionHalo} />
       {(heading !== undefined || mode === 'closeup') && (
-        <Path d="M0 -26L-10 -8L10 -8Z" fill={m.position} stroke={m.routeCasing} strokeWidth={1.5} strokeLinejoin="round"
-          transform={`rotate(${angle})`} />
+        <Path d="M0 0L-15 -34Q0 -42 15 -34Z" fill={m.position} opacity={0.3} transform={`rotate(${angle})`} />
       )}
       <Circle r={8} fill={m.position} stroke={m.routeCasing} strokeWidth={3} />
     </G>
@@ -603,7 +637,7 @@ export function CampusMap(props: CampusMapProps) {
       <G key={`bar-${i}`} transform={`translate(${x},${y}) scale(${k}) rotate(${-view.rot})`}>
         <Circle r={11} fill={b.kind === 'incident' ? m.barrier : m.stairsMark} stroke={m.routeCasing} strokeWidth={2} />
         {b.kind === 'incident' ? (
-          <SvgText y={5} fontSize={14} fontWeight="800" textAnchor="middle" fill={m.routeCasing === '#000000' ? '#000000' : '#FFFFFF'}>!</SvgText>
+          <SvgText y={5} fontSize={14} fontWeight="800" textAnchor="middle" fill={m.barrierText}>!</SvgText>
         ) : (
           <Path d="M-5 4H-2V1H1V-2H5V-5" stroke={m.routeCasing === '#000000' ? '#000000' : '#FFFFFF'} strokeWidth={1.8} fill="none" />
         )}
@@ -628,12 +662,15 @@ export function CampusMap(props: CampusMapProps) {
           {layers}
           {routePoints.length >= 2 && (
             <>
-              <Polyline points={routeStr} fill="none" stroke={m.routeCasing} strokeWidth={px(10)} strokeLinecap="round" strokeLinejoin="round" />
+              <Polyline points={routeStr} fill="none" stroke={m.routeEdge} strokeWidth={px(9.5)} strokeLinecap="round" strokeLinejoin="round" />
               <Polyline points={routeStr} fill="none" stroke={m.route} strokeWidth={px(5.5)} strokeLinecap="round" strokeLinejoin="round" />
             </>
           )}
           {donePoints && donePoints.length >= 2 && (
-            <Polyline points={doneStr} fill="none" stroke={m.routeDone} strokeWidth={px(5.5)} strokeLinecap="round" strokeLinejoin="round" />
+            <>
+              <Polyline points={doneStr} fill="none" stroke={m.routeDoneEdge} strokeWidth={px(9.5)} strokeLinecap="round" strokeLinejoin="round" />
+              <Polyline points={doneStr} fill="none" stroke={m.routeDone} strokeWidth={px(5.5)} strokeLinecap="round" strokeLinejoin="round" />
+            </>
           )}
           {turnPoint && (
             <G transform={`translate(${ptPlan(turnPoint)[0]},${ptPlan(turnPoint)[1]}) scale(${k})`}>

@@ -245,6 +245,7 @@ export default function RouteScreen() {
     const reqCourse = courseAt(place.id);
     return (
       <Screen scroll contentStyle={styles.noRouteScreen}>
+        <Stack.Screen options={{ title: place.name }} />
         <View style={styles.noRoute}>
           <View style={styles.noRouteIcon}>
             <MaterialCommunityIcons name="elevator-passenger-outline" size={t.iconSize.lg + 8} color={t.colors.danger} />
@@ -287,6 +288,7 @@ export default function RouteScreen() {
       : `El ascensor del Edif. ${diagnosis.elevatorBuilding ?? ''} tiene cabina pequeña (100×120 cm) y no cabe una silla de ruedas (mínimo 110×140 cm).`;
     return (
       <Screen scroll contentStyle={styles.noRouteScreen}>
+        <Stack.Screen options={{ title: place.name }} />
         <View style={styles.noRoute}>
           <View style={styles.noRouteIcon}>
             <MaterialCommunityIcons name="wheelchair-accessibility" size={t.iconSize.lg + 8} color={t.colors.primary} />

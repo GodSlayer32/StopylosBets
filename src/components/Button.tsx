@@ -22,7 +22,7 @@ type Props = {
 type Palette = { bg: string; fg: string; border: string; pressedBg: string; ripple: string };
 const makePalette = (colors: Colors): Record<Variant, Palette> => ({
   primary: { bg: colors.primary, fg: colors.primaryText, border: colors.primary, pressedBg: colors.primaryPressed, ripple: colors.primaryPressed },
-  secondary: { bg: colors.surface, fg: colors.primary, border: colors.primary, pressedBg: colors.primarySoft, ripple: colors.primarySoft },
+  secondary: { bg: colors.surface, fg: colors.primary, border: colors.borderStrong, pressedBg: colors.primarySoft, ripple: colors.primarySoft },
   ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent', pressedBg: colors.primarySoft, ripple: colors.primarySoft },
   danger: { bg: colors.danger, fg: colors.primaryText, border: colors.danger, pressedBg: colors.danger, ripple: colors.dangerSoft },
 });
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     minHeight: minTouch,
     paddingHorizontal: spacing.xl,
     borderRadius: radius.md,
-    borderWidth: 2,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },

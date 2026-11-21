@@ -2,7 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
-import { AccessibilityInfo, Alert, findNodeHandle, Modal, Pressable, Share, StyleSheet, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Alert, findNodeHandle, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
@@ -14,12 +14,12 @@ import { Chip } from '@/components/Chip';
 import { ElevatorStatus } from '@/components/ElevatorStatus';
 import { Screen } from '@/components/Screen';
 import { ScreenState } from '@/components/ScreenState';
-import { radius, spacing } from '@/constants/theme';
+import { radius, shadow, spacing } from '@/constants/theme';
 import { useApp } from '@/context/app-context';
 import { useTheme } from '@/hooks/use-theme';
 import { getNode, getPlace, PLACES } from '@/lib/routing';
 import scheduleJson from '@/data/schedule.json';
-import { accessibleRoomRequest, computeSchedule, isNoElevatorLeg, placeDetail, type ClassPlan } from '@/lib/schedule';
+import { computeSchedule, isNoElevatorLeg, placeDetail, type ClassPlan } from '@/lib/schedule';
 import { formatClock } from '@/lib/time';
 import type { Elevator, Place, Profile } from '@/types';
 
@@ -47,7 +47,7 @@ const placeSub = (p: Place) => `${p.building ? `Edif. ${p.building} · ` : ''}Pi
 export default function Home() {
   const router = useRouter();
   const { profile, origin, setOrigin, raining, incidents, elevators, confirmIncident, denyIncident } = useApp();
-  const { colors, minTouch, typography } = useTheme();
+  const { colors, minTouch, typography, accessible } = useTheme();
   const insets = useSafeAreaInsets();
   const sheetTitleRef = useRef<React.ComponentRef<typeof View>>(null);
   const [query, setQuery] = useState('');
@@ -105,6 +105,11 @@ export default function Home() {
   const nextPlan = plans.find((p) => p.cls.id === scheduleJson.nextClassId) ?? null;
   const warnPlan = plans.find((p) => p.startMin > (nextPlan?.startMin ?? 0) && (p.status === 'tarde' || p.status === 'justo' || p.status === 'sin-ruta'));
   const noElevPlan = plans.find((p) => p.startMin > (nextPlan?.startMin ?? 0) && isNoElevatorLeg(p, profile));
+  const dayNotices = (noElevPlan ? 1 : 0) + (warnPlan && warnPlan.leaveAt != null ? 1 : 0);
+  const dayNoticesText = dayNotices === 1 ? '1 aviso en tu día' : `${dayNotices} avisos en tu día`;
+  const noticeDanger = !!noElevPlan || warnPlan?.status === 'tarde' || warnPlan?.status === 'sin-ruta';
+  const noticeFg = noticeDanger ? colors.danger : colors.warning;
+  const noticeBg = noticeDanger ? colors.dangerSoft : colors.warningSoft;
   const leaveTone = nextPlan?.status === 'tarde' || nextPlan?.status === 'sin-ruta' ? 'danger' : nextPlan?.status === 'justo' ? 'warning' : 'success';
   const leaveText =
     !nextPlan || !nextPlan.status ? null
@@ -162,6 +167,7 @@ export default function Home() {
 
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']} scroll>
+      <View style={styles.header}>
       <View style={styles.row}>
         <View style={styles.flex}>
           <AppText variant="display" accessibilityRole="header">
@@ -176,6 +182,7 @@ export default function Home() {
           accessibilityLabel={`Perfil: ${PROFILE_LABEL[profile]}. Cambiar perfil`}
           onPress={() => router.replace('/')}
         />
+      </View>
       </View>
 
       <Card
@@ -203,7 +210,7 @@ export default function Home() {
       </Card>
 
       {nextClass && classPlace ? (
-        <Card style={[styles.gap, styles.nextCard, { borderColor: colors.primary }]}>
+        <Card style={styles.gap}>
           <AppText variant="label" color="primary">
             Tu próxima clase
           </AppText>
@@ -243,48 +250,22 @@ export default function Home() {
             <Ionicons name="calendar-outline" size={20} color={colors.primary} />
             <AppText variant="label" color="primary">Ver mi día</AppText>
           </Pressable>
-          {noElevPlan ? (
-            <View
-              accessible
-              accessibilityLabel={`A las ${noElevPlan.cls.start}, ${noElevPlan.cls.course}: sin ruta accesible, piso sin ascensor`}
-              style={[styles.leave, { backgroundColor: colors.dangerSoft, borderColor: colors.danger }]}>
-              <Ionicons name="warning" size={22} color={colors.danger} />
-              <View style={styles.flex}>
-                <AppText variant="label">{noElevPlan.cls.start} · {noElevPlan.cls.course}</AppText>
-                <AppText variant="caption">Sin ruta accesible · piso sin ascensor ({noElevPlan.place.name}, Edif. {noElevPlan.place.building})</AppText>
-              </View>
-            </View>
-          ) : null}
-          {noElevPlan ? (
-            <Button
-              label="Solicitar sala accesible"
-              icon="share-outline"
-              variant="secondary"
-              fullWidth
-              accessibilityLabel={`Solicitar sala accesible para ${noElevPlan.cls.course}`}
-              onPress={() => {
-                Share.share({ message: accessibleRoomRequest(profile, noElevPlan.place, noElevPlan.cls.course) }).catch(() => {});
-              }}
-            />
-          ) : null}
-          {warnPlan && warnPlan.leaveAt != null ? (
+          {dayNotices > 0 ? (
             <Pressable
               onPress={() => router.push('/my-day')}
               accessibilityRole="button"
-              accessibilityLabel={`Ojo: a las ${formatClock(warnPlan.leaveAt)} ${warnPlan.status === 'tarde' ? 'no alcanzas' : 'vas justo'} a ${warnPlan.cls.course}. Ver mi día`}
-              style={[styles.row, { minHeight: minTouch }]}>
-              <Ionicons name="warning" size={18} color={colors.warning} />
-              <AppText variant="caption" style={[styles.flex, { color: colors.warning, fontWeight: '700' }]}>
-                Ojo: a las {formatClock(warnPlan.leaveAt)} {warnPlan.status === 'tarde' ? 'no alcanzas' : 'vas justo'} a {warnPlan.cls.course}
-              </AppText>
-              <Ionicons name="chevron-forward" size={18} color={colors.warning} />
+              accessibilityLabel={`${dayNoticesText}. Ver mi día`}
+              style={[styles.noticeRow, { backgroundColor: noticeBg, minHeight: minTouch }]}>
+              <Ionicons name="warning" size={20} color={noticeFg} />
+              <AppText variant="label" style={styles.flex}>{dayNoticesText}</AppText>
+              <Ionicons name="chevron-forward" size={20} color={noticeFg} />
             </Pressable>
           ) : null}
         </Card>
       ) : null}
 
       {alerts.length > 0 ? (
-        <View style={[styles.gap, styles.afterCard]}>
+        <View style={styles.gap}>
           <Pressable
             onPress={() => setShowAlerts((v) => !v)}
             accessibilityRole="button"
@@ -353,7 +334,7 @@ export default function Home() {
       ) : null}
 
       <View
-        style={[styles.search, { backgroundColor: colors.surface, borderColor: colors.border, minHeight: minTouch }]}>
+        style={[styles.search, { backgroundColor: colors.surface, borderColor: accessible ? colors.border : colors.borderStrong, minHeight: minTouch }, !accessible && shadow]}>
         <Ionicons name="search" size={22} color={colors.textMuted} />
         <TextInput
           value={query}
@@ -484,17 +465,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-    borderWidth: 2,
+    borderRadius: radius.pill,
+    borderWidth: 1,
   },
   input: { flex: 1 },
   secondary: { alignSelf: 'flex-start', paddingHorizontal: spacing.xs },
   mapCard: { gap: spacing.md, padding: spacing.md },
   mapThumb: { height: 160, borderRadius: radius.md, borderWidth: 1, overflow: 'hidden' },
   openBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, borderRadius: radius.md },
-  nextCard: { borderWidth: 1 },
-  afterCard: { marginTop: spacing.xl },
-  leave: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 2 },
+  header: { gap: spacing.sm },
+  noticeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, borderRadius: radius.md },
+  leave: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 1 },
   backdrop: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     gap: spacing.md,

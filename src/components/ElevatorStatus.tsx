@@ -2,7 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { minTouch, radius, spacing } from '@/constants/theme';
+import { minTouch, radius, shadow, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAgo, formatConfirmations } from '@/lib/time';
 import type { Elevator } from '@/types';
@@ -26,7 +26,7 @@ export function elevatorSentence(e: Elevator): string {
 type Props = { elevator: Elevator; onPress?: () => void };
 
 export function ElevatorStatus({ elevator: e, onPress }: Props) {
-  const { colors } = useTheme();
+  const { colors, accessible } = useTheme();
   const tone = {
     ok: { fg: colors.success, bg: colors.successSoft, icon: 'checkmark-circle' as const },
     down: { fg: colors.danger, bg: colors.dangerSoft, icon: 'close-circle' as const },
@@ -54,7 +54,7 @@ export function ElevatorStatus({ elevator: e, onPress }: Props) {
       {actionable ? <Ionicons name="chevron-forward" size={20} color={colors.textMuted} /> : null}
     </>
   );
-  const style = [styles.row, { backgroundColor: colors.surface, borderColor: colors.border }];
+  const style = [styles.row, accessible ? { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 2 } : { backgroundColor: colors.surface, ...shadow }];
   if (actionable) {
     return (
       <Pressable
@@ -83,7 +83,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.md,
     borderRadius: radius.md,
-    borderWidth: 1,
   },
   iconWrap: { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm },

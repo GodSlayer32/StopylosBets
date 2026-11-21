@@ -121,7 +121,7 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
               {then ? (
                 <AppText variant="label" color="textMuted" numberOfLines={compact ? 2 : 1} style={compact ? undefined : styles.flex}>Luego: {lueg(then)}</AppText>
               ) : null}
-              <AppText variant="caption" color="textMuted">Faltan {sim.remainingM} m · {minutes} min</AppText>
+              <AppText variant="caption" color="textMuted" tabular>Faltan {sim.remainingM} m · {minutes} min</AppText>
             </View>
           </>
         )}
@@ -174,8 +174,8 @@ function Ctl({ label, icon, onPress, disabled, active, t, compact }: {
         width: t.minTouch,
         height: t.minTouch,
         borderRadius: t.radius.md,
-        borderWidth: compact ? 1.5 : 2,
-        borderColor: disabled ? t.colors.textMuted : t.colors.primary,
+        borderWidth: compact ? 1 : 2,
+        borderColor: disabled ? t.colors.border : t.colors.borderStrong,
         backgroundColor: disabled ? 'transparent' : active ? t.colors.primarySoft : t.colors.surface,
         alignItems: 'center',
         justifyContent: 'center',
@@ -194,10 +194,10 @@ const makeStyles = (t: Theme, compact: boolean) =>
       right: t.spacing.md,
       padding: t.spacing.md,
       gap: t.spacing.sm,
-      borderRadius: compact ? t.radius.md : t.radius.lg,
-      borderWidth: compact ? 1 : 2,
+      borderRadius: t.radius.lg,
+      borderWidth: compact ? 0 : 2,
       borderColor: t.colors.border,
-      backgroundColor: compact ? t.colors.overlaySurface : t.colors.surface,
+      backgroundColor: t.colors.surface,
       ...t.shadow,
     },
     info: { gap: t.spacing.xs },

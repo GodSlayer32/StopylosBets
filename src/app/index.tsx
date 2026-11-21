@@ -108,7 +108,8 @@ export default function MobilityProfile() {
                     backgroundColor: selected
                       ? colors.primarySoft
                       : colors.surface,
-                    borderColor: selected ? colors.primary : colors.border,
+                    borderColor: selected ? colors.primary : colors.borderStrong,
+                    borderWidth: selected ? 2 : 1,
                   },
                 ]}
               >
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     padding: spacing.lg,
     borderRadius: radius.lg,
-    borderWidth: 2,
+    borderWidth: 1,
   },
   iconWrap: {
     width: 56,

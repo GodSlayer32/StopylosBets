@@ -30,5 +30,5 @@ export function Screen({ children, scroll, edges = ['bottom', 'left', 'right'], 
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  content: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, gap: spacing.lg },
+  content: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, gap: spacing.xl },
 });

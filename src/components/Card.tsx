@@ -6,8 +6,11 @@ import { useTheme } from '@/hooks/use-theme';
 type Props = ViewProps & { onPress?: () => void; accessibilityLabel?: string; accessibilityHint?: string };
 
 export function Card({ onPress, accessibilityLabel, accessibilityHint, style, children, ...rest }: Props) {
-  const { colors } = useTheme();
-  const themed = { backgroundColor: colors.surface, borderColor: onPress ? colors.borderStrong : colors.border };
+  const { colors, accessible } = useTheme();
+  // Material: tarjeta blanca con elevación; el borde solo aparece en alto contraste.
+  const themed = accessible
+    ? { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 2 }
+    : { backgroundColor: colors.surface, ...shadow };
   if (onPress) {
     return (
       <Pressable
@@ -31,8 +34,6 @@ export function Card({ onPress, accessibilityLabel, accessibilityHint, style, ch
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
-    borderWidth: 1,
     padding: spacing.lg,
-    ...shadow,
   },
 });

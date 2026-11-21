@@ -105,7 +105,7 @@ export default function MyDay() {
   }
 
   return (
-    <Screen scroll>
+    <Screen scroll contentStyle={styles.list}>
       <View style={styles.head}>
         <AppText color="textMuted">{TODAY} · son las {formatClock(NOW_MINUTES)}</AppText>
         <AppText variant="heading">{STUDENT.name}</AppText>
@@ -206,6 +206,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   head: { gap: spacing.xs },
+  list: { gap: spacing.lg },
   classCard: { gap: spacing.md },
   doneTag: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   leg: { gap: spacing.md, paddingTop: spacing.md, borderTopWidth: 1 },

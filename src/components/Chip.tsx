@@ -48,6 +48,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.pill,
-    borderWidth: 2,
+    borderWidth: 1,
   },
 });

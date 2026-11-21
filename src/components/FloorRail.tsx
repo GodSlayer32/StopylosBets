@@ -17,9 +17,11 @@ type Props = {
 /** Fila visual 44 + hitSlop 4 por lado = 52 de área táctil */
 const ROW = 44;
 const HIT = 4;
+const CHIP_RADIUS = 12;
 
 function FloorRailBase({ levels, current, dest, onSelect }: Props) {
   const t = useTheme();
+  const m = t.map;
   const reduceMotion = useReduceMotion();
   const [pulse] = useState(() => new Animated.Value(0));
 
@@ -35,14 +37,14 @@ function FloorRailBase({ levels, current, dest, onSelect }: Props) {
     ]).start();
   }, [current, pulse, reduceMotion]);
 
-  const box = [styles.rail, { backgroundColor: t.colors.surface, borderColor: t.colors.border, borderRadius: t.radius.md, padding: t.spacing.xs }];
+  const box = [styles.rail, { backgroundColor: m.chip, shadowColor: m.shadow, borderRadius: CHIP_RADIUS, padding: t.spacing.xs }];
 
   if (levels.length === 0) {
     return (
       <View style={box} accessibilityLabel="Vista exterior">
-        <View style={[styles.row, { width: ROW + t.spacing.sm, backgroundColor: t.colors.primary, borderRadius: t.radius.sm }]}>
-          <Ionicons name="map-outline" size={18} color={t.colors.primaryText} />
-          <AppText variant="caption" style={{ color: t.colors.primaryText }}>Exterior</AppText>
+        <View style={[styles.row, { width: ROW + t.spacing.sm, backgroundColor: m.chipActive, borderRadius: t.radius.sm }]}>
+          <Ionicons name="map-outline" size={18} color={m.chipActiveText} />
+          <AppText variant="caption" style={{ color: m.chipActiveText }}>Exterior</AppText>
         </View>
       </View>
     );
@@ -54,7 +56,7 @@ function FloorRailBase({ levels, current, dest, onSelect }: Props) {
       {sorted.map((lv) => {
         const active = lv === current;
         const isDest = dest === lv;
-        const fg = active ? t.colors.primaryText : t.colors.text;
+        const fg = active ? m.chipActiveText : m.chipText;
         return (
           <Pressable
             key={lv}
@@ -64,7 +66,7 @@ function FloorRailBase({ levels, current, dest, onSelect }: Props) {
             accessibilityRole="button"
             accessibilityLabel={`Piso ${lv}${active ? ', actual' : ''}${isDest ? ', destino' : ''}`}
             accessibilityState={{ selected: active }}
-            style={[styles.row, { backgroundColor: active ? t.colors.primary : 'transparent', borderRadius: t.radius.sm }]}
+            style={[styles.row, { backgroundColor: active ? m.chipActive : 'transparent', borderRadius: t.radius.sm }]}
           >
             {active ? (
               <Animated.View style={{ position: 'absolute', left: 3, top: 3, opacity: pulse }}>
@@ -73,7 +75,7 @@ function FloorRailBase({ levels, current, dest, onSelect }: Props) {
             ) : null}
             <AppText variant="label" style={{ color: fg }}>{lv}</AppText>
             {isDest ? (
-              <Ionicons name="location" size={14} color={active ? t.colors.primaryText : t.colors.danger} style={styles.pin} />
+              <Ionicons name="location" size={14} color={active ? m.chipActiveText : m.pin} style={styles.pin} />
             ) : null}
           </Pressable>
         );
@@ -83,7 +85,13 @@ function FloorRailBase({ levels, current, dest, onSelect }: Props) {
 }
 
 const styles = StyleSheet.create({
-  rail: { borderWidth: StyleSheet.hairlineWidth, alignItems: 'center' },
+  rail: {
+    alignItems: 'center',
+    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
   row: { width: ROW, height: ROW, alignItems: 'center', justifyContent: 'center' },
   pin: { position: 'absolute', right: 3, bottom: 3 },
 });
