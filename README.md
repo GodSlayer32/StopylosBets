@@ -22,6 +22,7 @@ Una misma app y un mismo flujo con dos ajustes:
 Implementadas y verificables hoy:
 
 - **Perfil de movilidad** (sin restricciones, muletas, silla de ruedas, baja visión).
+- **Mapa del campus explorable**: desde el inicio, mapa vectorial con zoom y arrastre; tocar un edificio muestra su planta por piso, estado del ascensor y lista de salas con "Llévame"; buscador de salas y lugares.
 - **Rutas por perfil**: Dijkstra con restricciones de escaleras y pendiente.
 - **Vista previa** de la ruta con los escalones evitados.
 - **Modo navegación en pantalla dividida**, inspirado en la guía del Louvre para Nintendo 3DS: mapa macro o planta por piso con selector de pisos arriba, vista cercana que gira según el rumbo abajo, y mapa superior explorable.

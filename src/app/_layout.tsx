@@ -23,6 +23,7 @@ function ThemedStack() {
         }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="home" options={{ title: 'Inicio', headerShown: false, animation: reduceMotion ? 'none' : 'fade', animationDuration: 200 }} />
+        <Stack.Screen name="map" options={{ title: 'Mapa del campus' }} />
         <Stack.Screen name="my-day" options={{ title: 'Mi día' }} />
         <Stack.Screen name="route/[destId]" options={{ title: 'Tu ruta', animation: reduceMotion ? 'none' : 'fade_from_bottom', animationDuration: 250 }} />
         <Stack.Screen name="navigate/[destId]" options={{ headerShown: false, animation: 'slide_from_bottom' }} />

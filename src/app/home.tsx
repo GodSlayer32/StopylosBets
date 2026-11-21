@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { AccessibilityInfo, Alert, findNodeHandle, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/AppText';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
+import { CampusMap } from '@/components/CampusMap';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { ElevatorStatus } from '@/components/ElevatorStatus';
@@ -175,6 +176,30 @@ export default function Home() {
           onPress={() => router.replace('/')}
         />
       </View>
+
+      <Card
+        onPress={() => router.push('/map' as Href)}
+        accessibilityLabel="Mapa del campus. Explora edificios, pisos y ascensores. Abrir mapa"
+        style={styles.mapCard}>
+        <View pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden style={[styles.mapThumb, { borderColor: colors.border }]}>
+          <CampusMap
+            mode="macro"
+            routePoints={[]}
+            origin={getNode(origin) ? { x: getNode(origin)!.x, y: getNode(origin)!.y } : undefined}
+            height={160}
+          />
+        </View>
+        <View style={styles.row}>
+          <View style={styles.flex}>
+            <AppText variant="heading">Mapa del campus</AppText>
+            <AppText variant="caption" color="textMuted">Explora edificios, pisos y ascensores</AppText>
+          </View>
+          <View style={[styles.openBtn, { backgroundColor: colors.primary, minHeight: minTouch }]}>
+            <Ionicons name="map" size={18} color={colors.primaryText} />
+            <AppText variant="label" style={{ color: colors.primaryText }}>Abrir mapa</AppText>
+          </View>
+        </View>
+      </Card>
 
       {nextClass && classPlace ? (
         <Card style={[styles.gap, styles.nextCard, { borderColor: colors.primary }]}>
@@ -439,6 +464,9 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1 },
   secondary: { alignSelf: 'flex-start', paddingHorizontal: spacing.xs },
+  mapCard: { gap: spacing.md, padding: spacing.md },
+  mapThumb: { height: 160, borderRadius: radius.md, borderWidth: 1, overflow: 'hidden' },
+  openBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, borderRadius: radius.md },
   nextCard: { borderWidth: 1 },
   afterCard: { marginTop: spacing.xl },
   leave: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 2 },
