@@ -58,6 +58,8 @@ export type MapCamera = { cx: number; cy: number; zoom: number };
 const PLAN_W = 1313;
 const PLAN_H = 980;
 const CLOSEUP_ZOOM = 7;
+/** Tope de zoom del mapa superior en modo floor (x macroFit): equivale al encuadre del Edificio C; edificios chicos como P no se agrandan más */
+const FLOOR_MAX_ZOOM = 1.8;
 const LABEL_PX = 10;
 
 const toPlan = (p: XY): XY => [(p[0] / 100) * PLAN_W, (p[1] / 100) * PLAN_H];
@@ -207,7 +209,7 @@ export function CampusMap(props: CampusMapProps) {
     if (mode === 'floor' && activeB) {
       const box = bboxPts(activeB.polygon.map(toPlan));
       const usableW = width - insetRight;
-      const s = Math.min((usableW * 0.7) / (box.maxX - box.minX || 1), ((height - insetTop) * 0.8) / (box.maxY - box.minY || 1));
+      const s = Math.min((usableW * 0.7) / (box.maxX - box.minX || 1), ((height - insetTop) * 0.8) / (box.maxY - box.minY || 1), macroFit * FLOOR_MAX_ZOOM);
       const c = centerOf(box);
       return { cx: c.cx + insetRight / (2 * s), cy: c.cy - insetTop / (2 * s), s, rot: 0 };
     }
