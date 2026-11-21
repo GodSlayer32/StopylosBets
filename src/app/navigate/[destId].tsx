@@ -20,6 +20,9 @@ import { CAMPUS_MAP, FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
 import type { RouteResult } from '@/types';
 
+// El mapa superior solo muestra tu posición (sin línea de ruta), estilo guía del Louvre.
+const NO_ROUTE: [number, number][] = [];
+
 type Status = 'loading' | 'ready' | 'error';
 
 export default function NavigateScreen() {
@@ -218,8 +221,8 @@ export default function NavigateScreen() {
           <>
             <CampusMap
               mode="floor"
-              routePoints={routePts}
-              donePoints={atUser ? donePts : undefined}
+              routePoints={NO_ROUTE}
+              donePoints={undefined}
               position={atUser ? sim.point : undefined}
               heading={sim.heading}
               activeBuildingId={dispB}
@@ -246,11 +249,11 @@ export default function NavigateScreen() {
         ) : (
           <CampusMap
             mode="macro"
-            routePoints={routePts}
-            donePoints={donePts}
+            routePoints={NO_ROUTE}
+            donePoints={undefined}
             position={sim.point}
             heading={sim.heading}
-            origin={route.polyline[0]}
+            origin={undefined}
             destination={route.polyline[route.polyline.length - 1]}
             activeBuildingId={place.building}
             height={topH}
