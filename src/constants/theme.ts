@@ -109,7 +109,7 @@ export const mapHighContrast: MapColors = {
   stairs: '#FFB38A',
   service: '#9A9A9A',
   roomText: '#000000',
-  halo: '#000000',
+  halo: '#FFFFFF',
   route: '#FFD400',
   routeCasing: '#000000',
   routeDone: '#8A7300',

@@ -133,6 +133,8 @@ export default function NavigateScreen() {
     if (!route) return [];
     return [...route.polyline.slice(0, sim.segIndex + 1).map((p): [number, number] => [p.x, p.y]), [sim.point.x, sim.point.y]];
   }, [route, sim.segIndex, sim.point]);
+  const topRoute = accessibleMode ? routePts : NO_ROUTE;
+  const topDone = accessibleMode ? donePts : undefined;
   const barriers = useMemo(() => {
     const out: { x: number; y: number; kind: 'incident' }[] = [];
     incidents.forEach((i) => {
@@ -317,8 +319,8 @@ export default function NavigateScreen() {
           <>
             <CampusMap
               mode="floor"
-              routePoints={NO_ROUTE}
-              donePoints={undefined}
+              routePoints={topRoute}
+              donePoints={topDone}
               position={atUser ? sim.point : undefined}
               heading={sim.heading}
               activeBuildingId={dispB}
@@ -345,8 +347,8 @@ export default function NavigateScreen() {
         ) : (
           <CampusMap
             mode="macro"
-            routePoints={NO_ROUTE}
-            donePoints={undefined}
+            routePoints={topRoute}
+            donePoints={topDone}
             position={sim.point}
             heading={sim.heading}
             origin={undefined}

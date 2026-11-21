@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -41,6 +41,7 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const compact = !accessibleMode;
+  const [collapsed, setCollapsed] = useState(false);
   const styles = useMemo(() => makeStyles(t, compact), [t, compact]);
   const m = sim.currentManeuver;
   const wrapStyle = [styles.card, { bottom: t.spacing.md + insets.bottom }];
@@ -72,44 +73,58 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
   const amenityLabel = near.length ? `Cerca: ${near.map((a) => (a.distM < 5 ? `${a.amenity.name} aquí` : `${a.amenity.name} a ${a.distM} metros`)).join(', ')}` : '';
   const label = `${sim.zone}. ${strong} ${rest}.${then ? ` Luego: ${lueg(then)}.` : ''}${m.cue ? ` ${m.cue}.` : ''} Faltan ${sim.remainingM} metros, ${minutes} minutos.${amenityLabel ? ` ${amenityLabel}.` : ''}`;
 
+  const toggle = (
+    <Pressable
+      onPress={() => setCollapsed((c) => !c)}
+      accessibilityRole="button"
+      accessibilityLabel={collapsed ? 'Ver instrucciones' : 'Ver mapa'}
+      accessibilityState={{ expanded: !collapsed }}
+      style={styles.toggle}>
+      <Ionicons name={collapsed ? 'chevron-up' : 'chevron-down'} size={26} color={t.colors.primary} />
+    </Pressable>
+  );
+
   return (
     <View style={wrapStyle} onLayout={onLayout}>
       <View accessible accessibilityLabel={label} accessibilityLiveRegion={sim.playing ? 'none' : 'polite'} style={styles.info}>
-        {sim.zone ? (
+        {collapsed ? null : (
           <View style={styles.zoneRow}>
             <Ionicons name="location" size={t.typography.caption.fontSize} color={t.colors.textMuted} />
             <AppText variant="caption" color="textMuted" numberOfLines={1} style={styles.flex}>{sim.zone}</AppText>
+            {toggle}
           </View>
-        ) : null}
+        )}
         <View style={styles.mainRow}>
           <View style={[styles.icon, { backgroundColor: t.colors.primary }]}>
-            <MaterialCommunityIcons name={m.icon as Glyph} size={compact ? 24 : 38} color={t.colors.primaryText} />
+            <MaterialCommunityIcons name={m.icon as Glyph} size={compact ? 24 : 32} color={t.colors.primaryText} />
           </View>
-          <AppText variant="title" numberOfLines={3} style={[styles.flex, compact && styles.mainText]}>
+          <AppText variant="title" numberOfLines={collapsed ? 1 : 2} style={[styles.flex, compact && styles.mainText]}>
             <AppText variant="title" style={[compact && styles.mainText, styles.bold]}>{strong}</AppText>
             {` ${rest}`}
           </AppText>
+          {collapsed ? toggle : null}
         </View>
-        {m.cue ? (
-          <AppText
-            variant={compact ? 'caption' : 'heading'}
-            color="textMuted"
-            numberOfLines={compact ? 1 : 3}>
-            {m.cue.charAt(0).toUpperCase() + m.cue.slice(1)}
-          </AppText>
-        ) : null}
-        {near.length ? (
-          <View style={styles.amenityRow}>
-            <MaterialCommunityIcons name={AMENITY_ICON[near[0].amenity.type] as Glyph} size={compact ? 16 : 28} color={t.colors.primary} />
-            <AppText variant={compact ? 'caption' : 'heading'} numberOfLines={compact ? 1 : 2} style={styles.flex}>{amenityText}</AppText>
-          </View>
-        ) : null}
-        <View style={styles.metaRow}>
-          {then ? (
-            <AppText variant="label" color="textMuted" numberOfLines={compact ? 2 : undefined}>Luego: {lueg(then)}</AppText>
-          ) : null}
-          <AppText variant="caption" color="textMuted">Faltan {sim.remainingM} m · {minutes} min</AppText>
-        </View>
+        {collapsed ? null : (
+          <>
+            {m.cue ? (
+              <AppText variant={compact ? 'caption' : 'body'} color="textMuted" numberOfLines={compact ? 1 : 2}>
+                {m.cue.charAt(0).toUpperCase() + m.cue.slice(1)}
+              </AppText>
+            ) : null}
+            {compact && near.length ? (
+              <View style={styles.amenityRow}>
+                <MaterialCommunityIcons name={AMENITY_ICON[near[0].amenity.type] as Glyph} size={16} color={t.colors.primary} />
+                <AppText variant="caption" numberOfLines={1} style={styles.flex}>{amenityText}</AppText>
+              </View>
+            ) : null}
+            <View style={styles.metaRow}>
+              {then ? (
+                <AppText variant="label" color="textMuted" numberOfLines={compact ? 2 : 1} style={compact ? undefined : styles.flex}>Luego: {lueg(then)}</AppText>
+              ) : null}
+              <AppText variant="caption" color="textMuted">Faltan {sim.remainingM} m · {minutes} min</AppText>
+            </View>
+          </>
+        )}
       </View>
       {!compact && onRepeat ? (
         <Pressable
@@ -122,7 +137,7 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
           <AppText variant="title" style={{ color: t.colors.primaryText }}>Repetir instrucción</AppText>
         </Pressable>
       ) : null}
-      <View style={styles.controls}>
+      {collapsed ? null : <View style={styles.controls}>
         <Ctl compact={compact} label="Paso anterior" icon="chevron-back" onPress={sim.prev} disabled={sim.stepIndex === 0 && sim.progress < 0.01} t={t} />
         <Pressable
           onPress={sim.playing ? sim.pause : sim.play}
@@ -140,7 +155,7 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
           active={speakOn}
           t={t}
         />
-      </View>
+      </View>}
     </View>
   );
 }
@@ -177,23 +192,24 @@ const makeStyles = (t: Theme, compact: boolean) =>
       position: 'absolute',
       left: t.spacing.md,
       right: t.spacing.md,
-      padding: compact ? t.spacing.md : t.spacing.lg,
-      gap: compact ? t.spacing.sm : t.spacing.md,
+      padding: t.spacing.md,
+      gap: t.spacing.sm,
       borderRadius: compact ? t.radius.md : t.radius.lg,
       borderWidth: compact ? 1 : 2,
       borderColor: t.colors.border,
       backgroundColor: compact ? t.colors.overlaySurface : t.colors.surface,
       ...t.shadow,
     },
-    info: { gap: compact ? t.spacing.xs : t.spacing.sm },
+    info: { gap: t.spacing.xs },
     zoneRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs },
     mainRow: { flexDirection: 'row', alignItems: 'center', gap: compact ? t.spacing.sm : t.spacing.md },
     icon: compact
       ? { width: 40, height: 40, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' }
-      : { width: 64, height: 64, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' },
+      : { width: 52, height: 52, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' },
     bold: { fontWeight: '800' },
     mainText: { ...t.typography.heading, fontWeight: '600' },
-    metaRow: { gap: t.spacing.xs },
+    metaRow: compact ? { gap: t.spacing.xs } : { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
+    toggle: { width: t.minTouch, height: t.minTouch, alignItems: 'center', justifyContent: 'center', marginVertical: -t.spacing.sm },
     amenityRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -217,7 +233,7 @@ const makeStyles = (t: Theme, compact: boolean) =>
     },
     repeat: {
       alignSelf: 'stretch',
-      minHeight: 72,
+      minHeight: 64,
       borderRadius: t.radius.md,
       flexDirection: 'row',
       alignItems: 'center',
