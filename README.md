@@ -94,6 +94,7 @@ docs/           enunciado, presentación, plano e INCLUSION.md
 - Plano de Casa Central: material del desafío / USM.
 - Antecedente: tesis USM 2024 *Aplicación móvil de mapa universitario, enfocado en accesibilidad, flexibilidad y eficiencia* (E. Carrillo Naranjo).
 - Inspiración de UX: guía del Museo del Louvre para Nintendo 3DS (solo el patrón de interacción, sin assets).
+- Skills de Claude Code para UI/UX y accesibilidad (MIT, de Anthropic, Vercel, Next Level Builder, Bencium y AccessLint): ver [`.claude/skills/SOURCES.md`](.claude/skills/SOURCES.md).
 
 ## Uso de IA
 
