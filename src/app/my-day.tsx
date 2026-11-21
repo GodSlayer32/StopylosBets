@@ -14,7 +14,7 @@ import { useApp } from '@/context/app-context';
 import { floorLabel, lacksElevatorAccess } from '@/lib/buildings';
 import { useTheme } from '@/hooks/use-theme';
 import { accessibleRoomRequest, computeSchedule, isNoElevatorLeg, placeDetail, STUDENT, type ClassPlan } from '@/lib/schedule';
-import { formatClock, NOW_MINUTES } from '@/lib/time';
+import { formatClock } from '@/lib/time';
 import type { Profile } from '@/types';
 
 const REASON: Record<Profile, string> = {
@@ -34,18 +34,27 @@ export function legSentence(p: ClassPlan): string {
   return `${base} Llegas a tiempo.`;
 }
 
+function currentMinutes(): number {
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+}
+
 export default function MyDay() {
   const router = useRouter();
   const { profile, origin, setOrigin, incidents, elevators, raining } = useApp();
   const prevOrigin = useRef<string | null>(null);
+  const [nowMin, setNowMin] = useState(currentMinutes);
 
   // Al volver de la ruta, restaura el origen que había antes de usar la sala anterior.
   useFocusEffect(
     useCallback(() => {
+      setNowMin(currentMinutes());
+      const id = setInterval(() => setNowMin(currentMinutes()), 30000);
       if (prevOrigin.current) {
         setOrigin(prevOrigin.current);
         prevOrigin.current = null;
       }
+      return () => clearInterval(id);
     }, [setOrigin]),
   );
   const { colors, minTouch } = useTheme();
@@ -59,11 +68,11 @@ export default function MyDay() {
 
   const { plans, error } = useMemo(() => {
     try {
-      return { plans: computeSchedule(profile, origin, incidents, elevators, raining), error: false };
+      return { plans: computeSchedule(profile, origin, incidents, elevators, raining, nowMin), error: false };
     } catch {
       return { plans: [] as ClassPlan[], error: true };
     }
-  }, [profile, origin, incidents, elevators, raining]);
+  }, [profile, origin, incidents, elevators, raining, nowMin]);
 
   const load = () => {
     setReady(false);
@@ -107,7 +116,7 @@ export default function MyDay() {
   return (
     <Screen scroll contentStyle={styles.list}>
       <View style={styles.head}>
-        <AppText color="textMuted">{TODAY} · son las {formatClock(NOW_MINUTES)}</AppText>
+        <AppText color="textMuted">{TODAY} · son las {formatClock(nowMin)}</AppText>
         <AppText variant="heading">{STUDENT.name}</AppText>
       </View>
       {plans.map((p) => {
@@ -156,15 +165,6 @@ export default function MyDay() {
                       : `${p.fromOrigin ? `Desde ${p.fromLabel}: ` : ''}${p.minutes} min · tienes ${p.available}${p.extraMinutes > 0 ? ` · +${p.extraMinutes} min por ruta accesible` : ''}`}
                   </AppText>
                 </View>
-                {noElev ? (
-                  <Button
-                    label="Solicitar sala accesible"
-                    icon="share-outline"
-                    fullWidth
-                    accessibilityLabel={`Solicitar sala accesible para ${p.cls.course}`}
-                    onPress={() => requestRoom(p)}
-                  />
-                ) : null}
                 {p.status === 'justo' || p.status === 'tarde' ? (
                   <Button
                     label="Avisar al profesor"
@@ -175,19 +175,29 @@ export default function MyDay() {
                   />
                 ) : null}
                 <Button
-                  label="Llévame"
+                  label={noElev ? 'Llévame lo más cerca' : 'Llévame'}
                   icon="navigate"
-                  variant={noElev ? 'secondary' : 'primary'}
+                  variant="primary"
                   fullWidth
                   accessibilityLabel={`Llévame a ${p.place.name}`}
                   onPress={() => {
-                    if (p.from) {
+                    if (p.fromNodeId && !p.fromOrigin) {
                       prevOrigin.current = origin;
-                      setOrigin(p.from.nodeId);
+                      setOrigin(p.fromNodeId);
                     }
                     router.push(`/route/${p.place.id}`);
                   }}
                 />
+                {noElev ? (
+                  <Button
+                    label="Solicitar sala accesible"
+                    icon="share-outline"
+                    variant="secondary"
+                    fullWidth
+                    accessibilityLabel={`Solicitar sala accesible para ${p.cls.course}`}
+                    onPress={() => requestRoom(p)}
+                  />
+                ) : null}
               </View>
             ) : null}
           </Card>

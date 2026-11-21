@@ -144,7 +144,7 @@ export default function Home() {
 
   const nextBlocked = nextPlan?.status === 'tarde' || nextPlan?.status === 'sin-ruta';
   const notices: { key: string; text: string; onPress: () => void }[] = [
-    ...(noElevPlan ? [{ key: 'day-noelev', text: `${noElevPlan.cls.course}: sala sin ascensor, solicita una sala accesible`, onPress: () => router.push('/my-day') }] : []),
+    ...(noElevPlan ? [{ key: 'day-noelev', text: `${noElevPlan.cls.course}: sala sin ascensor: te llevamos lo más cerca y pedimos apoyo`, onPress: () => router.push('/my-day') }] : []),
     ...(warnPlan && warnPlan.leaveAt != null ? [{ key: 'day-warn', text: `${warnPlan.cls.course}: ${warnPlan.status === 'tarde' ? `no alcanzas por ${warnPlan.lateBy} min` : 'vas justo de tiempo'}`, onPress: () => router.push('/my-day') }] : []),
     ...alerts.map((a) => ({ key: a.key, text: a.text, onPress: () => Alert.alert('Detalle del aviso', a.detail) })),
   ];

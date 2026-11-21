@@ -292,6 +292,8 @@ function describe(e: Edge, from: Node, to: Node, elevators: Elevator[]): string 
   }
 }
 
+const edgeFrom = (id: string) => nodeById.get(id)!;
+
 function buildSteps(edges: Edge[], nodeIds: string[], elevators: Elevator[]): RouteStep[] {
   const steps: RouteStep[] = [];
   edges.forEach((e, i) => {
@@ -299,6 +301,13 @@ function buildSteps(edges: Edge[], nodeIds: string[], elevators: Elevator[]): Ro
     const to = nodeById.get(nodeIds[i + 1])!;
     const last = steps[steps.length - 1];
     const lastEdge = last ? edgeById.get(last.edgeIds[last.edgeIds.length - 1]) : undefined;
+    if (last && lastEdge && e.type === 'elevator' && last.type === 'elevator' && e.elevatorId === lastEdge.elevatorId) {
+      last.distanceM += e.distanceM;
+      last.toNodeId = to.id;
+      last.edgeIds.push(e.id);
+      last.text = describe(e, edgeFrom(last.fromNodeId), to, elevators);
+      return;
+    }
     if (last && lastEdge && e.type === last.type && (e.type === 'flat' || (e.type === 'slope' && e.name === lastEdge.name))) {
       last.distanceM += e.distanceM;
       last.toNodeId = to.id;
@@ -404,8 +413,9 @@ export function findRoute(
       : e.type === 'elevator' ? `Ascensor Edif. ${elevators.find((x) => x.id === e.elevatorId)?.building ?? ''}`
       : `${e.name ?? 'Tramo'} (${e.slopePct ?? 0}% de pendiente)`;
     const kind: AvoidedItem['kind'] = isBlocked(e, b) ? 'incident' : e.type === 'stairs' ? 'stairs' : 'slope';
-    if (!seen.has(text)) {
-      seen.add(text);
+    const key = e.type === 'stairs' ? `${text}#${e.id}` : text;
+    if (!seen.has(key)) {
+      seen.add(key);
       avoided.push({ text, reason, kind, steps: e.type === 'stairs' ? e.steps ?? 0 : undefined, name: e.name, edgeId: e.id });
     }
   };

@@ -299,7 +299,7 @@ export default function RouteScreen() {
         ) : (
           <AppText color="textMuted">
             Con este perfil todas las salidas de {getNode(origin)?.label ?? 'tu origen'} están bloqueadas,
-            asi que el apoyo tiene que venir hasta aqui.
+            así que el apoyo tiene que venir hasta aquí.
           </AppText>
         )}
       </Card>
@@ -370,7 +370,7 @@ export default function RouteScreen() {
         {isSlope ? (
           <View style={styles.noRouteActions}>
             <AppText variant="caption" color="textMuted" style={styles.center}>
-              O evita el problema de raiz:
+              O evita el problema de raíz:
             </AppText>
             <View style={styles.whyBox} accessible accessibilityLabel="En el cerro, el acceso por Placeres es casi plano">
               <MaterialCommunityIcons name="terrain" size={22} color={t.colors.primary} />
@@ -609,7 +609,7 @@ export default function RouteScreen() {
           </Pressable>
           {showAvoided
             ? stairItems.map((a) => (
-                <View key={a.text} style={styles.avoidRow} accessible accessibilityLabel={`${a.text}. ${a.reason}`}>
+                <View key={a.edgeId ?? a.text} style={styles.avoidRow} accessible accessibilityLabel={`${a.text}. ${a.reason}`}>
                   <MaterialCommunityIcons name={a.kind === 'stairs' ? 'stairs' : 'slope-uphill'} size={22} color={t.colors.textMuted} />
                   <AppText variant="caption" style={styles.flex}>{a.kind === 'stairs' ? (a.name ?? 'Escalera') : a.text}</AppText>
                   {a.kind === 'stairs' ? <AppText variant="caption" color="textMuted">{a.steps} escalones</AppText> : null}

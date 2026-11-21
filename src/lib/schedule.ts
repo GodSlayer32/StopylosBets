@@ -1,6 +1,6 @@
 import scheduleJson from '@/data/schedule.json';
 import { lacksElevatorAccess } from '@/lib/buildings';
-import { findRoute, getNode, getPlace } from '@/lib/routing';
+import { findNearestReachable, findRoute, getNode, getPlace } from '@/lib/routing';
 import { formatClock, NOW_MINUTES, parseClock } from '@/lib/time';
 import type { Elevator, Incident, Place, Profile } from '@/types';
 
@@ -27,6 +27,8 @@ export interface ClassPlan {
   fromLabel: string | null;
   /** El tramo parte del origen actual (la clase anterior ya terminó). */
   fromOrigin: boolean;
+  /** Nodo real de partida del tramo (la sala anterior, su punto alcanzable más cercano o el origen). */
+  fromNodeId: string | null;
   startMin: number;
   endMin: number;
   /** En curso o terminada según el reloj simulado. */
@@ -62,6 +64,7 @@ export function computeSchedule(
   incidents: Incident[],
   elevators: Elevator[],
   raining = false,
+  nowMin: number = NOW_MINUTES,
 ): ClassPlan[] {
   // Igual que el contexto: el ruteo evita ascensores 'sin confirmar'.
   const routingElevators = elevators.map((e) => (e.status === 'unconfirmed' ? { ...e, status: 'down' as const } : e));
@@ -74,9 +77,9 @@ export function computeSchedule(
     const prevPlace = prevCls ? getPlace(prevCls.placeId) ?? null : null;
     const startMin = parseClock(cls.start);
     const endMin = parseClock(cls.end);
-    const phase = endMin <= NOW_MINUTES ? 'terminada' : startMin <= NOW_MINUTES ? 'en-curso' : 'pendiente';
+    const phase = endMin <= nowMin ? 'terminada' : startMin <= nowMin ? 'en-curso' : 'pendiente';
     const base: ClassPlan = {
-      cls, place, from: null, fromLabel: null, fromOrigin: false, startMin, endMin, phase,
+      cls, place, from: null, fromLabel: null, fromOrigin: false, fromNodeId: null, startMin, endMin, phase,
       minutes: null, baseMinutes: null, extraMinutes: 0, available: null,
       leaveAt: null, arriveAt: null, lateBy: 0, status: null,
     };
@@ -85,20 +88,36 @@ export function computeSchedule(
       continue;
     }
     // Si la clase anterior ya terminó, la persona está en el origen actual; si no, sale de esa sala.
-    const fromOrigin = parseClock(prevCls.end) <= NOW_MINUTES;
+    const fromOrigin = parseClock(prevCls.end) <= nowMin;
     if (phase === 'terminada') {
       plans.push(base);
       continue;
     }
-    const fromNode = fromOrigin ? origin : prevPlace.nodeId;
-    const fromLabel = fromOrigin ? getNode(origin)?.label ?? 'tu ubicación' : prevCls.course;
-    const from = fromOrigin ? null : prevPlace;
-    const earliest = fromOrigin ? NOW_MINUTES : parseClock(prevCls.end);
+    let fromNode = fromOrigin ? origin : prevPlace.nodeId;
+    let fromLabel = fromOrigin ? getNode(origin)?.label ?? 'tu ubicación' : prevCls.course;
+    let from = fromOrigin ? null : prevPlace;
+    let fromOriginFlag = fromOrigin;
+    // Si la sala anterior no es alcanzable con este perfil, parte del punto alcanzable más cercano a ella.
+    if (!fromOrigin && !findRoute(origin, prevPlace.id, profile, incidents, routingElevators, raining)) {
+      const near = findNearestReachable(origin, prevPlace.id, profile, incidents, routingElevators, raining);
+      const usable = near && (findRoute(near.reachedNodeId, place.id, profile, incidents, routingElevators, raining)
+        || findNearestReachable(near.reachedNodeId, place.id, profile, incidents, routingElevators, raining)?.route.steps.length);
+      if (near && usable) {
+        fromNode = near.reachedNodeId;
+        fromLabel = near.reachedLabel;
+      } else {
+        fromNode = origin;
+        fromLabel = getNode(origin)?.label ?? 'tu ubicación';
+        from = null;
+        fromOriginFlag = true;
+      }
+    }
+    const earliest = fromOriginFlag ? nowMin : parseClock(prevCls.end);
     const route = findRoute(fromNode, place.id, profile, incidents, routingElevators, raining);
     const none = findRoute(fromNode, place.id, 'none', incidents, routingElevators, raining);
     const available = startMin - earliest;
     if (!route) {
-      plans.push({ ...base, from, fromLabel, fromOrigin, available, status: 'sin-ruta' });
+      plans.push({ ...base, from, fromLabel, fromOrigin: fromOriginFlag, fromNodeId: fromNode, available, status: 'sin-ruta' });
       continue;
     }
     const minutes = route.minutes;
@@ -110,7 +129,8 @@ export function computeSchedule(
       ...base,
       from,
       fromLabel,
-      fromOrigin,
+      fromOrigin: fromOriginFlag,
+      fromNodeId: fromNode,
       minutes,
       baseMinutes: none?.minutes ?? null,
       extraMinutes: none ? Math.max(0, minutes - none.minutes) : 0,
