@@ -57,7 +57,7 @@ export type MapCamera = { cx: number; cy: number; zoom: number };
 // Plano en unidades de imagen original para conservar la proporción de los %
 const PLAN_W = 1313;
 const PLAN_H = 980;
-const CLOSEUP_ZOOM = 4;
+const CLOSEUP_ZOOM = 7;
 const LABEL_PX = 10;
 
 const toPlan = (p: XY): XY => [(p[0] / 100) * PLAN_W, (p[1] / 100) * PLAN_H];
