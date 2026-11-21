@@ -43,7 +43,7 @@ export const highContrast: Colors = {
 
 export const mapColors = {
   bg: '#F3EFE6',
-  street: '#E3DDCF',
+  street: '#D3CCBC',
   green: '#CFE3B8',
   patio: '#EADFC4',
   court: '#D9C7B0',
@@ -70,6 +70,13 @@ export const mapColors = {
   pin: '#D93025',
   barrier: '#B45309',
   stairsMark: '#475569',
+  path: '#FBF9F3',
+  pathEdge: '#CFC8B8',
+  streetLine: '#FFFFFF',
+  tree: '#8DB574',
+  door: '#7A5C2E',
+  stairsHatch: '#B07A4A',
+  rampChevron: '#2E8B57',
 };
 export type MapColors = typeof mapColors;
 
@@ -102,6 +109,13 @@ export const mapHighContrast: MapColors = {
   pin: '#FF6B6B',
   barrier: '#FFB020',
   stairsMark: '#E5E5E5',
+  path: '#3A3A3A',
+  pathEdge: '#9A9A9A',
+  streetLine: '#BDBDBD',
+  tree: '#2F6B3A',
+  door: '#FFD400',
+  stairsHatch: '#FFB38A',
+  rampChevron: '#4ADE80',
 };
 
 export const largeTextScale = 1.25;

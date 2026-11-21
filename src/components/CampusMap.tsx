@@ -6,6 +6,7 @@ import Svg, { Circle, G, Path, Polyline, Text as SvgText } from 'react-native-sv
 import { AppText } from '@/components/AppText';
 import { useTheme } from '@/hooks/use-theme';
 import { CAMPUS_MAP, getFloorPlan } from '@/lib/campus-map';
+import { EDGES, NODES } from '@/lib/routing';
 
 type XY = [number, number];
 type Pt = { x: number; y: number };
@@ -45,6 +46,10 @@ export type CampusMapProps = {
   /** Tap sobre un edificio (macro/floor) */
   onBuildingPress?: (id: string) => void;
   accessibilityLabel?: string;
+  /** closeup: el perfil evita escaleras (se dibujan en gris con prohibido) */
+  avoidStairs?: boolean;
+  /** Próximo giro, se marca sobre la ruta */
+  turnPoint?: Pt;
 };
 
 export type MapCamera = { cx: number; cy: number; zoom: number };
@@ -95,13 +100,76 @@ const boundsBox = (b: Box): Box => {
 const fitScale = (box: Box, w: number, h: number, margin: number) =>
   Math.max(0.01, Math.min((w - 2 * margin) / (box.maxX - box.minX || 1), (h - 2 * margin) / (box.maxY - box.minY || 1)));
 
+
+// ---- Detalle a nivel de calle (datos estáticos precomputados)
+const NODE_MAP = new Map(NODES.map((n) => [n.id, n]));
+const isInteriorNode = (id: string) => {
+  const n = NODE_MAP.get(id);
+  return !!n?.building && !id.endsWith('_front');
+};
+const EXT_EDGES = EDGES.filter((e) => NODE_MAP.has(e.from) && NODE_MAP.has(e.to) && !isInteriorNode(e.from) && !isInteriorNode(e.to))
+  .map((e) => {
+    const a = toPlan([NODE_MAP.get(e.from)!.x, NODE_MAP.get(e.from)!.y]);
+    const b = toPlan([NODE_MAP.get(e.to)!.x, NODE_MAP.get(e.to)!.y]);
+    return { e, a, b, len: Math.hypot(b[0] - a[0], b[1] - a[1]) };
+  })
+  .filter((x) => x.len > 0.5);
+/** Metros por unidad de plano (mediana de aristas planas) */
+const MPU = (() => {
+  const r = EXT_EDGES.filter((x) => x.e.type === 'flat').map((x) => x.e.distanceM / x.len).sort((a, b) => a - b);
+  return r.length ? r[Math.floor(r.length / 2)] : 0.15;
+})();
+
+const STREETS = AREAS.filter((a) => a.kind === 'street').map((a) => {
+  const pts = a.polygon.map(toPlan);
+  const mx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const my = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  let sxx = 0, syy = 0, sxy = 0;
+  pts.forEach((p) => { sxx += (p[0] - mx) ** 2; syy += (p[1] - my) ** 2; sxy += (p[0] - mx) * (p[1] - my); });
+  const th = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+  const ux = Math.cos(th), uy = Math.sin(th);
+  const ts = pts.map((p) => (p[0] - mx) * ux + (p[1] - my) * uy);
+  return { a, mx, my, ux, uy, t0: Math.min(...ts), t1: Math.max(...ts), deg: (th * 180) / Math.PI };
+});
+
+const DOORS = (() => {
+  const out: { x: number; y: number; ang: number }[] = [];
+  const hasIn = new Set(NODES.filter((n) => n.id.endsWith('_in')).map((n) => n.building));
+  NODES.forEach((n) => {
+    if (!n.building) return;
+    if (!(n.id.endsWith('_in') || (n.id.endsWith('_front') && !hasIn.has(n.building)))) return;
+    const b = BUILDINGS.find((x) => x.id === n.building);
+    if (!b) return;
+    const [px0, py0] = toPlan([n.x, n.y]);
+    const poly = b.polygon.map(toPlan);
+    let best = { d: Infinity, x: px0, y: py0, ang: 0 };
+    for (let i = 0; i < poly.length; i++) {
+      const [x1, y1] = poly[i];
+      const [x2, y2] = poly[(i + 1) % poly.length];
+      const dx = x2 - x1, dy = y2 - y1;
+      const l2 = dx * dx + dy * dy || 1;
+      const tt = Math.max(0, Math.min(1, ((px0 - x1) * dx + (py0 - y1) * dy) / l2));
+      const qx = x1 + dx * tt, qy = y1 + dy * tt;
+      const d = Math.hypot(px0 - qx, py0 - qy);
+      if (d < best.d) best = { d, x: qx, y: qy, ang: (Math.atan2(dy, dx) * 180) / Math.PI };
+    }
+    out.push({ x: best.x, y: best.y, ang: best.ang });
+  });
+  return out;
+})();
+
+const hash2 = (i: number, j: number) => {
+  const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+};
+
 const shortLabel = (b: Building) => (b.id.length <= 2 ? b.id : b.name.charAt(0));
 
 export function CampusMap(props: CampusMapProps) {
   const {
     mode, routePoints, donePoints, position, heading = 0, origin, destination, barriers,
     activeBuildingId, level, destRoomId, height, anchorY = 0.6, title, insetRight = 0, insetTop = 0,
-    camera, onCameraChange, onBuildingPress, accessibilityLabel,
+    camera, onCameraChange, onBuildingPress, accessibilityLabel, avoidStairs = false, turnPoint,
   } = props;
   const t = useTheme();
   const m = t.map;
@@ -207,6 +275,10 @@ export function CampusMap(props: CampusMapProps) {
   // Capa estática: usa escala/rotación "asentadas" (objetivo); el tween solo mueve el transform del grupo
   const sK = target?.s ?? 1;
   const rotQ = Math.round((target?.rot ?? 0) / 3) * 3;
+  const detail = mode === 'closeup' && !closeupB;
+  const CELL = 100;
+  const cullX = detail && posXY ? Math.round(posXY[0] / CELL) * CELL : 0;
+  const cullY = detail && posXY ? Math.round(posXY[1] / CELL) * CELL : 0;
   const layers = useMemo<React.ReactNode[]>(() => {
   const k = 1 / sK;
   const px = (n: number) => n * k;
@@ -232,11 +304,122 @@ export function CampusMap(props: CampusMapProps) {
   AREAS.forEach((a) =>
     layers.push(<Path key={`a-${a.id}`} d={polyD([a.polygon])} fill={areaFill(a.kind)} opacity={dim ? 0.6 : 1} />),
   );
+
+  // ---- Detalle exterior (solo closeup en exterior)
+  const topLayers: React.ReactNode[] = [];
+  if (detail) {
+    const R = Math.hypot(width, height) * k + CELL * 1.6;
+    const near = (x: number, y: number) => Math.hypot(x - cullX, y - cullY) <= R;
+    const flatD: string[] = [];
+    const flatW = Math.max(px(7), 3.5 / MPU);
+    // calles: línea central + nombre
+    STREETS.forEach((st) => {
+      const x0 = st.mx + st.ux * st.t0 * 0.94, y0 = st.my + st.uy * st.t0 * 0.94;
+      const x1 = st.mx + st.ux * st.t1 * 0.94, y1 = st.my + st.uy * st.t1 * 0.94;
+      if (!near(st.mx, st.my) && !near(x0, y0) && !near(x1, y1)) return;
+      layers.push(
+        <Path key={`sl-${st.a.id}`} d={`M${x0},${y0}L${x1},${y1}`} stroke={m.streetLine} strokeWidth={px(1.6)}
+          strokeDasharray={`${px(9)},${px(9)}`} fill="none" opacity={0.85} />,
+      );
+      let ang = st.deg - rotQ;
+      ang = ((ang + 540) % 360) - 180; // pantalla
+      let loc = st.deg;
+      if (ang > 90 || ang < -90) loc += 180;
+      const lenPx = (st.t1 - st.t0) * sK;
+      const offs = lenPx > 500 ? [-0.3, 0.3] : [0];
+      const mid = (st.t0 + st.t1) / 2;
+      offs.forEach((o, i) => {
+        const tt = mid + o * (st.t1 - st.t0);
+        const lx = st.mx + st.ux * tt, ly = st.my + st.uy * tt;
+        if (!near(lx, ly)) return;
+        topLayers.push(
+          <G key={`sn-${st.a.id}-${i}`} transform={`rotate(${loc},${lx},${ly})`}>
+            <SvgText x={lx} y={ly + px(12) * 0.35} fontSize={px(12)} fontWeight="700" textAnchor="middle" fill={m.roomText} opacity={0.75}
+              stroke={m.street} strokeWidth={px(3)} strokeLinejoin="round">{st.a.name}</SvgText>
+            <SvgText x={lx} y={ly + px(12) * 0.35} fontSize={px(12)} fontWeight="700" textAnchor="middle" fill={m.roomText} opacity={0.75}>{st.a.name}</SvgText>
+          </G>,
+        );
+      });
+    });
+    // áreas verdes: árboles determinísticos
+    AREAS.filter((a) => a.kind === 'green').forEach((a) => {
+      const bb = bboxPts(a.polygon.map(toPlan));
+      const sp = px(30);
+      const gx0 = Math.max(bb.minX, cullX - R), gx1 = Math.min(bb.maxX, cullX + R);
+      const gy0 = Math.max(bb.minY, cullY - R), gy1 = Math.min(bb.maxY, cullY + R);
+      let n = 0;
+      for (let gx = Math.floor(gx0 / sp); gx <= gx1 / sp && n < 200; gx++) {
+        for (let gy = Math.floor(gy0 / sp); gy <= gy1 / sp && n < 200; gy++) {
+          const x = (gx + 0.15 + hash2(gx, gy) * 0.7) * sp;
+          const y = (gy + 0.15 + hash2(gy, gx + 7) * 0.7) * sp;
+          if (!near(x, y) || !inPoly([(x / PLAN_W) * 100, (y / PLAN_H) * 100], a.polygon)) continue;
+          n++;
+          layers.push(<Circle key={`t-${a.id}-${gx}-${gy}`} cx={x} cy={y} r={px(3.5 + hash2(gx + 3, gy + 5) * 3)} fill={m.tree} opacity={0.75} />);
+        }
+      }
+    });
+    // senderos
+    const vis = EXT_EDGES.filter((x) => near((x.a[0] + x.b[0]) / 2, (x.a[1] + x.b[1]) / 2) || near(x.a[0], x.a[1]) || near(x.b[0], x.b[1]));
+    vis.forEach((x) => flatD.push(`M${x.a[0]},${x.a[1]}L${x.b[0]},${x.b[1]}`));
+    layers.push(<Path key="p-edge" d={flatD.join('')} stroke={m.pathEdge} strokeWidth={flatW + px(2.5)} strokeLinecap="round" strokeLinejoin="round" fill="none" />);
+    layers.push(<Path key="p-fill" d={flatD.join('')} stroke={m.path} strokeWidth={flatW} strokeLinecap="round" strokeLinejoin="round" fill="none" />);
+    vis.forEach(({ e, a, b, len }) => {
+      const dx = (b[0] - a[0]) / len, dy = (b[1] - a[1]) / len;
+      const nx = -dy, ny = dx;
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      if (e.type === 'stairs') {
+        const col = avoidStairs ? m.stairsMark : m.stairsHatch;
+        const hd: string[] = [];
+        const w2 = flatW * 0.42;
+        for (let d = px(3); d < len; d += px(5)) {
+          const cx = a[0] + dx * d, cy = a[1] + dy * d;
+          hd.push(`M${cx + nx * w2},${cy + ny * w2}L${cx - nx * w2},${cy - ny * w2}`);
+        }
+        topLayers.push(
+          <Path key={`sa-${e.id}`} d={`M${a[0]},${a[1]}L${b[0]},${b[1]}`} stroke={avoidStairs ? m.buildingDim : m.path} strokeWidth={flatW} fill="none" />,
+          <Path key={`sh-${e.id}`} d={hd.join('')} stroke={col} strokeWidth={px(1.7)} fill="none" />,
+        );
+        if (avoidStairs) {
+          topLayers.push(
+            <G key={`sx-${e.id}`} transform={`translate(${mx},${my}) scale(${k}) rotate(${-rotQ})`}>
+              <Circle r={7} fill={m.halo} stroke={m.pin} strokeWidth={1.8} />
+              <Path d="M-4.5 4.5L4.5 -4.5" stroke={m.pin} strokeWidth={1.8} />
+            </G>,
+          );
+        }
+      } else if (e.type === 'ramp' || e.type === 'slope') {
+        const c = px(4.5);
+        const cd: string[] = [];
+        for (let d = px(10); d < len - px(4); d += px(18)) {
+          const cx = a[0] + dx * d, cy = a[1] + dy * d;
+          cd.push(`M${cx - dx * c * 0.4 + nx * c},${cy - dy * c * 0.4 + ny * c}L${cx + dx * c * 0.6},${cy + dy * c * 0.6}L${cx - dx * c * 0.4 - nx * c},${cy - dy * c * 0.4 - ny * c}`);
+        }
+        topLayers.push(<Path key={`rc-${e.id}`} d={cd.join('')} stroke={m.rampChevron} strokeWidth={px(2)} strokeLinecap="round" strokeLinejoin="round" fill="none" />);
+        if (e.slopePct) topLayers.push(label(`rp-${e.id}`, mx + nx * px(14), my + ny * px(14), `${e.slopePct}%`, 11, m.rampChevron, '800'));
+      } else if (e.type === 'elevator') {
+        topLayers.push(
+          <G key={`ev-${e.id}`} transform={`translate(${mx},${my}) scale(${k}) rotate(${-rotQ})`}>
+            <Circle r={9} fill={m.elevator} stroke={m.outline} strokeWidth={1} />
+            <Path d="M-3.5 -1L0 -4.5L3.5 -1Z M-3.5 1L0 4.5L3.5 1Z" fill={m.roomText} />
+          </G>,
+        );
+      }
+    });
+    // puertas de edificios
+    DOORS.forEach((d, i) => {
+      if (!near(d.x, d.y)) return;
+      topLayers.push(
+        <G key={`dr-${i}`} transform={`translate(${d.x},${d.y}) rotate(${d.ang})`}>
+          <Path d={`M${-px(7)},0L${px(7)},0`} stroke={m.door} strokeWidth={px(6)} strokeLinecap="butt" />
+        </G>,
+      );
+    });
+  }
   if (!dim) {
     AREAS.forEach((a) => {
       if (a.labelAt && a.kind !== 'street' && mode !== 'macro') {
         const [x, y] = toPlan(a.labelAt);
-        layers.push(label(`al-${a.id}`, x, y, a.name, LABEL_PX, m.roomText));
+        layers.push(label(`al-${a.id}`, x, y, a.name, mode === 'closeup' ? 12 : LABEL_PX, m.roomText, mode === 'closeup' ? '800' : '600'));
       }
     });
   }
@@ -251,6 +434,8 @@ export function CampusMap(props: CampusMapProps) {
         stroke={m.outline} strokeWidth={px(isIndoor ? 2 : 1)} strokeLinejoin="round" />,
     );
   });
+
+  layers.push(...topLayers);
 
   // Planta interior
   if (indoorB && plan) {
@@ -305,11 +490,13 @@ export function CampusMap(props: CampusMapProps) {
       const bb = bboxPts(b.polygon.map(toPlan));
       const wPx = (bb.maxX - bb.minX) * sK;
       const hPx = (bb.maxY - bb.minY) * sK;
-      return { b, area: wPx * hPx, size: Math.max(10, Math.min(22, Math.min(wPx, hPx) * 0.45)) };
+      return { b, wPx, area: wPx * hPx, size: Math.max(10, Math.min(22, Math.min(wPx, hPx) * 0.45)) };
     }).sort((a, c) => c.area - a.area);
-    sized.forEach(({ b, size }) => {
+    sized.forEach(({ b, size: size0, wPx }) => {
       const [x, y] = toPlan(b.labelAt);
-      const txt = shortLabel(b);
+      const useName = mode === 'closeup' && wPx >= b.name.length * 12 * 0.62 + 8;
+      const txt = useName ? b.name : shortLabel(b);
+      const size = useName ? 12 : mode === 'closeup' ? Math.max(size0, 18) : size0;
       const w = txt.length * size * 0.7;
       const rect: R = { l: x * sK - w / 2 - 2, t: y * sK - size / 2 - 2, r: x * sK + w / 2 + 2, b: y * sK + size / 2 + 2 };
       if (placed.some((q) => hit(rect, q))) return;
@@ -329,7 +516,7 @@ export function CampusMap(props: CampusMapProps) {
 
   return layers;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sK, rotQ, mode, activeBuildingId, indoorB, plan, destRoomId, m, level, origin, destination]);
+  }, [sK, rotQ, mode, activeBuildingId, indoorB, plan, destRoomId, m, level, origin, destination, detail, cullX, cullY, avoidStairs]);
 
   // ---- Gestos (pan / pinch / tap) con cámara manual
   const macroFitG = useMemo(() => fitScale(boundsBox(BOUNDS), width || 1, height, 12), [width, height]);
@@ -447,6 +634,12 @@ export function CampusMap(props: CampusMapProps) {
           )}
           {donePoints && donePoints.length >= 2 && (
             <Polyline points={doneStr} fill="none" stroke={m.routeDone} strokeWidth={px(5.5)} strokeLinecap="round" strokeLinejoin="round" />
+          )}
+          {turnPoint && (
+            <G transform={`translate(${ptPlan(turnPoint)[0]},${ptPlan(turnPoint)[1]}) scale(${k})`}>
+              <Circle r={8} fill={m.routeCasing} stroke={m.route} strokeWidth={3} />
+              <Circle r={3} fill={m.route} />
+            </G>
           )}
           {barrierMarks}
           {origin && (

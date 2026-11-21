@@ -17,7 +17,7 @@ import { useAppTheme } from '@/hooks/use-app-theme';
 import { useRouteSimulation } from '@/hooks/use-route-simulation';
 import { getBuilding } from '@/lib/buildings';
 import { CAMPUS_MAP, FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
-import { getNode, getPlace } from '@/lib/routing';
+import { EDGES, getNode, getPlace } from '@/lib/routing';
 import type { RouteResult } from '@/types';
 
 type Status = 'loading' | 'ready' | 'error';
@@ -26,7 +26,7 @@ export default function NavigateScreen() {
   const { destId } = useLocalSearchParams<{ destId: string }>();
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const { getRoute, accessibleMode, profile } = useApp();
+  const { getRoute, accessibleMode, profile, incidents } = useApp();
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -93,6 +93,23 @@ export default function NavigateScreen() {
     if (!route) return [];
     return [...route.polyline.slice(0, sim.segIndex + 1).map((p): [number, number] => [p.x, p.y]), [sim.point.x, sim.point.y]];
   }, [route, sim.segIndex, sim.point]);
+  const barriers = useMemo(() => {
+    const out: { x: number; y: number; kind: 'incident' }[] = [];
+    incidents.forEach((i) => {
+      if (i.nodeId) {
+        const n = getNode(i.nodeId);
+        if (n) out.push({ x: n.x, y: n.y, kind: 'incident' });
+      } else if (i.edgeId) {
+        const e = EDGES.find((x) => x.id === i.edgeId);
+        const a = e && getNode(e.from);
+        const b = e && getNode(e.to);
+        if (a && b) out.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, kind: 'incident' });
+      }
+    });
+    return out;
+  }, [incidents]);
+  const turnPoint = route && sim.currentManeuver && !sim.finished ? route.polyline[sim.currentManeuver.atIndex] : undefined;
+  const avoidStairs = profile === 'wheelchair' || profile === 'crutches';
   const originB = route ? getNode(route.nodeIds[0])?.building : undefined;
   const sameBuilding = !!originB && originB === place?.building;
   const floorB = sim.inside && sim.building ? sim.building : sameBuilding ? originB : undefined;
@@ -274,6 +291,9 @@ export default function NavigateScreen() {
           activeBuildingId={place.building}
           destRoomId={destRoomId}
           destination={route.polyline[route.polyline.length - 1]}
+          barriers={barriers}
+          turnPoint={turnPoint}
+          avoidStairs={avoidStairs}
           anchorY={Math.max(40, (mapH - (cardH + t.spacing.md * 2 + insets.bottom)) * 0.6) / mapH}
           height={mapH}
         /> : null}
