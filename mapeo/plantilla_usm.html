@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ruta accesible · USM Casa Central</title>
+<style>
+:root{
+  /* superficie */
+  --bg:#EFEADF; --surface:#FFFFFF; --surface-alt:#F4F2EC; --surface-sunk:#E8E4DA;
+  --text:#14181F; --text-muted:#5B6472; --text-faint:#8A93A1;
+  --border:#DBD6CA; --border-fuerte:#C2BCAE;
+  --primary:#1747D1; --primary-text:#FFFFFF; --primary-soft:#E3EAFD; --primary-dark:#0F2F8F;
+  --warning:#9A5B00; --warning-soft:#FDF0D5;
+  --danger:#AF1B1B; --danger-soft:#FBE4E4;
+  --success:#166534; --success-soft:#DCF5E3;
+  /* mapa */
+  --m-talud:#DED6C6; --m-talud-linea:#C6BCA6;
+  --m-pasto:#CFE0BC; --m-cancha:#C2D6AC;
+  --m-walk:#FDFBF6; --m-walk-borde:#BCB3A0;
+  --m-edif:#CFCABE; --m-edif-alto:#BFB9AA; --m-edif-borde:#8E8878;
+  --m-edif-dest:#BFC6D6; --m-edif-dest-alto:#AEB6C9;
+  --m-agua:#9EC5E8;
+  --via-sendero:#2D6CDF; --via-calle:#0E7C6B; --via-escalera:#C0392B;
+  --via-rampa:#C7781C; --via-ascensor:#6D3FC4; --via-talud:#8A6BC4;
+  --ruta:#E8491D; --ruta-halo:#FFFFFF; --ruta-fantasma:#6B7686;
+  /* forma */
+  --r-sm:8px; --r-md:14px; --r-lg:20px; --r-xl:26px; --r-pill:999px;
+  --s-xs:4px; --s-sm:8px; --s-md:12px; --s-lg:16px; --s-xl:24px; --s-xxl:36px;
+  --touch:50px; --fs:16.5px;
+  --sombra-sm:0 1px 2px rgba(20,24,31,.06), 0 2px 6px rgba(20,24,31,.05);
+  --sombra-md:0 2px 4px rgba(20,24,31,.06), 0 8px 20px rgba(20,24,31,.09);
+  --sombra-lg:0 10px 34px rgba(20,24,31,.16);
+  --t-rapida:140ms cubic-bezier(.4,0,.2,1);
+  --t-media:260ms cubic-bezier(.4,0,.2,1);
+}
+:root[data-contraste="alto"]{
+  --bg:#000; --surface:#000; --surface-alt:#141414; --surface-sunk:#0A0A0A;
+  --text:#FFF; --text-muted:#E8E8E8; --text-faint:#C8C8C8;
+  --border:#FFF; --border-fuerte:#FFF;
+  --primary:#FFD400; --primary-text:#000; --primary-soft:#2E2800; --primary-dark:#FFE55C;
+  --warning:#FFB020; --warning-soft:#2E1F00;
+  --danger:#FF7A7A; --danger-soft:#320000;
+  --success:#5BE88C; --success-soft:#002E12;
+  --m-talud:#1C1C1C; --m-talud-linea:#555;
+  --m-pasto:#0F2010; --m-cancha:#152A16;
+  --m-walk:#2E2E2E; --m-walk-borde:#787878;
+  --m-edif:#3C3C44; --m-edif-alto:#2A2A31; --m-edif-borde:#A8A8B4;
+  --m-edif-dest:#454554; --m-edif-dest-alto:#32323E;
+  --m-agua:#1B3A52;
+  --via-sendero:#FFD400; --via-calle:#5BE88C; --via-escalera:#FF7A7A;
+  --via-rampa:#FFB020; --via-ascensor:#C9A8FF; --via-talud:#C9A8FF;
+  --ruta:#FF6A00; --ruta-halo:#000; --ruta-fantasma:#8A93A1;
+  --sombra-sm:none; --sombra-md:none; --sombra-lg:none;
+}
+:root[data-texto="grande"]{ --fs:20px; --touch:58px; }
+@media (prefers-reduced-motion:reduce){ :root{ --t-rapida:0ms; --t-media:0ms } }
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--bg); color:var(--text); font-size:var(--fs);
+  font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  line-height:1.5; -webkit-text-size-adjust:100%; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;line-height:1.2;letter-spacing:-.015em}
+button,select,input{font:inherit;color:inherit}
+button{-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:var(--r-sm)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+
+/* =========================================================== estructura */
+.app{display:grid;grid-template-rows:auto 1fr;height:100%}
+
+header.top{
+  display:flex;gap:var(--s-md);align-items:center;flex-wrap:wrap;
+  padding:var(--s-md) var(--s-lg);
+  background:var(--surface);border-bottom:1px solid var(--border);
+  box-shadow:var(--sombra-sm);z-index:4;
+}
+.marca{display:flex;gap:var(--s-md);align-items:center;margin-right:auto;min-width:0}
+.marca-ico{
+  flex:none;width:42px;height:42px;display:grid;place-items:center;border-radius:13px;
+  background:linear-gradient(145deg,var(--primary),var(--primary-dark));color:var(--primary-text);
+  font-size:21px;box-shadow:var(--sombra-sm);
+}
+:root[data-contraste="alto"] .marca-ico{background:var(--primary);border:1px solid var(--border)}
+.marca-txt{display:flex;flex-direction:column;min-width:0}
+.marca-txt b{font-size:1.02em;font-weight:700}
+.marca-txt span{font-size:.74em;color:var(--text-muted);font-weight:500}
+.top-acciones{display:flex;gap:var(--s-sm);flex-wrap:wrap}
+
+.cuerpo{display:grid;grid-template-columns:min(420px,38vw) 1fr;min-height:0}
+@media (max-width:1000px){
+  .app{height:auto;min-height:100%}
+  .cuerpo{grid-template-columns:1fr}
+  .mapa-caja{height:68vh;min-height:400px;order:-1}
+  .panel{max-height:none !important;border-right:0;border-top:1px solid var(--border)}
+}
+
+/* =============================================================== panel */
+.panel{padding:var(--s-lg);border-right:1px solid var(--border);background:var(--surface);overflow-y:auto}
+.panel > * + *{margin-top:var(--s-xl)}
+.seccion-tit{display:flex;gap:var(--s-sm);align-items:center;margin-bottom:var(--s-md)}
+.seccion-num{
+  flex:none;width:23px;height:23px;display:grid;place-items:center;border-radius:var(--r-pill);
+  background:var(--text);color:var(--bg);font-size:.68em;font-weight:800;
+}
+:root[data-contraste="alto"] .seccion-num{background:var(--primary);color:var(--primary-text)}
+.seccion-tit h2{font-size:.92em;font-weight:700}
+.rotulo{font-size:.72em;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint)}
+
+.perfiles{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-sm)}
+.perfil{
+  position:relative;display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;
+  min-height:var(--touch);padding:var(--s-md);cursor:pointer;overflow:hidden;
+  background:var(--surface-alt);border:1.5px solid var(--border);border-radius:var(--r-md);
+  transition:transform var(--t-rapida), border-color var(--t-rapida), background var(--t-rapida), box-shadow var(--t-rapida);
+}
+.perfil:hover{border-color:var(--border-fuerte);transform:translateY(-1px);box-shadow:var(--sombra-sm)}
+.perfil:active{transform:translateY(0)}
+.perfil .p-ico{font-size:1.25em;line-height:1}
+.perfil .p-nom{font-size:.88em;font-weight:700}
+.perfil .p-sub{font-size:.7em;color:var(--text-muted);line-height:1.3}
+.perfil[aria-pressed="true"]{
+  background:var(--primary-soft);border-color:var(--primary);
+  box-shadow:0 0 0 1px var(--primary) inset, var(--sombra-sm);
+}
+.perfil[aria-pressed="true"] .p-nom{color:var(--primary-dark)}
+:root[data-contraste="alto"] .perfil[aria-pressed="true"] .p-nom{color:var(--primary)}
+
+.par{display:grid;gap:var(--s-md)}
+.campo label{display:block;font-size:.78em;font-weight:700;margin-bottom:var(--s-xs);color:var(--text-muted)}
+.campo select{
+  width:100%;min-height:var(--touch);padding:0 var(--s-md);cursor:pointer;
+  background:var(--surface-alt);border:1.5px solid var(--border);border-radius:var(--r-md);
+  transition:border-color var(--t-rapida);
+}
+.campo select:hover{border-color:var(--border-fuerte)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--s-sm);
+  min-height:var(--touch);padding:0 var(--s-lg);cursor:pointer;
+  border:1.5px solid transparent;border-radius:var(--r-md);font-weight:700;
+  transition:transform var(--t-rapida), box-shadow var(--t-rapida), background var(--t-rapida), border-color var(--t-rapida);
+}
+.btn:active{transform:scale(.985)}
+.btn-primario{width:100%;background:var(--primary);color:var(--primary-text);box-shadow:var(--sombra-sm)}
+.btn-primario:hover{background:var(--primary-dark);box-shadow:var(--sombra-md)}
+.btn-secundario{background:var(--surface-alt);border-color:var(--border);color:var(--text)}
+.btn-secundario:hover{border-color:var(--border-fuerte)}
+.btn-chip{
+  min-height:36px;padding:0 var(--s-md);border-radius:var(--r-pill);font-size:.78em;font-weight:600;
+  background:var(--surface-alt);border:1.5px solid var(--border);cursor:pointer;
+  transition:all var(--t-rapida);
+}
+.btn-chip:hover{border-color:var(--border-fuerte)}
+.btn-chip[aria-pressed="true"]{background:var(--primary);color:var(--primary-text);border-color:var(--primary)}
+
+/* avisos y tarjetas */
+.aviso{display:flex;gap:var(--s-md);padding:var(--s-md);border-radius:var(--r-md);font-size:.85em;align-items:flex-start;border:1px solid}
+.aviso .ico{flex:none;font-size:1.1em;line-height:1.35}
+.aviso b{display:block;margin-bottom:1px}
+.aviso-warning{background:var(--warning-soft);color:var(--warning);border-color:color-mix(in srgb,var(--warning) 35%,transparent)}
+.aviso-danger{background:var(--danger-soft);color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+.aviso-success{background:var(--success-soft);color:var(--success);border-color:color-mix(in srgb,var(--success) 35%,transparent)}
+.aviso-info{background:var(--primary-soft);color:var(--primary-dark);border-color:color-mix(in srgb,var(--primary) 30%,transparent)}
+:root[data-contraste="alto"] .aviso{border-color:currentColor}
+:root[data-contraste="alto"] .aviso-info{color:var(--primary)}
+
+.tarjeta{
+  background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--r-xl);
+  padding:var(--s-lg);box-shadow:var(--sombra-sm);
+}
+.tarjeta h3{font-size:1.12em;font-weight:800}
+.tarjeta .sub{color:var(--text-muted);font-size:.8em;margin-top:2px}
+
+.metricas{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-sm);margin-top:var(--s-lg)}
+.metrica{padding:var(--s-md) var(--s-sm);text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+.metrica b{display:block;font-size:1.55em;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.metrica span{display:block;margin-top:3px;font-size:.64em;color:var(--text-faint);text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+.metrica.alerta b{color:var(--danger)}
+
+/* perfil de altura */
+.perfil-altura{margin-top:var(--s-lg);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s-md)}
+.perfil-altura svg{display:block;width:100%;height:92px;overflow:visible}
+.perfil-altura .pa-pie{display:flex;justify-content:space-between;font-size:.68em;color:var(--text-faint);margin-top:var(--s-xs);font-weight:600}
+
+/* pasos */
+ol.pasos{list-style:none;margin:var(--s-lg) 0 0;padding:0;position:relative}
+ol.pasos li{display:flex;gap:var(--s-md);padding:var(--s-md) 0;border-top:1px solid var(--border);position:relative}
+ol.pasos li:first-child{border-top:0}
+.paso-ico{
+  flex:none;width:32px;height:32px;display:grid;place-items:center;border-radius:var(--r-pill);
+  background:var(--surface);border:1.5px solid var(--border);font-size:.85em;z-index:1;
+}
+.paso-txt{min-width:0;font-size:.86em;flex:1}
+.paso-txt .q{font-weight:600}
+.paso-txt small{display:block;color:var(--text-muted);font-size:.84em;margin-top:1px}
+.paso-alerta .paso-ico{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
+li[data-tipo="escalera"] .paso-ico{border-color:var(--via-escalera);color:var(--via-escalera)}
+li[data-tipo="rampa"] .paso-ico{border-color:var(--via-rampa);color:var(--via-rampa)}
+li[data-tipo="ascensor"] .paso-ico,li[data-tipo="salvaescaleras"] .paso-ico{border-color:var(--via-ascensor);color:var(--via-ascensor)}
+li[data-tipo="calle"] .paso-ico{border-color:var(--via-calle);color:var(--via-calle)}
+ol.pasos li.activo{background:var(--primary-soft);border-radius:var(--r-md);margin:0 calc(var(--s-sm) * -1);padding-left:var(--s-sm);padding-right:var(--s-sm)}
+
+.paso-acciones{display:block;margin-top:var(--s-sm)}
+.btn-mini{
+  background:none;border:1.5px solid var(--border);border-radius:var(--r-pill);
+  padding:4px 12px;font-size:.78em;font-weight:600;cursor:pointer;color:var(--text-muted);min-height:32px;
+  transition:all var(--t-rapida);
+}
+.btn-mini:hover{border-color:var(--primary);color:var(--primary)}
+.form-reporte{margin-top:var(--s-sm);padding:var(--s-md);background:var(--surface);border:1.5px solid var(--primary);border-radius:var(--r-md);display:grid;gap:6px}
+.form-reporte button{text-align:left;min-height:38px;padding:var(--s-xs) var(--s-md);border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface-alt);cursor:pointer;font-size:.84em;transition:all var(--t-rapida)}
+.form-reporte button:hover{border-color:var(--primary);background:var(--primary-soft)}
+.form-reporte .cancelar{border:0;background:none;color:var(--text-muted);text-decoration:underline;min-height:32px;padding:0;text-align:center}
+
+.vacio{padding:var(--s-xl) var(--s-lg);text-align:center;color:var(--text-faint);border:2px dashed var(--border);border-radius:var(--r-lg);font-size:.85em}
+
+ul.reportes{list-style:none;margin:0;padding:0;font-size:.82em}
+ul.reportes li{display:flex;gap:var(--s-sm);align-items:flex-start;padding:var(--s-md) 0;border-top:1px solid var(--border)}
+ul.reportes li:first-child{border-top:0}
+ul.reportes .r-ico{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r-pill);background:var(--danger-soft);color:var(--danger);font-size:.8em}
+ul.reportes .r-meta{color:var(--text-faint);font-size:.9em}
+ul.reportes .r-quitar{background:none;border:0;cursor:pointer;color:var(--text-muted);text-decoration:underline;padding:var(--s-xs);margin-left:auto;flex:none;font-size:.9em}
+
+details.fuente{font-size:.78em;color:var(--text-muted);border-top:1px solid var(--border);padding-top:var(--s-md)}
+details.fuente summary{cursor:pointer;font-weight:700;padding:var(--s-sm) 0;color:var(--text)}
+details.fuente p{margin:var(--s-sm) 0;line-height:1.6}
+details.fuente a{color:var(--primary)}
+:root[data-contraste="alto"] details.fuente a{color:var(--primary)}
+
+/* ================================================================ mapa */
+.mapa-caja{position:relative;overflow:hidden;background:var(--bg)}
+svg#mapa{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+svg#mapa.arrastrando{cursor:grabbing}
+svg#mapa.modo-reporte{cursor:crosshair}
+
+.mapa-ui{position:absolute;left:var(--s-md);top:var(--s-md);display:flex;flex-direction:column;gap:var(--s-sm);max-width:min(250px,60vw);z-index:2}
+.mapa-ui-dcha{left:auto;right:var(--s-md);align-items:flex-end}
+.mapa-ui-abajo{top:auto;bottom:var(--s-md)}
+.mapa-ui-ancha{max-width:min(430px,78vw)}
+.caja-flotante{
+  background:color-mix(in srgb,var(--surface) 93%,transparent);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;
+  box-shadow:var(--sombra-md);font-size:.73em;line-height:1.35;
+}
+:root[data-contraste="alto"] .caja-flotante{background:var(--surface);backdrop-filter:none}
+.caja-flotante .rotulo{margin-bottom:var(--s-sm)}
+.leyenda{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px}
+.plegable summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:22px}
+.plegable summary::-webkit-details-marker{display:none}
+.plegable summary::after{content:'';width:6px;height:6px;border-right:2px solid var(--text-faint);
+  border-bottom:2px solid var(--text-faint);transform:rotate(45deg) translate(-1px,-1px);
+  transition:transform var(--t-rapida)}
+.plegable[open] summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+.plegable[open] summary{margin-bottom:var(--s-sm)}
+.plegable summary .rotulo{margin:0}
+@media (max-width:1000px){
+  .mapa-ui{max-width:min(210px,52vw)}
+  .mapa-ui-ancha{max-width:min(320px,70vw)}
+  .leyenda{grid-template-columns:1fr}
+}
+.leyenda div{display:flex;gap:var(--s-sm);align-items:center}
+.muestra{flex:none;width:24px;height:0;border-top-width:4px;border-top-style:solid;border-radius:2px}
+.capas{display:grid;gap:2px}
+.capas label{display:flex;gap:var(--s-sm);align-items:center;min-height:27px;cursor:pointer;line-height:1.25}
+.capas input{width:17px;height:17px;flex:none;accent-color:var(--primary);cursor:pointer}
+.zoom-btns{display:flex;flex-direction:column;gap:6px}
+.zoom-btns button{
+  width:42px;height:42px;border-radius:var(--r-md);border:1px solid var(--border);
+  background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(10px);
+  cursor:pointer;font-size:1.05em;font-weight:800;box-shadow:var(--sombra-md);
+  transition:transform var(--t-rapida),background var(--t-rapida);
+}
+:root[data-contraste="alto"] .zoom-btns button{background:var(--surface);backdrop-filter:none}
+.zoom-btns button:hover{transform:scale(1.06)}
+.zoom-btns button.ancho{width:auto;height:38px;padding:0 var(--s-md);font-size:.72em;font-weight:700}
+.escala{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.escala-barra{height:5px;border:1.5px solid var(--text);border-top:0;width:70px}
+.escala span{font-size:.92em;font-weight:700;color:var(--text-muted)}
+
+#tooltip{
+  position:absolute;pointer-events:none;z-index:6;max-width:290px;
+  background:var(--text);color:var(--bg);padding:8px 11px;border-radius:var(--r-sm);
+  font-size:12.5px;line-height:1.45;box-shadow:var(--sombra-lg);
+  opacity:0;transform:translateY(3px);transition:opacity var(--t-rapida),transform var(--t-rapida);
+}
+:root[data-contraste="alto"] #tooltip{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}
+#tooltip.visible{opacity:1;transform:translateY(0)}
+#tooltip b{display:block;margin-bottom:2px}
+#tooltip .tt-sub{opacity:.75}
+
+/* ------------------------------------------------------ capas del svg */
+.calle-borde{fill:none;stroke:var(--m-walk-borde);stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.calle-fondo{fill:none;stroke:var(--m-walk);stroke-width:7.2;stroke-linecap:round;stroke-linejoin:round}
+.calle-rotulo{font-size:5.6px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  fill:var(--text-faint);text-anchor:middle;pointer-events:none;user-select:none}
+#cap-calles[data-detalle="muy-poco"] .calle-rotulo{opacity:0}
+.cap-talud{fill:var(--m-talud)}
+.cap-talud-tex{fill:url(#rayado)}
+.cap-pasto{fill:var(--m-pasto)}
+.cap-cancha{fill:var(--m-cancha)}
+.cap-walk{fill:var(--m-walk);stroke:var(--m-walk-borde);stroke-width:1;stroke-linejoin:round}
+.edif-sombra{fill:rgba(20,24,31,.22)}
+:root[data-contraste="alto"] .edif-sombra{fill:#000}
+.edif{fill:var(--m-edif);stroke:var(--m-edif-borde);stroke-width:.7;stroke-linejoin:round;
+  transition:fill var(--t-rapida)}
+.edif.dest{fill:var(--m-edif-dest)}
+.edif.dest.hover{fill:var(--m-edif-dest-alto)}
+.edif-hit{fill:transparent;stroke:none}
+.edif-hit.clicable{cursor:pointer}
+#cap-hit{pointer-events:auto}
+svg#mapa.modo-reporte #cap-hit{pointer-events:none}
+.edif.sel{fill:var(--primary);stroke:var(--primary-dark)}
+.edif-agua{fill:var(--m-agua);stroke:#6EA3CC;stroke-width:.7}
+.edif-patio{fill:var(--m-walk);stroke:var(--m-walk-borde);stroke-width:.7}
+
+.rotulo-edif{
+  font-size:8.4px;font-weight:700;fill:var(--text);letter-spacing:-.01em;
+  paint-order:stroke;stroke:var(--m-walk);stroke-width:3px;stroke-linejoin:round;
+  text-anchor:middle;pointer-events:none;user-select:none;
+  transition:opacity var(--t-media);
+}
+:root[data-contraste="alto"] .rotulo-edif{fill:#FFF;stroke:#000}
+.rotulo-edif.menor{font-size:6.6px;fill:var(--text-muted)}
+.rotulo-lugar{font-size:6.8px;font-weight:600;font-style:italic;fill:var(--text-muted);
+  paint-order:stroke;stroke:var(--m-walk);stroke-width:2.6px;stroke-linejoin:round;
+  text-anchor:middle;pointer-events:none;user-select:none;transition:opacity var(--t-media)}
+#cap-rotulos[data-detalle="poco"] .rotulo-lugar{opacity:.75}
+#cap-rotulos[data-detalle="poco"] .rotulo-edif.menor{opacity:0}
+
+.arista{stroke-linecap:round;stroke-linejoin:round;fill:none;transition:stroke-width var(--t-rapida)}
+.arista-golpe{stroke:transparent;stroke-width:10;fill:none;cursor:pointer}
+.arista-g:hover .arista{stroke-width:4.2}
+.nodo-pto{fill:var(--surface);stroke:var(--text-faint);stroke-width:.7;pointer-events:none}
+#cap-red[data-detalle="poco"] .nodo-pto{opacity:0}
+
+.ruta-halo{stroke:var(--ruta-halo);stroke-width:10;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ruta-tramo{stroke-width:5.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ruta-flujo{stroke:#fff;stroke-width:2;fill:none;stroke-linecap:round;opacity:.55;
+  stroke-dasharray:1 11;animation:flujo 1.1s linear infinite}
+:root[data-contraste="alto"] .ruta-flujo{stroke:#000;opacity:.85}
+@keyframes flujo{to{stroke-dashoffset:-12}}
+@media (prefers-reduced-motion:reduce){ .ruta-flujo{animation:none;opacity:0} }
+.ruta-dibujo{animation:dibujar .85s cubic-bezier(.4,0,.2,1) both}
+@keyframes dibujar{from{stroke-dashoffset:var(--largo)}to{stroke-dashoffset:0}}
+.ruta-fantasma{stroke:var(--ruta-fantasma);stroke-width:3;fill:none;stroke-linecap:round;
+  stroke-linejoin:round;stroke-dasharray:6 5;opacity:.75}
+
+.pin{cursor:default}
+.pin-cuerpo{stroke:#fff;stroke-width:1.6}
+:root[data-contraste="alto"] .pin-cuerpo{stroke:#000}
+.pin text{font-size:8.5px;font-weight:800;text-anchor:middle;fill:#fff;pointer-events:none}
+:root[data-contraste="alto"] .pin text{fill:#000}
+.pin-caer{animation:caer .45s cubic-bezier(.3,1.5,.5,1) backwards}
+@keyframes caer{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}
+.pin-pulso{animation:pulso 2.4s ease-out infinite}
+@keyframes pulso{0%{r:7;opacity:.5}70%,100%{r:17;opacity:0}}
+@media (prefers-reduced-motion:reduce){ .pin-caer,.pin-pulso{animation:none} }
+
+.chincheta{font-size:11px;text-anchor:middle;pointer-events:none;
+  paint-order:stroke;stroke:var(--surface);stroke-width:2.5px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="marca">
+      <span class="marca-ico" aria-hidden="true">♿</span>
+      <span class="marca-txt">
+        <b>Ruta accesible · USM Casa Central</b>
+        <span>Av. España 1680, Valparaíso — mapa de barreras del campus</span>
+      </span>
+    </div>
+    <div class="top-acciones">
+      <button class="btn btn-chip" id="btn-contraste" aria-pressed="false">Alto contraste</button>
+      <button class="btn btn-chip" id="btn-texto" aria-pressed="false">Texto grande</button>
+    </div>
+  </header>
+
+  <div class="cuerpo">
+
+    <aside class="panel" aria-label="Planificador de ruta">
+
+      <section>
+        <div class="seccion-tit"><span class="seccion-num">1</span><h2>¿Cómo te mueves por el campus?</h2></div>
+        <div class="perfiles" id="perfiles" role="group" aria-label="Perfil de movilidad"></div>
+      </section>
+
+      <section>
+        <div class="seccion-tit"><span class="seccion-num">2</span><h2>¿Desde dónde y hasta dónde?</h2></div>
+        <div class="par">
+          <div class="campo">
+            <label for="sel-origen">Desde</label>
+            <select id="sel-origen"></select>
+          </div>
+          <div class="campo">
+            <label for="sel-destino">Hasta <span style="font-weight:500;color:var(--text-faint)">— o toca un edificio en el mapa</span></label>
+            <select id="sel-destino"></select>
+          </div>
+        </div>
+      </section>
+
+      <section id="resultado" aria-live="polite"></section>
+
+      <section>
+        <div class="seccion-tit"><span class="seccion-num">3</span><h2>Barreras reportadas</h2></div>
+        <div id="panel-reportes"></div>
+        <button class="btn btn-secundario" id="btn-modo-reporte" aria-pressed="false"
+                style="width:100%;margin-top:var(--s-md)">Marcar barreras sobre el mapa</button>
+      </section>
+
+      <details class="fuente">
+        <summary>De dónde salen estos datos</summary>
+        <p><b>Geometría:</b> digitalizada sobre el plano del campus (1024 × 785 px, escala ≈ 0,5 m/px
+        calibrada con la cancha del estadio). Los edificios, taludes y pavimentos se extrajeron del
+        plano; los nodos y tramos de la red se trazaron a mano.</p>
+        <p><b>Accesibilidad:</b> Cañas Escobar, Camila (2018). <i>Propuestas para lograr una USM
+        accesible, Casa Central</i>. Memoria de Constructor Civil, Depto. de Obras Civiles, UTFSM.
+        <a href="https://repositorio.usm.cl/handle/123456789/6098" target="_blank" rel="noopener">repositorio.usm.cl</a>.
+        De ahí salen los puntajes de porterías y edificios, los ascensores existentes, el
+        salva-escaleras del Edificio C y la escalera entre la Portería Valdés y el Edificio M.</p>
+        <p><b>Ojo con esto:</b> la tesis es de 2018 y el plano no está fechado. Cada tramo lleva un
+        nivel de confianza; los marcados <i>«por verificar»</i> son inferencias del dibujo. Las cotas
+        de altura son estimadas, así que las pendientes son órdenes de magnitud, no mediciones.</p>
+      </details>
+
+    </aside>
+
+    <div class="mapa-caja">
+      <svg id="mapa" role="application" aria-label="Plano del campus Casa Central con la red de rutas accesibles"></svg>
+
+      <div class="mapa-ui">
+        <details class="caja-flotante plegable" id="d-capas" open>
+          <summary><span class="rotulo">Capas</span></summary>
+          <div class="capas">
+            <label><input type="checkbox" id="cap-red" checked> Red de rutas</label>
+            <label><input type="checkbox" id="cap-rotulos" checked> Nombres de edificios</label>
+            <label><input type="checkbox" id="cap-pend"> Resaltar cuestas &gt; 12 %</label>
+            <label><input type="checkbox" id="cap-comparar"> Comparar con la ruta sin restricciones</label>
+          </div>
+        </details>
+      </div>
+
+      <div class="mapa-ui mapa-ui-abajo mapa-ui-ancha">
+        <details class="caja-flotante plegable" id="d-leyenda" open>
+          <summary><span class="rotulo">Leyenda</span></summary>
+          <div class="leyenda">
+            <div><i class="muestra" style="border-color:var(--ruta)"></i> Tu ruta</div>
+            <div><i class="muestra" style="border-color:var(--via-sendero)"></i> Sendero peatonal</div>
+            <div><i class="muestra" style="border-color:var(--via-calle)"></i> Calle (riesgo vehicular)</div>
+            <div><i class="muestra" style="border-color:var(--via-escalera)"></i> Escalera</div>
+            <div><i class="muestra" style="border-color:var(--via-rampa)"></i> Rampa</div>
+            <div><i class="muestra" style="border-color:var(--via-ascensor)"></i> Ascensor o salva-escaleras</div>
+            <div><i class="muestra" style="border-color:var(--via-talud);border-top-style:dashed"></i> Paso informal por talud</div>
+          </div>
+        </details>
+      </div>
+
+      <div class="mapa-ui mapa-ui-dcha">
+        <div class="zoom-btns">
+          <button id="btn-mas" aria-label="Acercar">+</button>
+          <button id="btn-menos" aria-label="Alejar">−</button>
+          <button id="btn-reset" class="ancho" aria-label="Centrar el mapa">Centrar</button>
+        </div>
+      </div>
+
+      <div class="mapa-ui mapa-ui-dcha mapa-ui-abajo">
+        <div class="caja-flotante escala">
+          <div class="escala-barra" id="escala-barra"></div>
+          <span id="escala-txt">50 m</span>
+        </div>
+      </div>
+
+      <div id="tooltip" role="status"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const RED = __DATOS__;
+
+/* =======================================================================
+   Perfiles de movilidad — la lógica de costo del ruteo
+   ======================================================================= */
+const PERFILES = {
+  silla: {
+    nombre: 'Silla de ruedas', sub: 'Sin peldaños, cuestas suaves', icono: '♿',
+    velocidad: 0.75,
+    bloquea: ['escalera', 'talud'],
+    maxPeldanos: 0, maxPendiente: 18, avisoPendiente: 8,
+    factor: { sendero: 1, calle: 1.7, rampa: 1, ascensor: 1, salvaescaleras: 3, interior: 1.2, escalera: 99, talud: 99 },
+    pendienteComoda: 5, castigoPendiente: 0.25,
+    segPorPeldano: 25,
+    avisos: {
+      salvaescaleras: 'La tesis advierte que el salva-escaleras requiere ayuda de terceros para operarlo.',
+      ascensor: 'Este ascensor existe, pero está catalogado como NO accesible: cabina o botonera fuera de norma.',
+      calle: 'Tramo compartido con vehículos y sin vereda segregada.'
+    }
+  },
+  apoyo: {
+    nombre: 'Bastón o muletas', sub: 'Evita escaleras largas', icono: '🦯',
+    velocidad: 0.65,
+    bloquea: ['talud'],
+    maxPeldanos: 40, maxPendiente: 20, avisoPendiente: 12,
+    factor: { sendero: 1, calle: 1.3, rampa: 1, ascensor: 0.9, salvaescaleras: 1.5, interior: 1, escalera: 4, talud: 99 },
+    pendienteComoda: 8, castigoPendiente: 0.14,
+    metrosPorPeldano: 1.6, segPorPeldano: 4.5,
+    avisos: { escalera: 'Escalera sin pasamanos continuos de dos alturas.' }
+  },
+  visual: {
+    nombre: 'Baja visión', sub: 'Evita cruces sin señalizar', icono: '👁',
+    velocidad: 0.9,
+    bloquea: ['talud'],
+    maxPeldanos: 99, maxPendiente: 99,
+    factor: { sendero: 1, calle: 2.4, rampa: 1.1, ascensor: 1.1, salvaescaleras: 2, interior: 1, escalera: 1.7, talud: 99 },
+    pendienteComoda: 12, castigoPendiente: 0.06,
+    metrosPorPeldano: 0.4, segPorPeldano: 2,
+    avisos: {
+      calle: 'Sin señalización peatonal ni pavimento táctil de alerta en los cruces.',
+      escalera: 'Sin pavimento táctil de alerta al inicio y término de la escalera.'
+    }
+  },
+  ninguna: {
+    nombre: 'Sin restricciones', sub: 'La ruta más corta', icono: '🚶',
+    velocidad: 1.3,
+    bloquea: [],
+    maxPeldanos: 999, maxPendiente: 999,
+    factor: { sendero: 1, calle: 1, rampa: 1, ascensor: 1.2, salvaescaleras: 2, interior: 1, escalera: 1.1, talud: 1.6 },
+    pendienteComoda: 15, castigoPendiente: 0.04,
+    metrosPorPeldano: 0.2, segPorPeldano: 0.8,
+    avisos: {}
+  }
+};
+
+const ETIQUETA_TIPO = {
+  sendero: 'Sendero', calle: 'Calle', escalera: 'Escalera', rampa: 'Rampa',
+  ascensor: 'Ascensor', salvaescaleras: 'Salva-escaleras', interior: 'Paso interior',
+  talud: 'Paso por talud'
+};
+const ICONO_TIPO = {
+  sendero: '→', calle: '🚗', escalera: '▲', rampa: '◺',
+  ascensor: '⬍', salvaescaleras: '⇡', interior: '⌂', talud: '⛰'
+};
+const COLOR_TIPO = {
+  sendero: 'var(--via-sendero)', calle: 'var(--via-calle)', escalera: 'var(--via-escalera)',
+  rampa: 'var(--via-rampa)', ascensor: 'var(--via-ascensor)', salvaescaleras: 'var(--via-ascensor)',
+  interior: 'var(--text-faint)', talud: 'var(--via-talud)'
+};
+
+const MOTIVOS = [
+  'Hay peldaños que el plano no muestra',
+  'Paso bloqueado o cerrado con llave',
+  'Ascensor o plataforma fuera de servicio',
+  'Pavimento roto o resbaladizo',
+  'Obra en ejecución',
+  'Auto estacionado sobre la vereda'
+];
+
+/* =======================================================================
+   Estado
+   ======================================================================= */
+const estado = {
+  perfil: 'silla',
+  origen: 'PORT_ESP',
+  destino: 'PC_C',
+  ruta: null,
+  modoReporte: false,
+  comparar: false,
+  // Reportes de demo: barreras que la comunidad ya avisó.
+  reportes: [
+    { k: 'C_SALVA|C_INT', motivo: 'Salva-escaleras fuera de servicio', votos: 4, cuando: 'hoy, 08:40' },
+    { k: 'RB_T|RB_M',     motivo: 'Portón de la rampa cerrado con candado', votos: 2, cuando: 'ayer, 17:10' }
+  ]
+};
+
+const claveArista = (e) => e.a + '|' + e.b;
+const reporteDe = (e) => estado.reportes.find(r => r.k === claveArista(e) || r.k === e.b + '|' + e.a);
+
+/** Registra una barrera, o suma un voto si alguien ya la reportó. */
+function registrarReporte(e, motivo) {
+  const ya = reporteDe(e);
+  if (ya) ya.votos++;
+  else estado.reportes.push({ k: claveArista(e), motivo, votos: 1, cuando: 'recién' });
+  pintarRed(); pintarReportes(); trazarRuta();
+}
+
+/* =======================================================================
+   Grafo y costo
+   ======================================================================= */
+const ADY = {};
+RED.aristas.forEach((e, i) => {
+  e.i = i;
+  (ADY[e.a] ||= []).push(e);
+  (ADY[e.b] ||= []).push(e);
+});
+
+/** Costo de recorrer `e` con el perfil `p`, o null si es intransitable.
+ *  `estricto` exige una ruta sin ninguna barrera; si es false, las barreras se
+ *  pagan carísimo pero se pueden usar, y se reportan como obstáculos. */
+function costo(e, p, estricto) {
+  if (reporteDe(e)) return null;
+  const dura = p.bloquea.includes(e.tipo) || e.esc > p.maxPeldanos || e.pend > p.maxPendiente;
+  if (dura && estricto) return null;
+  if (e.tipo === 'talud' && p.bloquea.includes('talud')) return null;
+  let c = e.m * (p.factor[e.tipo] ?? 1);
+  if (e.pend > p.pendienteComoda) c *= 1 + (e.pend - p.pendienteComoda) * p.castigoPendiente;
+  if (e.esc) c += e.esc * (p.metrosPorPeldano ?? 8);
+  if (dura) c *= 25;
+  return c;
+}
+
+function dijkstra(desde, hasta, p, estricto) {
+  const dist = { [desde]: 0 }, prev = {}, vistos = new Set();
+  const pend = new Set([desde]);
+  while (pend.size) {
+    let u = null;
+    for (const n of pend) if (u === null || dist[n] < dist[u]) u = n;
+    pend.delete(u); vistos.add(u);
+    if (u === hasta) break;
+    for (const e of (ADY[u] || [])) {
+      const v = e.a === u ? e.b : e.a;
+      if (vistos.has(v)) continue;
+      const c = costo(e, p, estricto);
+      if (c === null) continue;
+      const nd = dist[u] + c;
+      if (dist[v] === undefined || nd < dist[v]) { dist[v] = nd; prev[v] = [u, e]; pend.add(v); }
+    }
+  }
+  if (dist[hasta] === undefined) return null;
+  const tramos = [];
+  let cur = hasta;
+  while (cur !== desde) { const [u, e] = prev[cur]; tramos.unshift({ e, de: u, a: cur }); cur = u; }
+  return tramos;
+}
+
+function resumir(tramos, p) {
+  let m = 0, seg = 0, peldanos = 0, subida = 0, bajada = 0;
+  const obstaculos = [];
+  for (const t of tramos) {
+    const e = t.e;
+    m += e.m;
+    const v = p.velocidad * (e.pend > 10 ? 0.65 : 1);
+    seg += e.m / v + e.esc * (p.segPorPeldano ?? 2);
+    if (e.tipo === 'ascensor') seg += 45;
+    if (e.tipo === 'salvaescaleras') seg += 180;
+    peldanos += e.esc;
+    const dz = (t.de === e.a) ? -e.dz : e.dz;
+    if (dz > 0) subida += dz; else bajada += -dz;
+    if (p.bloquea.includes(e.tipo) || e.esc > p.maxPeldanos || e.pend > p.maxPendiente) obstaculos.push(t);
+  }
+  return { m: Math.round(m), min: Math.max(1, Math.round(seg / 60)), peldanos,
+           subida: Math.round(subida), bajada: Math.round(bajada), obstaculos };
+}
+
+function calcular() {
+  const p = PERFILES[estado.perfil];
+  // Referencia: el mismo trayecto para alguien sin restricciones de movilidad.
+  // Es lo que deja ver el costo real de la barrera, no solo que exista.
+  const libre = dijkstra(estado.origen, estado.destino, PERFILES.ninguna, true);
+  const ref = libre ? { tramos: libre, ...resumir(libre, PERFILES.ninguna) } : null;
+  const estricta = dijkstra(estado.origen, estado.destino, p, true);
+  if (estricta) return { tramos: estricta, modo: 'estricta', ref, ...resumir(estricta, p) };
+  const flexible = dijkstra(estado.origen, estado.destino, p, false);
+  if (flexible) return { tramos: flexible, modo: 'flexible', ref, ...resumir(flexible, p) };
+  return null;
+}
+
+/* =======================================================================
+   Mapa (SVG)
+   ======================================================================= */
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('mapa');
+const tip = document.getElementById('tooltip');
+// Dos encuadres: en pantalla ancha entra todo el predio; en vertical se acerca
+// al nucleo del campus, porque si no el plano queda diminuto entre dos franjas vacias.
+const VISTA_ANCHA   = { x: 166, y: 144, w: 902, h: 574 };
+const VISTA_ANGOSTA = { x: 404, y: 212, w: 636, h: 516 };
+let vista = { ...VISTA_ANCHA };
+
+const el = (t, a = {}) => { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); return n; };
+const capa = (id, padre = svg) => { const g = el('g', { id }); padre.appendChild(g); return g; };
+const aplicarVista = () => { svg.setAttribute('viewBox', `${vista.x} ${vista.y} ${vista.w} ${vista.h}`); actualizarEscala(); };
+
+/** Puntos de una arista: extremos más los intermedios del trazado real. */
+function puntos(e, desdeA = true) {
+  const a = RED.nodos[e.a], b = RED.nodos[e.b];
+  let p = [[a.x, a.y], ...(e.via || []), [b.x, b.y]];
+  if (!desdeA) p = [...p].reverse();
+  return p;
+}
+const aPoly = (p) => p.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+
+// --- defs: patrones, filtros, gradientes
+(function defs() {
+  const d = el('defs');
+  // Trama diagonal para el talud: es lo que hace que la ladera se lea como ladera.
+  const pat = el('pattern', { id: 'rayado', width: 7, height: 7,
+                              patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(38)' });
+  pat.appendChild(el('line', { x1: 0, y1: 0, x2: 0, y2: 7,
+                               stroke: 'var(--m-talud-linea)', 'stroke-width': 1.1, opacity: .55 }));
+  const f = el('filter', { id: 'sombraPin', x: '-60%', y: '-30%', width: '220%', height: '200%' });
+  f.appendChild(el('feDropShadow', { dx: 0, dy: 1.6, stdDeviation: 1.4,
+                                     'flood-color': '#14181F', 'flood-opacity': 0.4 }));
+  d.append(pat, f);
+  svg.appendChild(d);
+})();
+
+const gCalles   = capa('cap-calles');
+const gTerreno  = capa('cap-terreno');
+const gWalk     = capa('cap-walk');
+const gEdifBase = capa('cap-edif-sombra');
+const gEdificios= capa('cap-edificios');
+const gRed      = capa('cap-red');
+const gHit      = capa('cap-hit');      // zonas sensibles de los edificios, sobre la red
+const gFantasma = capa('cap-fantasma');
+const gRuta     = capa('cap-ruta');
+const gMarcas   = capa('cap-marcas');
+const gRotulos  = capa('cap-rotulos');
+
+// --- avenidas publicas: casing oscuro + relleno claro, como cualquier mapa de calles
+RED.calles.forEach((c, i) => {
+  const d = 'M ' + c.pts.map(p => p.join(' ')).join(' L ');
+  gCalles.appendChild(el('path', { d, class: 'calle-borde' }));
+  gCalles.appendChild(el('path', { d, class: 'calle-fondo', id: 'calle' + i }));
+  const t = el('text', { class: 'calle-rotulo', dy: -0.6 });
+  const tp = el('textPath', { href: '#calle' + i, startOffset: c.n === 'Avenida España' ? '62%' : '46%' });
+  tp.textContent = c.n;
+  t.appendChild(tp);
+  gCalles.appendChild(t);
+});
+
+// --- terreno
+gTerreno.appendChild(el('path', { d: RED.terreno.talud, class: 'cap-talud', 'fill-rule': 'evenodd' }));
+gTerreno.appendChild(el('path', { d: RED.terreno.talud, class: 'cap-talud-tex', 'fill-rule': 'evenodd' }));
+gTerreno.appendChild(el('path', { d: RED.terreno.pasto, class: 'cap-pasto', 'fill-rule': 'evenodd' }));
+gTerreno.appendChild(el('path', { d: RED.terreno.cancha, class: 'cap-cancha', 'fill-rule': 'evenodd' }));
+gWalk.appendChild(el('path', { d: RED.terreno.walk, class: 'cap-walk', 'fill-rule': 'evenodd' }));
+
+// --- edificios
+const NOMBRE_EDIF = {
+  A: ['Edificio A', 1], B: ['Edificio B', 1], C: ['Edificio C', 1],
+  D: ['Comedor · D y E', 1], K: ['CIAC · K', 1], L: ['Edificio L', 0],
+  M: ['Edificio M', 1], M2: ['Gimnasio 2 · M2', 0], O: ['Edificios O y N', 0],
+  P: ['Federación · P', 1], P2: ['Edificio P2', 0], R: ['Edificios R y R2', 1],
+  T: ['Auditorio · T', 1], U: ['Biblioteca · U', 1], F2: ['Edificios F y F2', 1],
+  H: ['Casa del Rector', 0], J: ['Edificio J', 0],
+  MATTA: ['Edificio Matta', 0], IST: ['Casa IST', 0], SG: ['Casa San Guillermo', 0],
+  X13: ['Piscina', 0], X19: ['Patio interior U', 0], X26: ['Portería España', 0],
+  BARI: ['Edificio Bari', 0], X15: ['Edificio Bari 2', 0]
+};
+// Qué nodo de la red representa a cada edificio, para poder tocarlo en el mapa.
+const NODO_EDIF = {
+  A: 'A_S', B: 'B_N', C: 'C_S2', D: 'D_W', K: 'TAL_K', L: 'L_ACC', M: 'M_ACC',
+  M2: 'M2_ACC', O: 'O_N', P: 'P_ACC', P2: 'P2_ACC', R: 'R_ACC', T: 'T_ACC',
+  U: 'U_ACC', F2: 'F_ACC', H: 'H_ACC', J: 'TAL_J', X13: 'PISCINA',
+  X19: 'U_PATIO', X26: 'PORT_ESP'
+};
+const DEST_POR_NODO = {};
+RED.destinos.forEach(d => DEST_POR_NODO[d.id] = d);
+
+const edifEls = {};
+RED.edificios.forEach(b => {
+  if (b.id === 'X19') {                       // es un patio, no un volumen
+    gWalk.appendChild(el('path', { d: b.d, class: 'edif-patio', 'fill-rule': 'evenodd' }));
+    return;
+  }
+  // Sombra proyectada: da el relieve que hace que el plano no se vea plano.
+  const s = el('path', { d: b.d, class: 'edif-sombra', 'fill-rule': 'evenodd', transform: 'translate(1.1 2.2)' });
+  gEdifBase.appendChild(s);
+
+  const nodo = NODO_EDIF[b.id];
+  const p = el('path', { d: b.d, class: 'edif' + (nodo ? ' dest' : ''), 'fill-rule': 'evenodd' });
+  if (b.id === 'X13') p.setAttribute('class', 'edif-agua');
+  gEdificios.appendChild(p);
+  edifEls[b.id] = p;
+
+  const nom = NOMBRE_EDIF[b.id];
+  if (!nodo && !nom) return;
+
+  // La forma sensible va en una capa sobre la red: si no, las lineas de ruta
+  // se comen el clic y tocar un edificio no hace nada.
+  const hit = el('path', { d: b.d, class: 'edif-hit' + (nodo ? ' clicable' : ''), 'fill-rule': 'evenodd' });
+  gHit.appendChild(hit);
+  hit.addEventListener('pointermove', (ev) => {
+    p.classList.add('hover');
+    mostrarTip(ev, fichaEdificio(b, nodo, nom));
+  });
+  hit.addEventListener('pointerleave', () => { p.classList.remove('hover'); ocultarTip(); });
+  if (nodo) hit.addEventListener('click', () => {
+    if (huboArrastre) return;
+    estado.destino = nodo;
+    const sel = document.getElementById('sel-destino');
+    if ([...sel.options].some(o => o.value === nodo)) sel.value = nodo;
+    trazarRuta();
+  });
+});
+
+function fichaEdificio(b, nodo, nom) {
+  const d = nodo ? DEST_POR_NODO[nodo] : null;
+  const partes = [`<b>${nom ? nom[0] : (d ? d.nombre : b.id)}</b>`];
+  if (d && d.uso) partes.push(`<span class="tt-sub">${d.uso}</span>`);
+  if (d) {
+    const f = [];
+    if (d.accesos) f.push(`${d.accesos} accesos`);
+    if (d.ascensor === 'si-no-accesible') f.push('ascensor fuera de norma');
+    if (d.ascensor === 'no') f.push('sin ascensor');
+    if (d.puntaje) f.push(`puntaje ${String(d.puntaje).replace('.', ',')}`);
+    if (f.length) partes.push(`<span class="tt-sub">${f.join(' · ')}</span>`);
+  }
+  if (nodo) partes.push(`<span class="tt-sub" style="opacity:1">Tocar para ir hasta aquí</span>`);
+  return partes.join('<br>');
+}
+
+// --- rótulos de edificios
+RED.edificios.forEach(b => {
+  const nom = NOMBRE_EDIF[b.id];
+  if (!nom) return;
+  const t = el('text', { x: b.cx, y: b.cy, class: 'rotulo-edif' + (nom[1] ? '' : ' menor') });
+  t.textContent = nom[0];
+  gRotulos.appendChild(t);
+});
+
+// --- rotulos de espacios abiertos
+RED.lugares.forEach(l => {
+  const t = el('text', { x: l.x, y: l.y, class: 'rotulo-lugar' });
+  t.textContent = l.n;
+  gRotulos.appendChild(t);
+});
+
+// --- red de rutas
+const aristaEls = [];
+RED.aristas.forEach(e => {
+  const pts = aPoly(puntos(e));
+  const g = el('g', { class: 'arista-g' });
+  const linea = el('polyline', { points: pts, class: 'arista' });
+  const golpe = el('polyline', { points: pts, class: 'arista-golpe' });
+  g.append(linea, golpe);
+  gRed.appendChild(g);
+  aristaEls.push({ e, linea });
+
+  golpe.addEventListener('pointermove', (ev) => mostrarTip(ev, fichaArista(e)));
+  golpe.addEventListener('pointerleave', ocultarTip);
+  golpe.addEventListener('click', () => {
+    if (!estado.modoReporte || huboArrastre) return;
+    if (reporteDe(e)) { registrarReporte(e); return; }
+    const motivo = prompt('¿Qué barrera encontraste?\n' + ETIQUETA_TIPO[e.tipo] + ': '
+      + RED.nodos[e.a].n + ' → ' + RED.nodos[e.b].n, MOTIVOS[1]);
+    if (motivo) registrarReporte(e, motivo);
+  });
+});
+Object.values(RED.nodos).forEach(n => gRed.appendChild(el('circle', { cx: n.x, cy: n.y, r: 1.5, class: 'nodo-pto' })));
+
+function fichaArista(e) {
+  const r = reporteDe(e);
+  return [
+    `<b>${ETIQUETA_TIPO[e.tipo]}</b>`,
+    `<span class="tt-sub">${RED.nodos[e.a].n} → ${RED.nodos[e.b].n}</span>`,
+    `${Math.round(e.m)} m · ${e.pend} % de cuesta${e.esc ? ` · ${e.esc} peldaños` : ''}`,
+    `<span class="tt-sub">${e.nota}</span>`,
+    e.conf !== 'alta' ? `<span class="tt-sub"><i>Confianza ${e.conf} — por verificar en terreno.</i></span>` : '',
+    r ? `<b style="color:#FCA5A5">⚠ ${r.motivo} (${r.votos} reportes)</b>` : ''
+  ].filter(Boolean).join('<br>');
+}
+
+function mostrarTip(ev, html) {
+  tip.innerHTML = html;
+  tip.classList.add('visible');
+  const caja = svg.parentElement.getBoundingClientRect();
+  const x = ev.clientX - caja.left, y = ev.clientY - caja.top;
+  tip.style.left = Math.max(6, Math.min(x + 16, caja.width - tip.offsetWidth - 10)) + 'px';
+  tip.style.top = Math.max(6, Math.min(y + 16, caja.height - tip.offsetHeight - 10)) + 'px';
+}
+function ocultarTip() { tip.classList.remove('visible'); }
+
+function pintarRed() {
+  const resaltar = document.getElementById('cap-pend').checked;
+  for (const { e, linea } of aristaEls) {
+    const roto = !!reporteDe(e);
+    let color = COLOR_TIPO[e.tipo];
+    let ancho = (e.tipo === 'escalera' || e.tipo === 'rampa') ? 2.8 : 1.9;
+    if (e.tipo === 'interior') ancho = 1.2;
+    linea.setAttribute('opacity', e.tipo === 'interior' ? .45 : 1);
+    if (resaltar && e.pend > 12 && !['ascensor', 'salvaescaleras'].includes(e.tipo)) { color = 'var(--danger)'; ancho = 3.2; }
+    if (roto) { color = 'var(--danger)'; ancho = 3.2; }
+    linea.setAttribute('stroke', color);
+    linea.setAttribute('stroke-width', ancho);
+    const punteada = e.tipo === 'talud' || e.conf === 'baja' || e.tipo === 'interior' ? '3 3' : (roto ? '2 4' : 'none');
+    linea.setAttribute('stroke-dasharray', punteada);
+  }
+}
+
+/* ------------------------------------------------------------ la ruta */
+function trazarRuta() {
+  gRuta.textContent = ''; gFantasma.textContent = ''; gMarcas.textContent = '';
+  estado.ruta = calcular();
+  pintarResultado();
+  pintarChinchetas();
+  if (!estado.ruta) return;
+  const r = estado.ruta;
+
+  if (estado.comparar && r.ref && r.ref.m < r.m) {
+    for (const t of r.ref.tramos) {
+      gFantasma.appendChild(el('polyline', { points: aPoly(puntos(t.e, t.de === t.e.a)), class: 'ruta-fantasma' }));
+    }
+  }
+
+  for (const t of r.tramos) {
+    gRuta.appendChild(el('polyline', { points: aPoly(puntos(t.e, t.de === t.e.a)), class: 'ruta-halo' }));
+  }
+  r.tramos.forEach((t, i) => {
+    const pts = aPoly(puntos(t.e, t.de === t.e.a));
+    const l = el('polyline', { points: pts, class: 'ruta-tramo', stroke: 'var(--ruta)' });
+    if (r.obstaculos.includes(t)) {
+      l.setAttribute('stroke', 'var(--danger)');
+      l.setAttribute('stroke-dasharray', '6 5');
+    } else {
+      // Dibujo progresivo: 400 cubre de sobra el tramo más largo (~120 px).
+      l.classList.add('ruta-dibujo');
+      l.style.setProperty('--largo', '400');
+      l.setAttribute('stroke-dasharray', '400');
+      l.style.animationDelay = (i * 0.045) + 's';
+    }
+    l.dataset.i = i;
+    l.addEventListener('pointermove', (ev) => mostrarTip(ev, fichaArista(t.e)));
+    l.addEventListener('pointerleave', ocultarTip);
+    gRuta.appendChild(l);
+    if (!r.obstaculos.includes(t) && t.e.tipo !== 'ascensor' && t.e.tipo !== 'salvaescaleras') {
+      gRuta.appendChild(el('polyline', { points: pts, class: 'ruta-flujo' }));
+    }
+  });
+
+  pin(RED.nodos[estado.origen], 'A', 'var(--success)', true);
+  pin(RED.nodos[estado.destino], 'B', 'var(--primary)', false);
+}
+
+function pin(n, letra, color, pulsa) {
+  const g = el('g', { class: 'pin pin-caer' });
+  if (pulsa) g.appendChild(el('circle', { cx: n.x, cy: n.y, r: 7, fill: color, class: 'pin-pulso' }));
+  const cuerpo = el('path', {
+    d: `M ${n.x} ${n.y} c -4.6 -5.4 -7 -8.2 -7 -11.4 a 7 7 0 0 1 14 0 c 0 3.2 -2.4 6 -7 11.4 z`,
+    fill: color, class: 'pin-cuerpo', filter: 'url(#sombraPin)'
+  });
+  const t = el('text', { x: n.x, y: n.y - 8 }); t.textContent = letra;
+  g.append(cuerpo, t);
+  g.addEventListener('pointermove', (ev) => mostrarTip(ev, `<b>${n.n}</b>`));
+  g.addEventListener('pointerleave', ocultarTip);
+  gMarcas.appendChild(g);
+}
+
+function pintarChinchetas() {
+  estado.reportes.forEach(r => {
+    const [a, b] = r.k.split('|');
+    if (!RED.nodos[a] || !RED.nodos[b]) return;
+    const t = el('text', { x: (RED.nodos[a].x + RED.nodos[b].x) / 2, y: (RED.nodos[a].y + RED.nodos[b].y) / 2 + 3, class: 'chincheta' });
+    t.textContent = '⚠';
+    gMarcas.appendChild(t);
+  });
+}
+
+/* =======================================================================
+   Panel
+   ======================================================================= */
+function pintarPerfiles() {
+  const cont = document.getElementById('perfiles');
+  cont.textContent = '';
+  for (const [k, p] of Object.entries(PERFILES)) {
+    const b = document.createElement('button');
+    b.className = 'perfil';
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(k === estado.perfil));
+    b.innerHTML = `<span class="p-ico" aria-hidden="true">${p.icono}</span>
+      <span class="p-nom">${p.nombre}</span><span class="p-sub">${p.sub}</span>`;
+    b.onclick = () => { estado.perfil = k; pintarPerfiles(); trazarRuta(); };
+    cont.appendChild(b);
+  }
+}
+
+function llenarSelects() {
+  const so = document.getElementById('sel-origen'), sd = document.getElementById('sel-destino');
+  const opcion = (d) => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.nombre; return o; };
+  RED.origenes.map(id => DEST_POR_NODO[id] || { id, nombre: RED.nodos[id].n }).forEach(d => so.appendChild(opcion(d)));
+  RED.destinos.forEach(d => sd.appendChild(opcion(d)));
+  so.value = estado.origen; sd.value = estado.destino;
+  so.onchange = () => { estado.origen = so.value; trazarRuta(); };
+  sd.onchange = () => { estado.destino = sd.value; trazarRuta(); };
+}
+
+/** Gráfico de altura de la ruta: el campus es un cerro y eso se tiene que ver. */
+function perfilAltura(r) {
+  const pts = [];
+  let acum = 0;
+  pts.push({ d: 0, z: RED.nodos[r.tramos[0].de].z, tipo: r.tramos[0].e.tipo });
+  for (const t of r.tramos) { acum += t.e.m; pts.push({ d: acum, z: RED.nodos[t.a].z, tipo: t.e.tipo }); }
+  const W = 300, H = 76, pad = 4;
+  const zs = pts.map(p => p.z);
+  const zMin = Math.min(...zs), zMax = Math.max(...zs);
+  const rango = Math.max(6, zMax - zMin);
+  const X = (d) => pad + d / Math.max(1, acum) * (W - 2 * pad);
+  const Y = (z) => H - pad - (z - zMin) / rango * (H - 2 * pad - 8);
+  const linea = pts.map(p => `${X(p.d).toFixed(1)},${Y(p.z).toFixed(1)}`).join(' ');
+  const area = `${pad},${H} ${linea} ${X(acum).toFixed(1)},${H}`;
+  const tramos = pts.slice(1).map((p, i) => {
+    const q = pts[i];
+    const c = COLOR_TIPO[p.tipo] === 'var(--text-faint)' ? 'var(--via-sendero)' : COLOR_TIPO[p.tipo];
+    return `<line x1="${X(q.d).toFixed(1)}" y1="${Y(q.z).toFixed(1)}" x2="${X(p.d).toFixed(1)}" y2="${Y(p.z).toFixed(1)}"
+             stroke="${c}" stroke-width="3" stroke-linecap="round"/>`;
+  }).join('');
+  return `<div class="perfil-altura">
+    <div class="rotulo">Perfil de altura</div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="Perfil de altura de la ruta">
+      <polygon points="${area}" fill="var(--primary-soft)"/>
+      ${tramos}
+    </svg>
+    <div class="pa-pie"><span>${Math.round(zMin)} m s. n. m.</span>
+      <span>${r.subida > r.bajada ? '↗' : '↘'} ${Math.max(r.subida, r.bajada)} m de desnivel</span>
+      <span>${Math.round(zMax)} m</span></div>
+  </div>`;
+}
+
+function desvio(r) {
+  if (estado.perfil === 'ninguna' || !r.ref || r.ref.m <= 0) return '';
+  const veces = r.m / r.ref.m;
+  if (veces < 1.15) return '';
+  return `<div class="aviso aviso-info" style="margin-top:var(--s-md)"><span class="ico">↔</span><div>
+    <b>${veces.toFixed(1)}× más largo</b>
+    El mismo trayecto sin restricciones de movilidad son ${r.ref.m} m y ${r.ref.min} min,
+    por la escalera o los peldaños que aquí hay que rodear.</div></div>`;
+}
+
+function pintarResultado() {
+  const cont = document.getElementById('resultado');
+  const p = PERFILES[estado.perfil];
+  const r = estado.ruta;
+  cont.textContent = '';
+
+  if (!r) {
+    cont.innerHTML = `<div class="aviso aviso-danger"><span class="ico">✕</span><div>
+      <b>No hay ninguna forma de llegar</b>
+      Con las barreras reportadas activas no queda ningún camino entre esos dos puntos.
+      Quita un reporte o elige otro destino.</div></div>`;
+    return;
+  }
+
+  if (!r.tramos.length) {
+    cont.innerHTML = `<div class="aviso aviso-info"><span class="ico">◎</span><div>
+      <b>Ya estás ahí</b>El origen y el destino son el mismo punto.</div></div>`;
+    return;
+  }
+
+  const dest = DEST_POR_NODO[estado.destino];
+  const cab = document.createElement('div');
+  cab.className = 'tarjeta';
+
+  const cabecera = r.modo === 'estricta'
+    ? `<div class="aviso aviso-success" style="margin-bottom:var(--s-lg)"><span class="ico">✓</span><div>
+         <b>Ruta sin barreras</b>Todo el trayecto cumple lo que necesita el perfil «${p.nombre}».</div></div>`
+    : `<div class="aviso aviso-warning" style="margin-bottom:var(--s-lg)"><span class="ico">!</span><div>
+         <b>No existe una ruta sin barreras</b>
+         Esta es la de menor dificultad, pero tiene ${r.obstaculos.length}
+         ${r.obstaculos.length === 1 ? 'punto' : 'puntos'} donde vas a necesitar ayuda. Van marcados abajo.</div></div>`;
+
+  cab.innerHTML = cabecera + `
+    <h3>${dest ? dest.nombre : RED.nodos[estado.destino].n}</h3>
+    ${dest && dest.uso ? `<div class="sub">${dest.uso}</div>` : ''}
+    <div class="metricas">
+      <div class="metrica"><b>${r.m}</b><span>metros</span></div>
+      <div class="metrica"><b>${r.min}</b><span>min aprox.</span></div>
+      <div class="metrica${r.peldanos ? ' alerta' : ''}"><b>${r.peldanos}</b><span>peldaños</span></div>
+    </div>
+    ${perfilAltura(r)}
+    ${desvio(r)}`;
+
+  if (dest && (dest.puntaje || dest.ascensor || dest.nota)) {
+    const ficha = document.createElement('div');
+    ficha.className = 'aviso ' + (dest.puntaje >= 27 ? 'aviso-danger' : dest.puntaje >= 20 ? 'aviso-warning' : 'aviso-info');
+    ficha.style.marginTop = 'var(--s-md)';
+    const f = [];
+    if (dest.accesos) f.push(`${dest.accesos} accesos (${dest.principales} principales)`);
+    if (dest.ascensor === 'si-no-accesible') f.push('tiene ascensor, pero no cumple norma');
+    if (dest.ascensor === 'no') f.push('sin ascensor');
+    if (dest.puntaje) f.push(`puntaje de accesibilidad ${String(dest.puntaje).replace('.', ',')}`);
+    ficha.innerHTML = `<span class="ico">ℹ</span><div><b>Al llegar</b>${f.join(' · ')}.${dest.nota ? ' ' + dest.nota : ''}</div>`;
+    cab.appendChild(ficha);
+  }
+
+  const ol = document.createElement('ol');
+  ol.className = 'pasos';
+  r.tramos.forEach((t, i) => {
+    const e = t.e, esObst = r.obstaculos.includes(t);
+    const li = document.createElement('li');
+    li.className = esObst ? 'paso-alerta' : '';
+    li.dataset.tipo = e.tipo;
+    const detalle = [
+      `${Math.round(e.m)} m`,
+      e.esc ? `${e.esc} peldaños` : null,
+      e.pend >= 8 ? `${e.pend} % de cuesta` : null,
+      e.conf !== 'alta' ? 'por verificar' : null
+    ].filter(Boolean).join(' · ');
+    const avisos = [];
+    if (p.avisos[e.tipo]) avisos.push(p.avisos[e.tipo]);
+    if (p.avisoPendiente && e.pend >= p.avisoPendiente && !['escalera', 'ascensor', 'salvaescaleras'].includes(e.tipo))
+      avisos.push(`Cuesta de ${e.pend} %: por sobre el ${p.avisoPendiente} % que resiste este perfil sin ayuda.`);
+    li.innerHTML = `<span class="paso-ico" aria-hidden="true">${esObst ? '⚠' : ICONO_TIPO[e.tipo]}</span>
+      <span class="paso-txt"><span class="q">${ETIQUETA_TIPO[e.tipo]} hasta ${RED.nodos[t.a].n}</span>
+        <small>${detalle}</small>
+        ${avisos.map(a => `<small style="color:var(--warning)">${a}</small>`).join('')}
+        ${esObst ? `<small style="color:var(--danger)"><b>Aquí necesitas ayuda:</b> ${e.nota}</small>` : ''}
+        <span class="paso-acciones"></span>
+      </span>`;
+    li.querySelector('.paso-acciones').appendChild(botonReportar(e, li));
+    li.addEventListener('pointerenter', () => resaltarTramo(i, true));
+    li.addEventListener('pointerleave', () => resaltarTramo(i, false));
+    ol.appendChild(li);
+  });
+  cont.append(cab, ol);
+}
+
+/** Pasar el cursor por un paso lo engorda en el mapa: conecta lista y plano. */
+function resaltarTramo(i, on) {
+  const l = gRuta.querySelector(`.ruta-tramo[data-i="${i}"]`);
+  if (l) l.setAttribute('stroke-width', on ? 8.5 : 5.5);
+  const li = document.querySelectorAll('ol.pasos li')[i];
+  if (li) li.classList.toggle('activo', on);
+}
+
+/** Botón «reportar» de un paso: el camino accesible por teclado;
+ *  hacer clic sobre el mapa es solo el atajo. */
+function botonReportar(e, li) {
+  const b = document.createElement('button');
+  b.className = 'btn-mini'; b.type = 'button';
+  const ya = reporteDe(e);
+  b.textContent = ya ? `Me pasó lo mismo (${ya.votos})` : 'Reportar una barrera aquí';
+  b.onclick = () => {
+    if (ya) { registrarReporte(e); return; }
+    if (li.querySelector('.form-reporte')) return;
+    const form = document.createElement('div');
+    form.className = 'form-reporte';
+    form.innerHTML = `<div class="rotulo">¿Qué encontraste en este tramo?</div>`;
+    MOTIVOS.forEach(m => {
+      const op = document.createElement('button');
+      op.type = 'button'; op.textContent = m;
+      op.onclick = () => registrarReporte(e, m);
+      form.appendChild(op);
+    });
+    const otro = document.createElement('button');
+    otro.type = 'button'; otro.textContent = 'Otra cosa…';
+    otro.onclick = () => { const m = prompt('¿Qué encontraste?'); if (m) registrarReporte(e, m); };
+    const cancel = document.createElement('button');
+    cancel.type = 'button'; cancel.className = 'cancelar'; cancel.textContent = 'Cancelar';
+    cancel.onclick = () => form.remove();
+    form.append(otro, cancel);
+    li.appendChild(form);
+    form.querySelector('button').focus();
+  };
+  return b;
+}
+
+function pintarReportes() {
+  const cont = document.getElementById('panel-reportes');
+  if (!estado.reportes.length) {
+    cont.innerHTML = `<div class="vacio">Nadie ha reportado barreras hoy.</div>`;
+    return;
+  }
+  const ul = document.createElement('ul');
+  ul.className = 'reportes';
+  estado.reportes.forEach((r, i) => {
+    const [a] = r.k.split('|');
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="r-ico" aria-hidden="true">⚠</span>
+      <span><b>${r.motivo}</b><br><span class="r-meta">${RED.nodos[a] ? RED.nodos[a].n : a} · ${r.votos} reportes · ${r.cuando}</span></span>`;
+    const btn = document.createElement('button');
+    btn.className = 'r-quitar'; btn.type = 'button'; btn.textContent = 'Ya está resuelto';
+    btn.onclick = () => { estado.reportes.splice(i, 1); pintarRed(); pintarReportes(); trazarRuta(); };
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+  cont.textContent = ''; cont.appendChild(ul);
+}
+
+/* =======================================================================
+   Controles del mapa
+   ======================================================================= */
+const btnModo = document.getElementById('btn-modo-reporte');
+btnModo.onclick = () => {
+  estado.modoReporte = !estado.modoReporte;
+  btnModo.setAttribute('aria-pressed', String(estado.modoReporte));
+  btnModo.textContent = estado.modoReporte ? 'Listo, salir del modo marcado' : 'Marcar barreras sobre el mapa';
+  svg.classList.toggle('modo-reporte', estado.modoReporte);
+};
+
+const alterna = (id, attr) => {
+  const b = document.getElementById(id);
+  b.onclick = () => {
+    const on = document.documentElement.getAttribute(attr[0]) !== attr[1];
+    document.documentElement.setAttribute(attr[0], on ? attr[1] : 'normal');
+    b.setAttribute('aria-pressed', String(on));
+  };
+};
+alterna('btn-contraste', ['data-contraste', 'alto']);
+alterna('btn-texto', ['data-texto', 'grande']);
+
+document.getElementById('cap-red').onchange = (ev) => gRed.style.display = ev.target.checked ? '' : 'none';
+document.getElementById('cap-rotulos').onchange = (ev) => gRotulos.style.display = ev.target.checked ? '' : 'none';
+document.getElementById('cap-pend').onchange = pintarRed;
+document.getElementById('cap-comparar').onchange = (ev) => { estado.comparar = ev.target.checked; trazarRuta(); };
+
+function detalle() {
+  const d = vista.w > 560 ? 'poco' : 'mucho';
+  gRotulos.dataset.detalle = d;
+  gRed.dataset.detalle = d;
+  gCalles.dataset.detalle = vista.w > 1000 ? 'muy-poco' : 'normal';
+}
+
+function actualizarEscala() {
+  detalle();
+  const r = svg.getBoundingClientRect();
+  if (!r.width) return;
+  const mPorPx = vista.w * RED.m_por_px / r.width;     // metros por píxel de pantalla
+  const objetivo = 90 * mPorPx;
+  const paso = [10, 20, 25, 50, 100, 200, 250, 500].reduce((a, b) => Math.abs(b - objetivo) < Math.abs(a - objetivo) ? b : a);
+  document.getElementById('escala-barra').style.width = (paso / mPorPx).toFixed(0) + 'px';
+  document.getElementById('escala-txt').textContent = paso + ' m';
+}
+
+let animZoom = null;
+function irA(destino, ms = 320) {
+  if (animZoom) cancelAnimationFrame(animZoom);
+  const ini = { ...vista }, t0 = performance.now();
+  const paso = (t) => {
+    const k = Math.min(1, (t - t0) / ms), s = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    vista = { x: ini.x + (destino.x - ini.x) * s, y: ini.y + (destino.y - ini.y) * s,
+              w: ini.w + (destino.w - ini.w) * s, h: ini.h + (destino.h - ini.h) * s };
+    aplicarVista();
+    if (k < 1) animZoom = requestAnimationFrame(paso);
+  };
+  animZoom = requestAnimationFrame(paso);
+}
+
+function zoom(f, cx, cy, suave) {
+  const nw = Math.max(110, Math.min(1500, vista.w * f));
+  const nh = nw * (vista.h / vista.w);
+  const d = { x: cx - (cx - vista.x) * (nw / vista.w), y: cy - (cy - vista.y) * (nh / vista.h), w: nw, h: nh };
+  if (suave) irA(d); else { vista = d; aplicarVista(); }
+}
+const centro = () => [vista.x + vista.w / 2, vista.y + vista.h / 2];
+document.getElementById('btn-mas').onclick = () => zoom(1 / 1.45, ...centro(), true);
+document.getElementById('btn-menos').onclick = () => zoom(1.45, ...centro(), true);
+document.getElementById('btn-reset').onclick = () => irA(encuadre());
+
+svg.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const r = svg.getBoundingClientRect();
+  zoom(ev.deltaY > 0 ? 1.15 : 1 / 1.15,
+       vista.x + (ev.clientX - r.left) / r.width * vista.w,
+       vista.y + (ev.clientY - r.top) / r.height * vista.h, false);
+}, { passive: false });
+
+// Nada de setPointerCapture: capturar el puntero en el <svg> deja sin evento
+// `click` a los edificios y a los tramos. Se escucha en window y se distingue
+// un arrastre de un toque por la distancia recorrida.
+let arrastre = null;
+let huboArrastre = false;
+svg.addEventListener('pointerdown', (ev) => {
+  if (estado.modoReporte || ev.button) return;
+  arrastre = { x: ev.clientX, y: ev.clientY, vx: vista.x, vy: vista.y };
+  huboArrastre = false;
+});
+window.addEventListener('pointermove', (ev) => {
+  if (!arrastre) return;
+  const dx = ev.clientX - arrastre.x, dy = ev.clientY - arrastre.y;
+  if (!huboArrastre && Math.abs(dx) + Math.abs(dy) > 4) {
+    huboArrastre = true;
+    svg.classList.add('arrastrando');
+  }
+  if (!huboArrastre) return;
+  ev.preventDefault();
+  const r = svg.getBoundingClientRect();
+  vista.x = arrastre.vx - dx / r.width * vista.w;
+  vista.y = arrastre.vy - dy / r.height * vista.h;
+  aplicarVista();
+});
+['pointerup', 'pointercancel'].forEach(t =>
+  window.addEventListener(t, () => { arrastre = null; svg.classList.remove('arrastrando'); }));
+
+/** El encuadre base, ajustado a la forma del contenedor. */
+function encuadre() {
+  const r = svg.getBoundingClientRect();
+  if (!r.width || !r.height) return { ...VISTA_ANCHA };
+  const ar = r.width / r.height;
+  const base = ar < 1.1 ? VISTA_ANGOSTA : VISTA_ANCHA;
+  const v = { ...base }, arBase = base.w / base.h;
+  if (ar > arBase) { v.w = base.h * ar; v.x = base.x - (v.w - base.w) / 2; }
+  else { v.h = base.w / ar; v.y = base.y - (v.h - base.h) / 2; }
+  return v;
+}
+window.addEventListener('resize', () => { vista = encuadre(); aplicarVista(); });
+
+/** En pantallas chicas las cajas arrancan plegadas: el mapa manda. */
+const plegables = [...document.querySelectorAll('.plegable')];
+let anchoPrevio = null;
+function ajustarPlegables() {
+  const chico = window.innerWidth <= 1000;
+  if (anchoPrevio === chico) return;        // no pisar lo que la persona abrio
+  anchoPrevio = chico;
+  plegables.forEach(d => d.open = !chico);
+}
+window.addEventListener('resize', ajustarPlegables);
+
+/* =======================================================================
+   Arranque
+   ======================================================================= */
+ajustarPlegables();
+pintarPerfiles();
+llenarSelects();
+pintarRed();
+pintarReportes();
+vista = encuadre();
+aplicarVista();
+trazarRuta();
+</script>
+</body>
+</html>
