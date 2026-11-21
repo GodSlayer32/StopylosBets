@@ -20,8 +20,8 @@ Para baja visión, el mapa es secundario. Lo que guía es la voz, las vibracione
 | 1 | Referencias físicas en las instrucciones (barandas, baldosa podotáctil, puertas, sonido de la fuente) y dirección horaria ("hacia las 3") | Baja visión | Hecho (datos simulados) |
 | 2 | Vibraciones distintas por maniobra y botón grande "Repetir instrucción" | Baja visión | Hecho |
 | 3 | Compatibilidad con TalkBack: anuncios automáticos, etiquetas, estados y encabezados | Baja visión | Hecho (sin probar con TalkBack activo) |
-| 4 | Estado de ascensores con frescura y confirmación ("reportado hace 12 min · 3 confirmaciones", "¿Sigue caído?") | Movilidad | En curso |
-| 5 | Descanso y servicios en la ruta (bancas, baños accesibles) | Movilidad | Trabajo futuro |
+| 4 | Estado de ascensores con frescura y confirmación ("reportado hace 12 min · 3 confirmaciones", "¿Sigue caído?") | Movilidad | Hecho |
+| 5 | Descanso y servicios en la ruta (bancas, baños accesibles) y modo lluvia | Movilidad | Hecho |
 | 6 | Prueba con usuarios en el campus | Ambos | Pendiente (equipo) |
 
 ## Código de vibraciones
@@ -42,7 +42,7 @@ La leyenda también está en la app: botón **?** en la pantalla de navegación.
 ### Voz y vibraciones
 1. Sube el volumen y quita el modo silencio.
 2. En la pantalla de perfil elige **Baja visión**: la app pasa a alto contraste.
-3. Inicio → **Llévame** (Laboratorios Edif. C) → **Iniciar ruta**.
+3. Inicio → **Llévame** (próxima clase, P401) → **Iniciar ruta**.
 4. Toca **Repetir instrucción**: debe leer la instrucción con su referencia física y vibrar según la maniobra.
 5. Avanza con ▶ y comprueba que cada giro vibre distinto (2 pulsos = izquierda, 3 = derecha).
 
@@ -52,7 +52,7 @@ La leyenda también está en la app: botón **?** en la pantalla de navegación.
 3. Comprueba que:
    - cada botón diga qué hace,
    - las tarjetas de perfil digan si están seleccionadas,
-   - el resumen de ruta se lea como una frase ("9 minutos, 305 metros, sin escaleras, evitas 80 escalones"),
+   - el resumen de ruta se lea como una frase (por ejemplo "3 minutos, 121 metros, sin escaleras"),
    - al avanzar de paso, TalkBack anuncie la maniobra solo.
 4. Con TalkBack activo la app no usa su propia voz, para no hablar dos veces.
 
@@ -61,7 +61,7 @@ La leyenda también está en la app: botón **?** en la pantalla de navegación.
 Las bases piden *evidencia real de funcionamiento*. Una prueba corta en Casa Central vale más que cualquier funcionalidad extra.
 
 **Movilidad reducida**
-- Un integrante recorre de Av. España al Edificio C con una pierna inmovilizada o muletas prestadas.
+- Un integrante recorre del Edificio C a la sala P401 con una pierna inmovilizada o muletas prestadas.
 - Primero sin la app (eligiendo su camino) y después siguiendo la ruta de la app.
 - Anotar: tiempo, escalones subidos, veces que tuvo que devolverse.
 
@@ -69,7 +69,7 @@ Las bases piden *evidencia real de funcionamiento*. Una prueba corta en Casa Cen
 - Un integrante con lentes empañados o cinta translúcida recorre del Patio Central al Edificio C solo con voz y vibraciones, acompañado por otro por seguridad.
 - Anotar: tiempo, errores de dirección, cuántas veces usó "Repetir instrucción", comentarios.
 
-**Para el pitch:** una frase con el resultado, por ejemplo: *"Con la app subió 0 escalones en vez de 80 y llegó en X minutos."*
+**Para el pitch:** una frase con el resultado, por ejemplo: *"Con la app subió 0 escalones en vez de X y llegó en Y minutos."*
 
 ## Supuestos y límites (declarar en README y pitch)
 
