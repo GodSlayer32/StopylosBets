@@ -3,7 +3,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
-import { colors, spacing } from '@/constants/theme';
+import { spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
   variant: 'loading' | 'empty' | 'error';
@@ -20,6 +21,7 @@ const defaults = {
 };
 
 export function ScreenState({ variant, title, message, actionLabel, onAction }: Props) {
+  const { colors } = useTheme();
   const d = defaults[variant];
   const isError = variant === 'error';
   return (

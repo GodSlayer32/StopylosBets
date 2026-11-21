@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { colors, minTouch, radius, spacing } from '@/constants/theme';
+import { minTouch, radius, spacing, type Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Props = {
@@ -16,12 +17,12 @@ type Props = {
   accessibilityLabel?: string;
 };
 
-const palette: Record<Variant, { bg: string; fg: string; border: string }> = {
+const makePalette = (colors: Colors): Record<Variant, { bg: string; fg: string; border: string }> => ({
   primary: { bg: colors.primary, fg: colors.primaryText, border: colors.primary },
   secondary: { bg: colors.surface, fg: colors.primary, border: colors.primary },
   ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent' },
   danger: { bg: colors.danger, fg: colors.primaryText, border: colors.danger },
-};
+});
 
 export function Button({
   label,
@@ -33,7 +34,8 @@ export function Button({
   fullWidth,
   accessibilityLabel,
 }: Props) {
-  const p = palette[variant];
+  const { colors } = useTheme();
+  const p = makePalette(colors)[variant];
   const inactive = disabled || loading;
   return (
     <Pressable

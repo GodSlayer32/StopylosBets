@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import incidentsJson from '../data/incidents.json';
 import { BASE_ELEVATORS, compareWithShortest, findRoute } from '../lib/routing';
 import type { Elevator, Incident, Profile, RouteComparison, RouteResult } from '../types';
@@ -33,21 +33,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile>('crutches');
   const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
   const [incidents, setIncidents] = useState<Incident[]>(incidentsJson.incidents as Incident[]);
-  const [elevators, setElevators] = useState<Elevator[]>(BASE_ELEVATORS);
-
-  useEffect(() => {
+  const elevators = useMemo<Elevator[]>(() => {
     const downIds = incidents
       .filter((i) => i.type === 'elevator' && i.elevatorId)
       .map((i) => i.elevatorId!);
-    if (!downIds.length) return;
-    setElevators((prev) => {
-      if (prev.every((e) => !downIds.includes(e.id) || e.status === 'down')) return prev;
-      return prev.map((e) =>
-        downIds.includes(e.id) && e.status !== 'down'
-          ? { ...e, status: 'down', lastUpdate: new Date().toISOString() }
-          : e,
-      );
-    });
+    return BASE_ELEVATORS.map((e) => (downIds.includes(e.id) ? { ...e, status: 'down' as const } : e));
   }, [incidents]);
 
   const addIncident = useCallback((i: NewIncident) => {

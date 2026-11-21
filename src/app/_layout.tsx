@@ -1,12 +1,14 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
-import { colors, typography } from '@/constants/theme';
+import { AppProvider } from '@/context/app-context';
+import { useTheme } from '@/hooks/use-theme';
 
-export default function RootLayout() {
+function ThemedStack() {
+  const { colors, typography, accessible } = useTheme();
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style={accessible ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
@@ -22,5 +24,13 @@ export default function RootLayout() {
         <Stack.Screen name="report" options={{ title: 'Reportar barrera', presentation: 'modal' }} />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppProvider>
+      <ThemedStack />
+    </AppProvider>
   );
 }

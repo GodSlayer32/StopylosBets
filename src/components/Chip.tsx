@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { colors, minTouch, radius, spacing } from '@/constants/theme';
+import { minTouch, radius, spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
   label: string;
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function Chip({ label, selected, onPress, icon }: Props) {
+  const { colors } = useTheme();
   const fg = selected ? colors.primaryText : colors.text;
   return (
     <Pressable
@@ -19,7 +21,11 @@ export function Chip({ label, selected, onPress, icon }: Props) {
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected: !!selected }}
-      style={[styles.chip, selected && styles.selected]}>
+      style={[
+        styles.chip,
+        { borderColor: colors.border, backgroundColor: colors.surface },
+        selected && { backgroundColor: colors.primary, borderColor: colors.primary },
+      ]}>
       {icon ? <Ionicons name={icon} size={20} color={fg} /> : null}
       <AppText variant="label" style={{ color: fg }}>
         {label}
@@ -37,8 +43,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     borderRadius: radius.pill,
     borderWidth: 2,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
   },
-  selected: { backgroundColor: colors.primary, borderColor: colors.primary },
 });
