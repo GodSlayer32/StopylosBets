@@ -67,6 +67,7 @@ export const mapColors = {
   position: '#1747D1',
   pin: '#D93025',
   barrier: '#B45309',
+  stairsMark: '#475569',
 };
 export type MapColors = typeof mapColors;
 
@@ -98,6 +99,7 @@ export const mapHighContrast: MapColors = {
   position: '#FFD400',
   pin: '#FF6B6B',
   barrier: '#FFB020',
+  stairsMark: '#E5E5E5',
 };
 
 export const largeTextScale = 1.25;

@@ -33,6 +33,8 @@ export type CampusMapProps = {
   anchorY?: number;
   /** Rótulo superior izquierdo, p. ej. "Mapa | Piso 1" */
   title?: string;
+  /** floor: px del borde derecho tapados (p. ej. FloorRail) */
+  insetRight?: number;
 };
 
 // Plano en unidades de imagen original para conservar la proporción de los %
@@ -86,7 +88,7 @@ const shortLabel = (b: Building) => (b.id.length <= 2 ? b.id : b.name.charAt(0))
 export function CampusMap(props: CampusMapProps) {
   const {
     mode, routePoints, donePoints, position, heading = 0, origin, destination, barriers,
-    activeBuildingId, level, destRoomId, height, anchorY = 0.6, title,
+    activeBuildingId, level, destRoomId, height, anchorY = 0.6, title, insetRight = 0,
   } = props;
   const t = useTheme();
   const m = t.map;
@@ -119,7 +121,9 @@ export function CampusMap(props: CampusMapProps) {
     }
     if (mode === 'floor' && activeB) {
       const box = bboxPts(activeB.polygon.map(toPlan));
-      return { ...centerOf(box), s: fitScale(box, width, height, 28), rot: 0 };
+      const s = fitScale(box, width - insetRight, height, 20);
+      const c = centerOf(box);
+      return { cx: c.cx + insetRight / (2 * s), cy: c.cy, s, rot: 0 };
     }
     if (routePoints.length >= 2) {
       const box = bboxPts(routePoints.map(toPlan));
@@ -131,7 +135,7 @@ export function CampusMap(props: CampusMapProps) {
     }
     return { ...centerOf(macroBox), s: macroFit, rot: 0 };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, width, height, activeB, posXY?.[0], posXY?.[1], heading, routePoints.length]);
+  }, [mode, width, height, insetRight, activeB, posXY?.[0], posXY?.[1], heading, routePoints.length]);
 
   // ---- Transición suave del encuadre
   const [view, setView] = useState<View3 | undefined>(undefined);
@@ -265,19 +269,38 @@ export function CampusMap(props: CampusMapProps) {
       const digits = r.name.replace(/\D/g, '');
       const candidates = r.kind === 'wc' ? ['WC'] : [r.name, digits].filter((x) => x);
       const txt = candidates.find((c) => c.length * LABEL_PX * 0.62 + 6 <= wPx && hPx >= LABEL_PX + 4);
-      if (txt) layers.push(label(`rl-${r.id}`, cx, cy, txt, LABEL_PX, m.roomText));
+      if (txt) layers.push(label(`rl-${r.id}`, cx, cy, txt, LABEL_PX, m.roomText, r.id === destRoomId ? '800' : '600'));
     });
   }
 
   // Letras de edificios (modo exterior)
   if (!indoor && mode !== 'floor') {
-    BUILDINGS.forEach((b) => {
+    type R = { l: number; t: number; r: number; b: number };
+    const hit = (a: R, c: R) => a.l < c.r && a.r > c.l && a.t < c.b && a.b > c.t;
+    const placed: R[] = [origin, destination]
+      .filter((p): p is Pt => !!p)
+      .map((p) => {
+        const [x, y] = ptPlan(p);
+        return { l: x * sK - 14, t: y * sK - 30, r: x * sK + 14, b: y * sK + 14 };
+      });
+    const sized = BUILDINGS.map((b) => {
+      const bb = bboxPts(b.polygon.map(toPlan));
+      const wPx = (bb.maxX - bb.minX) * sK;
+      const hPx = (bb.maxY - bb.minY) * sK;
+      return { b, area: wPx * hPx, size: Math.max(11, Math.min(26, Math.min(wPx, hPx) * 0.5)) };
+    }).sort((a, c) => c.area - a.area);
+    sized.forEach(({ b, size }) => {
       const [x, y] = toPlan(b.labelAt);
+      const txt = shortLabel(b);
+      const w = txt.length * size * 0.7;
+      const rect: R = { l: x * sK - w / 2 - 2, t: y * sK - size / 2 - 2, r: x * sK + w / 2 + 2, b: y * sK + size / 2 + 2 };
+      if (placed.some((q) => hit(rect, q))) return;
+      placed.push(rect);
       const isActive = b.id === activeBuildingId;
       layers.push(
         <G key={`bl-${b.id}`} transform={unrot(x, y)}>
-          <SvgText x={x} y={y + px(26) * 0.35} fontSize={px(26)} fontWeight="800" textAnchor="middle"
-            fill={isActive ? m.buildingActiveText : m.buildingText}>{shortLabel(b)}</SvgText>
+          <SvgText x={x} y={y + px(size) * 0.35} fontSize={px(size)} fontWeight="800" textAnchor="middle"
+            fill={isActive ? m.buildingActiveText : m.buildingText}>{txt}</SvgText>
         </G>,
       );
     });
@@ -288,7 +311,7 @@ export function CampusMap(props: CampusMapProps) {
 
   return layers;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sK, rotQ, mode, activeBuildingId, indoorB, plan, destRoomId, m, level]);
+  }, [sK, rotQ, mode, activeBuildingId, indoorB, plan, destRoomId, m, level, origin, destination]);
 
   const container = [styles.container, { height, backgroundColor: m.bg }];
   if (!view) return <View style={container} onLayout={onLayout} />;
@@ -320,7 +343,7 @@ export function CampusMap(props: CampusMapProps) {
     const [x, y] = toPlan([b.x, b.y]);
     return (
       <G key={`bar-${i}`} transform={`translate(${x},${y}) scale(${k}) rotate(${-view.rot})`}>
-        <Circle r={11} fill={b.kind === 'incident' ? m.barrier : m.pin} stroke={m.routeCasing} strokeWidth={2} />
+        <Circle r={11} fill={b.kind === 'incident' ? m.barrier : m.stairsMark} stroke={m.routeCasing} strokeWidth={2} />
         {b.kind === 'incident' ? (
           <SvgText y={5} fontSize={14} fontWeight="800" textAnchor="middle" fill={m.routeCasing === '#000000' ? '#000000' : '#FFFFFF'}>!</SvgText>
         ) : (
@@ -334,7 +357,7 @@ export function CampusMap(props: CampusMapProps) {
   const destRoomPin = destRoom
     ? (() => {
         const b = bboxPts(destRoom.polygon.map(toPlan));
-        return pin('dest-room', [(b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2], m.pin);
+        return pin('dest-room', [(b.minX + b.maxX) / 2, b.minY], m.pin);
       })()
     : null;
 

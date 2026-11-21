@@ -233,10 +233,10 @@ export default function RouteScreen() {
       </Pressable>
 
       <View style={styles.legend}>
-        <LegendDot color={t.colors.success} label="Origen" t={t} />
-        <LegendDot color={t.colors.text} label="Destino" t={t} />
-        <LegendDot color={t.colors.textMuted} label="Escalera evitada" t={t} />
-        <LegendDot color={t.colors.danger} label="Barrera reportada" t={t} />
+        <LegendItem t={t} label="Origen"><View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: t.map.routeCasing, borderWidth: 3, borderColor: t.map.route }} /></LegendItem>
+        <LegendItem t={t} label="Destino"><Ionicons name="location" size={20} color={t.map.pin} /></LegendItem>
+        <LegendItem t={t} label="Escalera evitada"><LegendDot color={t.map.stairsMark}><MaterialCommunityIcons name="stairs" size={12} color={t.colors.bg} /></LegendDot></LegendItem>
+        <LegendItem t={t} label="Barrera reportada"><LegendDot color={t.map.barrier}><AppText variant="caption" style={{ color: t.colors.bg, fontWeight: '800', lineHeight: 16 }}>!</AppText></LegendDot></LegendItem>
       </View>
 
       {stairItems.length > 0 ? (
@@ -373,10 +373,14 @@ function stepSlope(edgeIds: string[]): number {
   );
 }
 
-function LegendDot({ color, label, t }: { color: string; label: string; t: ReturnType<typeof useAppTheme> }) {
+function LegendDot({ color, children }: { color: string; children: React.ReactNode }) {
+  return <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>{children}</View>;
+}
+
+function LegendItem({ label, children, t }: { label: string; children: React.ReactNode; t: ReturnType<typeof useAppTheme> }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs }}>
-      <View style={{ width: 12, height: 12, borderRadius: t.radius.pill, backgroundColor: color }} />
+      <View style={{ width: 22, alignItems: 'center' }}>{children}</View>
       <AppText variant="caption" color="textMuted">{label}</AppText>
     </View>
   );
@@ -418,7 +422,7 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    legend: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.md, justifyContent: 'center' },
+    legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: t.spacing.lg, rowGap: t.spacing.sm, justifyContent: 'center' },
     section: { gap: t.spacing.md },
     avoidBox: {
       padding: t.spacing.md,

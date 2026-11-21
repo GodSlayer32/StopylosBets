@@ -169,6 +169,7 @@ export default function NavigateScreen() {
               level={floorLevel}
               destRoomId={destRoomId}
               height={topH}
+              insetRight={64}
               title={`Edificio ${floorB} | Piso ${floorLevel}`}
             />
             <View style={styles.rail} pointerEvents="none">
