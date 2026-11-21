@@ -2,7 +2,21 @@
 
 Rutas accesibles y guía no visual para moverse por la USM Casa Central.
 
-Proyecto del **Hackathon LYOSS USM 2026** (21 nov 2026, Casa Central, Valparaíso). Desafío: *Campus sin barreras: movilidad y orientación para todos*.
+Equipo **Stop y los Bets** · **Hackathon LYOSS USM 2026** (21 nov 2026, Casa Central, Valparaíso).
+Desafío: *Campus sin barreras: movilidad y orientación para todos*.
+
+> ¿Cómo podemos utilizar la tecnología para reducir las dificultades de orientación y
+> desplazamiento que enfrentan estudiantes con distintas necesidades dentro de un campus?
+
+## El desafío en cinco decisiones
+
+| | Nuestra decisión |
+|---|---|
+| **Barrera** | El campus está en un cerro: escaleras, pendientes sobre el 6 % y pisos sin ascensor cortan recorridos que en el plano parecen directos. Y cuando no hay camino, nadie te dice qué hacer. |
+| **Personas** | Estudiantes con movilidad reducida (silla de ruedas, muletas, lesión temporal) y con baja visión. |
+| **Mejora** | Que la ruta se calcule con las reglas de cada cuerpo, que la guía se pueda seguir sin mirar la pantalla, y que *no haya ruta* deje de ser un callejón sin salida. |
+| **Tecnología** | Grafo del campus con Dijkstra y costos por perfil, guía por voz y vibraciones, y reportes de la comunidad que recalculan la ruta en vivo. Todo offline en el teléfono. |
+| **Demo** | Un recorrido real en el teléfono, con los tres perfiles y los casos límite: ascensor caído, piso sin ascensor y destino inalcanzable. |
 
 ## Problema
 
@@ -27,6 +41,7 @@ Implementadas y verificables hoy:
 - **Vista previa** de la ruta con los escalones evitados.
 - **Modo navegación en pantalla dividida**, inspirado en la guía del Louvre para Nintendo 3DS: mapa macro o planta por piso con selector de pisos arriba, vista cercana que gira según el rumbo abajo, y mapa superior explorable.
 - **Instrucciones por maniobra** paso a paso.
+- **Cuando no hay ruta, igual te movemos**: la app calcula sola hasta dónde puedes llegar por tu cuenta, te guía hasta ese punto y levanta el ticket de acompañamiento en el portal de atención USM, sin que tengas que pedirlo.
 - **Reportes de barreras** con recálculo de ruta en vivo.
 - **Estado de ascensores** con frescura ("hace 12 min") y confirmaciones de la comunidad.
 - **Baja visión**: alto contraste, texto grande, voz, referencias físicas, dirección horaria ("hacia las 3"), vibraciones distintas por maniobra, botón **Repetir** y compatibilidad con TalkBack.
@@ -42,7 +57,7 @@ Detalle de inclusión y código de vibraciones: [docs/INCLUSION.md](docs/INCLUSI
 3. Ir a **Mi día**: la **Ayudantía en C-210** (piso 2, Edif. C, sin ascensor) aparece como *Sin ruta accesible · piso sin ascensor*.
 4. Pulsar **Solicitar sala accesible**: se abre el mensaje cortés prearmado para compartir con Docencia o el profesor.
 5. Opcional: pedir ruta a **Lab. Física** (ascensor del Edif. D), reportar ese ascensor como caído y ver el estado *sin ruta* con alternativa.
-6. Cambiar a **Silla de ruedas**: sin ruta autónoma desde Av. España, alternativa por **Placeres** o con acompañante.
+6. Cambiar a **Silla de ruedas**: desde Av. España no hay ruta autónoma. La app lo dice, calcula sola el punto más cercano al que sí se puede llegar y **levanta el ticket de apoyo** (folio, estado y detalle de lo que pidió por ti). Abajo quedan las alternativas: entrar por **Placeres** o ir con acompañante.
 7. Cambiar a **Baja visión** y repetir: alto contraste, voz y vibraciones.
 
 ## Cómo ejecutar
@@ -114,11 +129,11 @@ Desarrollo asistido con **Claude Code**: Claude Opus como arquitecto y revisor, 
 
 ## Integrantes
 
-| Nombre | Rol |
-|--------|-----|
-| TODO: [Nombre Apellido] | TODO: [Rol] |
-| TODO: [Nombre Apellido] | TODO: [Rol] |
-| TODO: [Nombre Apellido] | TODO: [Rol] |
+Equipo **Stop y los Bets**:
+
+- Eduardo Pacheco
+- Alex Domínguez
+- Catalina Yáñez
 
 ## Licencia
 
