@@ -48,7 +48,9 @@ export default function Home() {
   const [quick, setQuick] = useState<string | null>(null);
   const [pickingOrigin, setPickingOrigin] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
-  const [showElevators, setShowElevators] = useState(true);
+  const [showElevators, setShowElevators] = useState(false);
+  const downCount = elevators.filter((e) => e.status !== 'ok').length;
+  const elevatorSummary = downCount === 0 ? 'Todos funcionan' : `${downCount} fuera de servicio`;
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [thanks, setThanks] = useState<string | null>(null);
   const sheetElevator: Elevator | undefined = elevators.find((e) => e.id === sheetId);
@@ -180,11 +182,14 @@ export default function Home() {
         <Pressable
           onPress={() => setShowElevators((v) => !v)}
           accessibilityRole="button"
-          accessibilityLabel={`Ascensores del campus. ${showElevators ? 'Ocultar' : 'Ver'} estado`}
+          accessibilityLabel={`Ascensores del campus: ${elevatorSummary}. ${showElevators ? 'Ocultar' : 'Ver'} detalle`}
           accessibilityState={{ expanded: showElevators }}
           style={[styles.row, { minHeight: minTouch }]}>
           <MaterialCommunityIcons name="elevator-passenger" size={22} color={colors.primary} />
-          <AppText variant="heading" style={styles.flex}>Ascensores del campus</AppText>
+          <View style={styles.flex}>
+            <AppText variant="heading">Ascensores del campus</AppText>
+            <AppText variant="caption" color={downCount > 0 ? 'danger' : 'success'}>{elevatorSummary}</AppText>
+          </View>
           <Ionicons name={showElevators ? 'chevron-down' : 'chevron-forward'} size={20} color={colors.textMuted} />
         </Pressable>
         {showElevators
