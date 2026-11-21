@@ -18,6 +18,7 @@ import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { AMENITY_ICON, amenitiesAlongRoute, amenityWord } from '@/lib/amenities';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
+import { meetIn, meetName, supportVerb } from '@/lib/meeting-point';
 import { detectElevatorCause, remainingText } from '@/lib/support-ticket';
 import { formatAgo, formatConfirmations } from '@/lib/time';
 import { floorLabel, lacksElevatorAccess } from '@/lib/buildings';
@@ -279,8 +280,8 @@ export default function RouteScreen() {
             {partial.route.steps.length
               ? 'Te llevamos lo más cerca posible'
               : elevatorCause
-                ? `Quédate en ${stayLabel}: pedimos apoyo para ${elevatorCause.toFloor < elevatorCause.fromFloor ? 'bajar' : 'subir'}`
-                : `Quédate en ${stayLabel}: pedimos apoyo`}
+                ? `Quédate ${meetIn(stayLabel)}: pedimos apoyo para ${supportVerb(elevatorCause.fromFloor, elevatorCause.toFloor)}`
+                : `Quédate ${meetIn(stayLabel)}: pedimos apoyo`}
           </AppText>
         </View>
         {partial.route.steps.length ? (
@@ -318,8 +319,8 @@ export default function RouteScreen() {
         ) : (
           <AppText color="textMuted">
             {elevatorCause
-              ? `El ascensor del Edif. ${elevatorCause.building} está fuera de servicio. No hay otra forma de ${elevatorCause.toFloor < elevatorCause.fromFloor ? 'bajar' : 'subir'} en silla.`
-              : `Desde ${stayLabel} no hay un camino que puedas hacer por tu cuenta con tu perfil. El equipo de apoyo viene a buscarte hasta aquí.`}
+              ? `El ascensor del Edif. ${elevatorCause.building} está fuera de servicio. No hay otra forma de ${supportVerb(elevatorCause.fromFloor, elevatorCause.toFloor)} en silla.`
+              : `Desde ${meetName(stayLabel)} no hay un camino que puedas hacer por tu cuenta con tu perfil. El equipo de apoyo viene a buscarte hasta aquí.`}
           </AppText>
         )}
       </Card>

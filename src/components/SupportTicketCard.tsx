@@ -9,6 +9,7 @@ import { Card } from '@/components/Card';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import type { AppTheme } from '@/constants/theme';
+import { meetTo } from '@/lib/meeting-point';
 import type { PartialRoute, Place, SupportTicket } from '@/types';
 
 type Props = {
@@ -56,7 +57,7 @@ export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Pr
         accessibilityLiveRegion="polite"
         accessibilityLabel={
           llego
-            ? 'El apoyo llegó, te ayudan a bajar'
+            ? `El apoyo llegó, te ayudan a ${ticket.supportVerb}`
             : asignado
             ? `Ticket asignado a ${ticket.assignee}, llega en unos ${ticket.etaMin} minutos`
             : 'Ticket enviado, esperando asignación'
@@ -69,9 +70,9 @@ export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Pr
         />
         <AppText variant="caption" style={styles.flex} color={asignado ? 'success' : 'primary'}>
           {llego
-            ? 'El apoyo llegó · te ayudan a bajar'
+            ? `El apoyo llegó · te ayudan a ${ticket.supportVerb}`
             : asignado
-            ? `${ticket.assignee} va en camino · llega en ~${ticket.etaMin} min a ${ticket.reachedLabel}`
+            ? `${ticket.assignee} va en camino · llega en ~${ticket.etaMin} min ${meetTo(ticket.reachedLabel)}`
             : 'Enviado · esperando asignación'}
         </AppText>
       </View>

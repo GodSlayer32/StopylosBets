@@ -1,5 +1,6 @@
 import { EDGES, getNode } from '@/lib/routing';
 import { floorLabel } from '@/lib/buildings';
+import { meetName } from '@/lib/meeting-point';
 import type { EdgeCue, RouteResult } from '@/types';
 
 const IMG_W = 1313;
@@ -242,7 +243,7 @@ function addCues(out: Maneuver[], route: RouteResult, partial = false) {
     if (m.type === 'arrive') {
       const label = getNode(route.nodeIds[route.nodeIds.length - 1])?.label;
       m.spoken = clean(partial
-        ? `Llegaste al punto de encuentro${label ? `, ${label}` : ''}.${arrival ? ` ${nat(arrival)}.` : ''}`
+        ? `Llegaste al punto de encuentro${label ? `, ${meetName(label)}` : ''}.${arrival ? ` ${nat(arrival)}.` : ''}`
         : `Llegaste a ${label ?? 'tu destino'}.${arrival ? ` ${nat(arrival)}.` : ' Tu destino está frente a ti.'}`);
       if (arrival) m.cue = first(arrival);
       continue;

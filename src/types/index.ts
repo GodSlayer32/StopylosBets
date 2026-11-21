@@ -217,6 +217,8 @@ export interface SupportTicket {
   resumeNodeId: string;
   /** Si la causa es un ascensor caido: frase corta de lo que se pidio */
   supportText?: string;
+  /** Dirección del apoyo: según el piso alcanzado y el del destino */
+  supportVerb: 'subir' | 'bajar' | 'llegar';
   /** El texto que se envia al portal */
   detail: string;
   portalUrl: string;

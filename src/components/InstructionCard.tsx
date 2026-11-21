@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import type { SimState } from '@/hooks/use-route-simulation';
 import { AMENITY_ICON, amenityShort } from '@/lib/amenities';
+import { meetTo } from '@/lib/meeting-point';
 import type { Maneuver } from '@/lib/maneuvers';
 import type { Place, RouteResult } from '@/types';
 
@@ -37,8 +38,10 @@ type Props = {
     onHelped: () => void;
     /** El apoyo ya llegó: "Ya me ayudaron" pasa a ser la acción principal */
     arrived?: boolean;
+    /** Dirección del apoyo: subir, bajar o llegar */
+    supportVerb: 'subir' | 'bajar' | 'llegar';
   };
-  /** Acción "El ascensor no funciona", visible cuando la maniobra actual o siguiente es de ascensor */
+  /** Acción opcional "¿El ascensor no funciona? Repórtalo", visible al llegar al ascensor, antes de entrar */
   onElevatorDown?: () => void;
 };
 
@@ -63,9 +66,9 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
 
   if (sim.finished && partial) {
     const status = partial.arrived
-      ? 'El apoyo llegó · te ayudan a bajar'
+      ? `El apoyo llegó · te ayudan a ${partial.supportVerb}`
       : partial.assignee
-        ? `${partial.assignee} va en camino · llega en ~${partial.etaMin} min`
+        ? `${partial.assignee} va en camino · llega en ~${partial.etaMin} min ${meetTo(partial.reachedLabel)}`
         : 'Pedimos apoyo, espera aquí';
     return (
       <View style={wrapStyle} onLayout={onLayout}>
@@ -77,8 +80,8 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
             style={styles.flex}
             accessible
             accessibilityRole="header"
-            accessibilityLabel={`Llegaste a ${partial.reachedLabel}. Faltan ${partial.remainingText} hasta ${place.name}. ${status}`}>
-            <AppText variant="title">Llegaste a {partial.reachedLabel}</AppText>
+            accessibilityLabel={`Llegaste ${meetTo(partial.reachedLabel)}. Faltan ${partial.remainingText} hasta ${place.name}. ${status}`}>
+            <AppText variant="title">Llegaste {meetTo(partial.reachedLabel)}</AppText>
             <AppText color="textMuted">Faltan {partial.remainingText} hasta {place.name}</AppText>
           </View>
           <View style={[styles.statusRow, { backgroundColor: t.colors.successSoft }]}>
@@ -178,11 +181,11 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
         <Pressable
           onPress={onElevatorDown}
           accessibilityRole="button"
-          accessibilityLabel="El ascensor no funciona: reportarlo y pedir apoyo"
+          accessibilityLabel="¿El ascensor no funciona? Repórtalo y pide apoyo"
           accessibilityHint="Reporta el ascensor y pide apoyo para continuar"
           style={({ pressed }) => [styles.elevDown, pressed && { opacity: 0.85 }]}>
-          <MaterialCommunityIcons name="elevator-passenger-outline" size={t.iconSize.sm} color={t.colors.danger} />
-          <AppText variant="label" color="danger">El ascensor no funciona</AppText>
+          <MaterialCommunityIcons name="help-circle-outline" size={t.iconSize.sm} color={t.colors.textMuted} />
+          <AppText variant="label" color="textMuted">¿El ascensor no funciona? Repórtalo</AppText>
         </Pressable>
       ) : null}
       {!compact && onRepeat ? (
@@ -303,9 +306,9 @@ const makeStyles = (t: Theme, compact: boolean) =>
     elevDown: {
       minHeight: Math.max(48, t.minTouch),
       borderRadius: t.radius.md,
-      borderWidth: 1.5,
-      borderColor: t.colors.danger,
-      backgroundColor: t.colors.dangerSoft,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      backgroundColor: 'transparent',
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',

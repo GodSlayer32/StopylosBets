@@ -1,5 +1,6 @@
 import type { Elevator, PartialRoute, Place, Profile, SupportTicket } from '@/types';
 
+import { supportVerb } from './meeting-point';
 import { EDGES, getNode } from './routing';
 
 /** Portal de atención de la USM (Proactivanet). */
@@ -60,7 +61,9 @@ export function detectElevatorCause(
 }
 
 export function elevatorSupportText(c: ElevatorCause): string {
-  return `Apoyo para ${c.toFloor < c.fromFloor ? 'bajar' : 'subir'} del piso ${c.fromFloor} al piso ${c.toFloor} del Edif. ${c.building} con personal capacitado (ascensor fuera de servicio)`;
+  const v = supportVerb(c.fromFloor, c.toFloor);
+  if (v === 'llegar') return `Apoyo para llegar al piso ${c.toFloor} del Edif. ${c.building} con personal capacitado (ascensor fuera de servicio)`;
+  return `Apoyo para ${v} del piso ${c.fromFloor} al piso ${c.toFloor} del Edif. ${c.building} con personal capacitado (ascensor fuera de servicio)`;
 }
 
 /**
@@ -143,6 +146,9 @@ export function buildTicket(
     originNodeId,
     resumeNodeId: cause?.resumeNodeId ?? place.nodeId,
     supportText: cause ? elevatorSupportText(cause) : undefined,
+    supportVerb: cause
+      ? supportVerb(cause.fromFloor, cause.toFloor)
+      : supportVerb(getNode(partial.reachedNodeId)?.floor ?? 1, place.floor ?? 1),
     detail: ticketDetail(partial, place, profile, originLabel, createdAt, cause),
     portalUrl: PORTAL_URL,
   };

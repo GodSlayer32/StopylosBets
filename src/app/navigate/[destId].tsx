@@ -21,6 +21,7 @@ import { getBuilding, floorLabel } from '@/lib/buildings';
 import { CAMPUS_MAP, FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
 import { EDGES, getNode, getPlace, NODES } from '@/lib/routing';
 import { STUDENT } from '@/lib/schedule';
+import { meetName, supportVerb } from '@/lib/meeting-point';
 import { remainingText } from '@/lib/support-ticket';
 import type { RouteResult } from '@/types';
 import type { LayoutChangeEvent } from 'react-native';
@@ -123,7 +124,7 @@ export default function NavigateScreen() {
     lastSpoken.current = key;
     if (sim.finished) {
       playManeuverHaptic('arrive');
-      say(esParcial ? `Llegaste al punto de encuentro, ${destLabel}. Aquí te espera el apoyo` : `Llegaste a ${destLabel}`);
+      say(esParcial ? `Llegaste al punto de encuentro, ${meetName(destLabel)}. Aquí te espera el apoyo` : `Llegaste a ${destLabel}`);
       return;
     }
     playManeuverHaptic(m.type);
@@ -142,7 +143,7 @@ export default function NavigateScreen() {
   const repeat = useCallback(() => {
     if (!m) return;
     playManeuverHaptic(sim.finished ? 'arrive' : m.type);
-    say(sim.finished ? (esParcial ? `Llegaste al punto de encuentro, ${destLabel}` : `Llegaste a ${destLabel}`) : (m.spoken ?? m.text), true);
+    say(sim.finished ? (esParcial ? `Llegaste al punto de encuentro, ${meetName(destLabel)}` : `Llegaste a ${destLabel}`) : (m.spoken ?? m.text), true);
   }, [m, sim.finished, destLabel, esParcial, say]);
 
   const toggleVoice = useCallback(() => {
@@ -220,7 +221,7 @@ export default function NavigateScreen() {
     say(`¿El ascensor del edificio ${promptElevator.building} sigue fuera de servicio? Responde sí o ya funciona.`);
   }, [promptElevator, say]);
 
-  // Acción "El ascensor no funciona": maniobra actual/siguiente de ascensor, o ≤20 m de uno de la ruta
+  // Acción opcional "¿El ascensor no funciona?": solo en la maniobra actual de ascensor, antes de entrar
   const routeElevators = useMemo(() => {
     if (!route) return [];
     const ids = [...new Set(route.edgeIds.map((id) => EDGES.find((e) => e.id === id)?.elevatorId).filter((id): id is string => !!id))];
@@ -233,11 +234,15 @@ export default function NavigateScreen() {
   }, [route, elevators]);
   const elevatorTarget = useMemo(() => {
     if (!route || sim.finished || esParcial || !routeElevators.length) return undefined;
+    // Solo cuando la maniobra actual es tomar el ascensor y aún no se entra a la cabina
+    if (sim.currentManeuver?.type !== 'elevator') return undefined;
+    // Dentro de la cabina = ya cambió de piso respecto del inicio del tramo de ascensor
+    const st = route.steps[sim.stepIndex];
+    const startFloor = st?.type === 'elevator' ? getNode(st.fromNodeId)?.floor : undefined;
+    if (startFloor !== undefined && sim.level !== undefined && sim.level !== startFloor) return undefined;
     const dist = (pts: { x: number; y: number }[]) => Math.min(...pts.map((n) => Math.hypot(n.x - sim.point.x, n.y - sim.point.y) * mPerPct));
-    const nearest = routeElevators.reduce((b, c) => (dist(c.pts) < dist(b.pts) ? c : b));
-    const maneuverNear = sim.currentManeuver?.type === 'elevator' || sim.nextManeuver?.type === 'elevator';
-    return maneuverNear || dist(nearest.pts) <= 20 ? nearest.id : undefined;
-  }, [route, sim.finished, sim.point, sim.currentManeuver, sim.nextManeuver, esParcial, routeElevators, mPerPct]);
+    return routeElevators.reduce((b, c) => (dist(c.pts) < dist(b.pts) ? c : b)).id;
+  }, [route, sim.finished, sim.point, sim.currentManeuver, sim.stepIndex, sim.level, esParcial, routeElevators, mPerPct]);
   const reportElevatorDown = useCallback(() => {
     if (!elevatorTarget || !destId) return;
     sim.pause();
@@ -522,6 +527,7 @@ export default function NavigateScreen() {
         onHome={goHome}
         partial={nearest ? {
           reachedLabel: nearest.reachedLabel,
+          supportVerb: ticket?.supportVerb ?? supportVerb(getNode(nearest.reachedNodeId)?.floor ?? 1, place.floor ?? 1),
           remainingM: nearest.remainingM,
           remainingText: remainingText(nearest.reachedNodeId, place, nearest.remainingM),
           assignee: ticket?.status === 'assigned' || ticket?.status === 'arrived' ? ticket.assignee : undefined,
