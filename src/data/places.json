@@ -128,15 +128,6 @@
       "icon": "medical-bag"
     },
     {
-      "id": "sala-estudio-f",
-      "name": "Sala de Estudio Edif. F",
-      "nodeId": "f_in",
-      "building": "F",
-      "floor": 1,
-      "category": "estudio",
-      "icon": "book-education-outline"
-    },
-    {
       "id": "cafeteria-c",
       "name": "Cafetería Edif. C",
       "nodeId": "c_cafe",
@@ -144,6 +135,24 @@
       "floor": 2,
       "category": "comida",
       "icon": "coffee"
+    },
+    {
+      "id": "f-informatica",
+      "name": "Laboratorio de Informática (Edif. F)",
+      "nodeId": "f_inf",
+      "building": "F",
+      "floor": -1,
+      "category": "laboratorio",
+      "icon": "laptop"
+    },
+    {
+      "id": "bano-f",
+      "name": "Baño Edif. F",
+      "nodeId": "f_bano",
+      "building": "F",
+      "floor": -1,
+      "category": "servicio",
+      "icon": "toilet"
     }
   ]
 }
