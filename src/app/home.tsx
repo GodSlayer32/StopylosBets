@@ -203,8 +203,8 @@ export default function Home() {
           <CampusMap
             mode="macro"
             routePoints={[]}
-            origin={getNode(origin) ? { x: getNode(origin)!.x, y: getNode(origin)!.y } : undefined}
-            height={160}
+            position={getNode(origin) ? { x: getNode(origin)!.x, y: getNode(origin)!.y } : undefined}
+            height={200}
           />
         </View>
         <View style={styles.row}>

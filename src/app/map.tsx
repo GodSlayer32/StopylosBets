@@ -172,7 +172,7 @@ export default function MapScreen() {
           <CampusMap
             mode={bid && hasPlan ? 'floor' : 'macro'}
             routePoints={[]}
-            origin={originPt}
+            position={originPt}
             barriers={barriers}
             activeBuildingId={bid}
             level={level}

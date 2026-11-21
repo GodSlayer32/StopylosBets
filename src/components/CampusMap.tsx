@@ -622,9 +622,9 @@ export function CampusMap(props: CampusMapProps) {
   );
 
   const posMarker = (transform: string, angle: number, key: string) => (
-    <G key={key} transform={transform}>
+    <G key={key} transform={`${transform}${mode === 'macro' ? ' scale(0.6)' : ''}`}>
       <Circle r={22} fill={m.positionHalo} />
-      {(heading !== undefined || mode === 'closeup') && (
+      {(props.heading !== undefined || mode === 'closeup') && (
         <Path d="M0 0L-15 -34Q0 -42 15 -34Z" fill={m.position} opacity={0.3} transform={`rotate(${angle})`} />
       )}
       <Circle r={8} fill={m.position} stroke={m.routeCasing} strokeWidth={3} />
