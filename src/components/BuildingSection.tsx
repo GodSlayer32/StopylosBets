@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 
@@ -32,9 +32,11 @@ export function BuildingSection({
   const { colors } = useTheme();
   const building = getBuilding(buildingId);
   const [width, setWidth] = useState(0);
+  const [measuredH, setMeasuredH] = useState(0);
+  const H = measuredH > 0 ? measuredH : height;
   const floors = building ? [...building.floors].reverse() : []; // arriba -> abajo
   const n = floors.length || 1;
-  const bandH = Math.max(24, (height - TITLE_H) / n);
+  const bandH = Math.max(36, (H - TITLE_H - 2) / n);
   const topOf = (level: number) => {
     const i = floors.findIndex((f) => f.level === level);
     return TITLE_H + (i < 0 ? n - 1 : i) * bandH;
@@ -75,7 +77,7 @@ export function BuildingSection({
       ]).start();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, currentLevel, via, position, height]);
+  }, [width, currentLevel, via, position, H]);
 
   if (!building) return null;
 
@@ -98,7 +100,10 @@ export function BuildingSection({
         : ` Tu destino${destName ? `, ${destName},` : ''} está en este mismo piso.`
       : '');
 
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+  const onLayout = (e: LayoutChangeEvent) => {
+    setWidth(e.nativeEvent.layout.width);
+    setMeasuredH(e.nativeEvent.layout.height);
+  };
   const elevColor = elevatorDown ? colors.danger : colors.text;
   const stairColor = colors.textMuted;
 
@@ -122,7 +127,7 @@ export function BuildingSection({
 
       {width > 0 ? (
         <>
-          <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          <Svg width={width} height={H} style={StyleSheet.absoluteFill}>
             {floors.map((f) => {
               const y = topOf(f.level);
               const isCur = f.level === currentLevel;
@@ -152,7 +157,7 @@ export function BuildingSection({
             const y = topOf(f.level);
             const isDest = dest?.level === f.level;
             return (
-              <View key={f.level}>
+              <Fragment key={f.level}>
                 <View style={[styles.floorLabel, { top: y, height: bandH, width: LABEL_W - spacing.sm }]}>
                   <AppText variant="caption" numberOfLines={1}
                     style={{ color: f.level === currentLevel ? colors.text : colors.textMuted, fontWeight: '700' }}>
@@ -169,7 +174,7 @@ export function BuildingSection({
                     </AppText>
                   </View>
                 ) : null}
-              </View>
+              </Fragment>
             );
           })}
 

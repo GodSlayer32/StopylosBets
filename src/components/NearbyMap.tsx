@@ -10,9 +10,9 @@ import type { RouteResult } from '@/types';
 const IMG_W = 1313;
 const IMG_H = 980;
 /** Pantalla px por px de plano */
-const ZOOM = 3.2;
+const ZOOM = 2;
 /** Posición vertical de la flecha (fracción del alto) */
-const ANCHOR_Y = 0.45;
+const ANCHOR_Y = 0.5;
 const LABEL_SIZE = 36;
 const BIG = 100000;
 
@@ -36,11 +36,13 @@ type Props = {
   segIndex: number;
   width: number;
   height: number;
+  /** Px del borde inferior tapados por la tarjeta */
+  bottomInset?: number;
   accessibleMode?: boolean;
   label: string;
 };
 
-export function NearbyMap({ route, point, heading, segIndex, width, height, accessibleMode = false, label }: Props) {
+export function NearbyMap({ route, point, heading, segIndex, width, height, bottomInset = 0, accessibleMode = false, label }: Props) {
   const t = useAppTheme(accessibleMode);
 
   // Heading suavizado por el camino más corto (sin dar la vuelta larga)
@@ -57,7 +59,7 @@ export function NearbyMap({ route, point, heading, segIndex, width, height, acce
   const labelRot = anim.interpolate({ inputRange: [-BIG, BIG], outputRange: [`${-BIG}deg`, `${BIG}deg`] });
 
   const ax = width / 2;
-  const ay = height * ANCHOR_Y;
+  const ay = Math.max(40, (height - bottomInset) * ANCHOR_Y);
   const S = Math.ceil(2 * Math.hypot(Math.max(ax, width - ax), Math.max(ay, height - ay)));
   const view = S / ZOOM; // unidades de plano visibles en el grupo
   const c = px(point);

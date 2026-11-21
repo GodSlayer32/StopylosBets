@@ -7,8 +7,8 @@ const IMG_W = 1313;
 const IMG_H = 980;
 /** Duración total de la simulación (demo) */
 const TOTAL_SECONDS = 27;
-/** Peso mínimo de un tramo (ej. ascensor, que no se mueve en el plano) */
-const MIN_SEG_WEIGHT = 70;
+/** Segundos que dura un tramo de ascensor */
+const ELEVATOR_SECONDS = 4.5;
 const TICK_MS = 33;
 
 type Pt = { x: number; y: number };
@@ -45,22 +45,6 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
   const geo = useMemo(() => {
     if (!route) return null;
     const pts = route.polyline;
-    const weights: number[] = [];
-    const headings: number[] = [];
-    let lastHeading = 0;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const a = toPx(pts[i]);
-      const b = toPx(pts[i + 1]);
-      const len = Math.hypot(b.x - a.x, b.y - a.y);
-      weights.push(Math.max(len, MIN_SEG_WEIGHT));
-      if (len > 0.5) lastHeading = (Math.atan2(b.x - a.x, -(b.y - a.y)) * 180) / Math.PI;
-      headings.push(lastHeading);
-    }
-    // heading de tramos iniciales sin movimiento
-    const firstReal = headings.find((_, i) => weights[i] > MIN_SEG_WEIGHT) ?? 0;
-    for (let i = 0; i < headings.length && weights[i] <= MIN_SEG_WEIGHT; i++) headings[i] = firstReal;
-    const cum = [0];
-    weights.forEach((w) => cum.push(cum[cum.length - 1] + w));
     // primer segmento de cada paso
     const stepStartSeg: number[] = [];
     const stepOfSeg: number[] = [];
@@ -70,7 +54,28 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
       for (let k = 0; k < s.edgeIds.length; k++) stepOfSeg[seg + k] = si;
       seg += s.edgeIds.length;
     });
+    const lens: number[] = [];
+    const headings: number[] = [];
+    let lastHeading = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = toPx(pts[i]);
+      const b = toPx(pts[i + 1]);
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      lens.push(len);
+      if (len > 0.5) lastHeading = (Math.atan2(b.x - a.x, -(b.y - a.y)) * 180) / Math.PI;
+      headings.push(lastHeading);
+    }
+    const firstReal = headings.find((_, i) => lens[i] > 0.5) ?? 0;
+    for (let i = 0; i < headings.length && lens[i] <= 0.5; i++) headings[i] = firstReal;
+    // Pesos en segundos: ascensor fijo, caminata reparte el resto
+    const isElev = lens.map((_, i) => route.steps[stepOfSeg[i]]?.type === 'elevator');
+    const nElev = isElev.filter(Boolean).length;
+    const walkTotal = lens.reduce((sum, l, i) => sum + (isElev[i] ? 0 : l), 0) || 1;
+    const walkSeconds = Math.max(8, TOTAL_SECONDS - nElev * ELEVATOR_SECONDS);
+    const weights = lens.map((l, i) => (isElev[i] ? ELEVATOR_SECONDS : Math.max(0.3, (l / walkTotal) * walkSeconds)));
     const edgeM = route.steps.flatMap((s) => s.edgeIds.map(() => s.distanceM / s.edgeIds.length));
+    const cum = [0];
+    weights.forEach((w) => cum.push(cum[cum.length - 1] + w));
     return { pts, weights, headings, cum, total: cum[cum.length - 1], stepStartSeg, stepOfSeg, edgeM };
   }, [route]);
 
@@ -90,7 +95,7 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
     let last = Date.now();
     const id = setInterval(() => {
       const now = Date.now();
-      const next = Math.min(geo.total, progRef.current + ((now - last) / 1000) * (geo.total / TOTAL_SECONDS));
+      const next = Math.min(geo.total, progRef.current + ((now - last) / 1000) * 1);
       last = now;
       setP(next);
       if (next >= geo.total) setPlaying(false);
@@ -156,7 +161,7 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
     const stepIndex = finished ? route.steps.length - 1 : geo.stepOfSeg[k] ?? 0;
     const step = route.steps[stepIndex];
     const inside =
-      step.type === 'elevator' || (!!node?.building && !nodeId.endsWith('_front') && !finished);
+      step.type === 'elevator' || !!getNode(route.nodeIds[k])?.building || !!getNode(route.nodeIds[k + 1])?.building;
     const sStart = geo.cum[geo.stepStartSeg[stepIndex]];
     const sEnd = geo.cum[stepIndex + 1 < route.steps.length ? geo.stepStartSeg[stepIndex + 1] : geo.weights.length];
     const stepProgress = finished ? 1 : Math.min(1, Math.max(0, (prog - sStart) / Math.max(1, sEnd - sStart)));
@@ -171,7 +176,7 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
       nodeId,
       building: node?.building,
       level: node?.floor,
-      inside: finished ? false : inside,
+      inside,
       stepProgress,
       progress: geo.total ? prog / geo.total : 0,
       remainingM: Math.max(0, Math.round(route.distanceM - done)),

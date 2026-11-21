@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
 import { BuildingSection } from '@/components/BuildingSection';
@@ -26,6 +26,7 @@ export default function NavigateScreen() {
   const { width, height } = useWindowDimensions();
   const { getRoute, accessibleMode, profile, elevators } = useApp();
   const t = useAppTheme(accessibleMode);
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(t), [t]);
   const place = destId ? getPlace(destId) : undefined;
 
@@ -34,6 +35,7 @@ export default function NavigateScreen() {
   const [voice, setVoice] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [mapH, setMapH] = useState(0);
+  const [cardH, setCardH] = useState(180);
   const sim = useRouteSimulation(route);
 
   useEffect(() => {
@@ -115,7 +117,7 @@ export default function NavigateScreen() {
   const via = route.steps.some((s) => s.type === 'elevator') ? 'elevator' : null;
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <Pressable onPress={close} accessibilityRole="button" accessibilityLabel="Cerrar navegación" style={styles.iconBtn}>
           <Ionicons name="close" size={26} color={t.colors.text} />
@@ -140,15 +142,17 @@ export default function NavigateScreen() {
             height={topH}
           />
         ) : (
-          <RouteMap
-            route={route}
-            width={width}
-            height={topH}
-            barriers={[]}
-            current={sim.point}
-            accessibleMode={accessibleMode}
-            label={`Mapa general de la ruta hacia ${place.name}`}
-          />
+          <View>
+            <RouteMap
+              route={route}
+              width={width}
+              height={topH}
+              barriers={[]}
+              accessibleMode={accessibleMode}
+              label={`Mapa general de la ruta hacia ${place.name}`}
+            />
+            <PositionMarker route={route} point={sim.point} width={width} height={topH} t={t} />
+          </View>
         )}
       </Animated.View>
 
@@ -162,12 +166,13 @@ export default function NavigateScreen() {
           segIndex={sim.segIndex}
           width={width}
           height={mapH}
+          bottomInset={cardH + t.spacing.md * 2 + insets.bottom}
           accessibleMode={accessibleMode}
           label="Vista cercana orientada en tu dirección de avance"
         /> : null}
       </View>
 
-      <View style={styles.card} accessibilityLiveRegion="polite">
+      <View style={[styles.card, { bottom: t.spacing.md + insets.bottom }]} accessibilityLiveRegion="polite" onLayout={(e) => setCardH(Math.round(e.nativeEvent.layout.height))}>
         {sim.finished ? (
           <View style={styles.arrived}>
             <View style={[styles.check, { backgroundColor: t.colors.successSoft }]}>
@@ -200,7 +205,7 @@ export default function NavigateScreen() {
                 accessibilityLabel={sim.playing ? 'Pausar recorrido' : 'Simular recorrido'}
                 style={[styles.play, { backgroundColor: t.colors.primary }]}>
                 <Ionicons name={sim.playing ? 'pause' : 'play'} size={22} color={t.colors.primaryText} />
-                <AppText variant="label" style={{ color: t.colors.primaryText }}>{sim.playing ? 'Pausar' : 'Simular recorrido'}</AppText>
+                <AppText variant="label" style={{ color: t.colors.primaryText }}>{sim.playing ? 'Pausa' : 'Simular'}</AppText>
               </Pressable>
               <Ctl label="Paso siguiente" icon="chevron-forward" onPress={sim.next} t={t} />
               <Ctl
@@ -215,6 +220,35 @@ export default function NavigateScreen() {
         )}
       </View>
     </SafeAreaView>
+  );
+}
+
+const IMG_W = 1313;
+const IMG_H = 980;
+
+/** Replica el recorte de RouteMap para dibujar la posición actual con halo. */
+function PositionMarker({ route, point, width, height, t }: {
+  route: RouteResult; point: { x: number; y: number }; width: number; height: number; t: ReturnType<typeof useAppTheme>;
+}) {
+  const pts = route.polyline.map((p) => ({ x: (p.x / 100) * IMG_W, y: (p.y / 100) * IMG_H }));
+  const ar = width / height;
+  const xs = pts.map((p) => p.x);
+  const ys = pts.map((p) => p.y);
+  const pad = 90;
+  let w = Math.max(Math.max(...xs) - Math.min(...xs) + pad * 2, (Math.max(...ys) - Math.min(...ys) + pad * 2) * ar, 360);
+  let h = w / ar;
+  if (w > IMG_W) { w = IMG_W; h = w / ar; }
+  if (h > IMG_H) { h = IMG_H; w = h * ar; }
+  const l = Math.min(Math.max((Math.max(...xs) + Math.min(...xs)) / 2 - w / 2, 0), IMG_W - w);
+  const tp = Math.min(Math.max((Math.max(...ys) + Math.min(...ys)) / 2 - h / 2, 0), IMG_H - h);
+  const x = (((point.x / 100) * IMG_W - l) / w) * width;
+  const y = (((point.y / 100) * IMG_H - tp) / h) * height;
+  const R = 22;
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: x - R, top: y - R, width: R * 2, height: R * 2, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ position: 'absolute', width: R * 2, height: R * 2, borderRadius: R, backgroundColor: t.colors.primary, opacity: 0.3 }} />
+      <View style={{ width: R, height: R, borderRadius: R / 2, backgroundColor: t.colors.primary, borderWidth: 4, borderColor: t.colors.surface }} />
+    </View>
   );
 }
 
