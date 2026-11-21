@@ -45,6 +45,7 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [quick, setQuick] = useState<string | null>(null);
   const [pickingOrigin, setPickingOrigin] = useState(false);
+  const [showAlerts, setShowAlerts] = useState(false);
 
   const nextClass = scheduleJson.classes.find((c) => c.id === scheduleJson.nextClassId);
   const classPlace = nextClass ? getPlace(nextClass.placeId) : undefined;
@@ -69,6 +70,11 @@ export default function Home() {
       detail: `Ascensor del Edificio ${e.building} fuera de servicio. Recalculamos tus rutas sin usarlo.`,
     })),
   ];
+
+  const worstDanger = alerts.some((a) => a.tone === 'danger');
+  const worstFg = worstDanger ? colors.danger : colors.warning;
+  const worstBg = worstDanger ? colors.dangerSoft : colors.warningSoft;
+  const alertsTitle = alerts.length === 1 ? '1 aviso en el campus' : `${alerts.length} avisos en el campus`;
 
   const q = norm(query.trim());
   const active = q.length > 0 || quick !== null;
@@ -101,17 +107,6 @@ export default function Home() {
         />
       </View>
 
-      {alerts.length > 0 ? (
-        <View style={styles.gap}>
-          <AppText variant="label" color="textMuted">
-            {alerts.length === 1 ? '1 aviso activo en el campus' : `${alerts.length} avisos activos en el campus`}
-          </AppText>
-          {alerts.map((a) => (
-            <Banner key={a.key} tone={a.tone} text={a.text} onPress={() => Alert.alert('Detalle del aviso', a.detail)} />
-          ))}
-        </View>
-      ) : null}
-
       {nextClass && classPlace ? (
         <Card style={[styles.gap, { borderColor: colors.primary, borderWidth: 2 }]}>
           <AppText variant="label" color="primary">
@@ -129,6 +124,26 @@ export default function Home() {
             onPress={() => router.push(`/route/${classPlace.id}`)}
           />
         </Card>
+      ) : null}
+
+      {alerts.length > 0 ? (
+        <View style={styles.gap}>
+          <Pressable
+            onPress={() => setShowAlerts((v) => !v)}
+            accessibilityRole="button"
+            accessibilityLabel={`${alertsTitle}. ${showAlerts ? 'Ocultar' : 'Ver'} avisos`}
+            accessibilityState={{ expanded: showAlerts }}
+            style={[styles.alertRow, { backgroundColor: worstBg, borderColor: worstFg, minHeight: minTouch }]}>
+            <Ionicons name="warning" size={22} color={worstFg} />
+            <AppText variant="label" style={styles.flex}>{alertsTitle}</AppText>
+            <Ionicons name={showAlerts ? 'chevron-down' : 'chevron-forward'} size={20} color={worstFg} />
+          </Pressable>
+          {showAlerts
+            ? alerts.map((a) => (
+                <Banner key={a.key} tone={a.tone} text={a.text} onPress={() => Alert.alert('Detalle del aviso', a.detail)} />
+              ))
+            : null}
+        </View>
       ) : null}
 
       <Pressable
@@ -248,6 +263,14 @@ const styles = StyleSheet.create({
   gap: { gap: spacing.md },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   origin: { paddingHorizontal: spacing.xs },
+  alertRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
   search: {
     flexDirection: 'row',
     alignItems: 'center',

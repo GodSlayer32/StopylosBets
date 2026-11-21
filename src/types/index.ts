@@ -84,6 +84,10 @@ export interface RouteStep {
 export interface AvoidedItem {
   text: string;
   reason: string;
+  kind?: 'stairs' | 'slope' | 'incident';
+  steps?: number;
+  name?: string;
+  edgeId?: string;
 }
 
 export interface RouteResult {
@@ -109,4 +113,26 @@ export interface RouteComparison {
   extraMeters: number;
   extraMinutes: number;
   stepsAvoided: number;
+}
+
+export interface BuildingFloor {
+  level: number;
+  label: string;
+  rooms: string[];
+}
+
+export interface BuildingEntrance {
+  level: number;
+  side: 'left' | 'right';
+  label: string;
+}
+
+export interface Building {
+  id: string;
+  name: string;
+  /** Ordenados de abajo hacia arriba */
+  floors: BuildingFloor[];
+  elevator: { id: string; x: number };
+  stairs: { x: number };
+  entrances: BuildingEntrance[];
 }

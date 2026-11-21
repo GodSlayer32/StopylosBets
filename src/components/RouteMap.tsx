@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
-import Svg, { Circle, G, Polyline, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, G, Line, Polyline, Text as SvgText } from 'react-native-svg';
 
 import { useAppTheme } from '@/hooks/use-app-theme';
 import type { RouteResult } from '@/types';
@@ -9,7 +9,8 @@ const IMG_W = 1313;
 const IMG_H = 980;
 const px = (p: { x: number; y: number }) => ({ x: (p.x / 100) * IMG_W, y: (p.y / 100) * IMG_H });
 
-export type MapBarrier = { id: string; x: number; y: number };
+/** kind: 'incident' (por defecto) = barrera reportada; 'stairs' = escalera evitada */
+export type MapBarrier = { id: string; x: number; y: number; kind?: 'incident' | 'stairs' };
 
 type Props = {
   route: RouteResult;
@@ -74,6 +75,19 @@ export function RouteMap({ route, width, height, barriers, current, accessibleMo
         {barriers.map((b) => {
           const p = px(b);
           if (!inside(p)) return null;
+          if (b.kind === 'stairs') {
+            const k = u;
+            const pts = [
+              [-6, 6], [-6, 2], [-2, 2], [-2, -2], [2, -2], [2, -6], [6, -6],
+            ].map(([dx, dy]) => `${p.x + dx * k},${p.y + dy * k}`).join(' ');
+            return (
+              <G key={b.id}>
+                <Circle cx={p.x} cy={p.y} r={14 * k} fill={t.colors.surfaceAlt} stroke={t.colors.textMuted} strokeWidth={3 * k} />
+                <Polyline points={pts} fill="none" stroke={t.colors.textMuted} strokeWidth={2.5 * k} strokeLinejoin="round" strokeLinecap="round" />
+                <Line x1={p.x - 9 * k} y1={p.y - 9 * k} x2={p.x + 9 * k} y2={p.y + 9 * k} stroke={t.colors.textMuted} strokeWidth={3 * k} strokeLinecap="round" />
+              </G>
+            );
+          }
           return (
             <G key={b.id}>
               <Circle cx={p.x} cy={p.y} r={14 * u} fill={t.colors.danger} stroke={t.colors.surface} strokeWidth={3 * u} />

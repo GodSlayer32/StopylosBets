@@ -21,6 +21,7 @@ function ThemedStack() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="home" options={{ title: 'Inicio', headerShown: false }} />
         <Stack.Screen name="route/[destId]" options={{ title: 'Tu ruta' }} />
+        <Stack.Screen name="navigate/[destId]" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
         <Stack.Screen name="report" options={{ title: 'Reportar barrera', presentation: 'modal' }} />
       </Stack>
     </>

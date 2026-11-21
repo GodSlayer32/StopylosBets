@@ -145,14 +145,13 @@ const ICON: Record<EdgeType, string> = {
 };
 
 function describe(e: Edge, from: Node, to: Node, elevators: Elevator[]): string {
-  const m = Math.round(e.distanceM);
   switch (e.type) {
     case 'stairs':
       return `Sube ${e.steps ?? ''} escalones${e.name ? ` (${e.name})` : ''} hasta ${to.label}`.replace('  ', ' ');
     case 'ramp':
-      return `Sigue por la rampa hasta ${to.label} (${m} m${e.slopePct ? `, pendiente ${e.slopePct}%` : ''})`;
+      return `Sigue por la rampa hasta ${to.label}`;
     case 'slope':
-      return `Sigue por ${e.name ?? 'el camino'} hasta ${to.label} (${m} m, pendiente suave de ${e.slopePct}%)`;
+      return `Sigue por ${e.name ?? 'el camino'} hasta ${to.label}`;
     case 'elevator': {
       const el = elevators.find((x) => x.id === e.elevatorId);
       const bld = el?.building ?? from.building ?? '';
@@ -160,7 +159,7 @@ function describe(e: Edge, from: Node, to: Node, elevators: Elevator[]): string 
       return `Toma el ascensor del Edif. ${bld} al piso ${floor}`;
     }
     default:
-      return `Camina ${m} m hasta ${to.label}`;
+      return e.name ? `Sigue por ${e.name} hasta ${to.label}` : `Camina hasta ${to.label}`;
   }
 }
 
@@ -175,10 +174,11 @@ function buildSteps(edges: Edge[], nodeIds: string[], elevators: Elevator[]): Ro
       last.distanceM += e.distanceM;
       last.toNodeId = to.id;
       last.edgeIds.push(e.id);
-      if (e.type === 'flat') last.text = `Camina ${Math.round(last.distanceM)} m hasta ${to.label}`;
-      else {
-        const maxSlope = Math.max(...last.edgeIds.map((id) => edgeById.get(id)?.slopePct ?? 0));
-        last.text = `Sigue por ${e.name ?? 'el camino'} hasta ${to.label} (${Math.round(last.distanceM)} m, pendiente de hasta ${maxSlope}%)`;
+      if (e.type === 'flat') {
+        const firstName = edgeById.get(last.edgeIds[0])?.name;
+        last.text = firstName ? `Sigue por ${firstName} hasta ${to.label}` : `Camina hasta ${to.label}`;
+      } else {
+        last.text = `Sigue por ${e.name ?? 'el camino'} hasta ${to.label}`;
       }
       return;
     }
@@ -242,7 +242,11 @@ export function findRoute(
       e.type === 'stairs' ? `${e.steps} escalones${e.name ? `: ${e.name}` : ''}`
       : e.type === 'elevator' ? `Ascensor Edif. ${elevators.find((x) => x.id === e.elevatorId)?.building ?? ''}`
       : `${e.name ?? 'Tramo'} (${e.slopePct ?? 0}% de pendiente)`;
-    if (!seen.has(text)) { seen.add(text); avoided.push({ text, reason }); }
+    const kind: AvoidedItem['kind'] = isBlocked(e, b) ? 'incident' : e.type === 'stairs' ? 'stairs' : 'slope';
+    if (!seen.has(text)) {
+      seen.add(text);
+      avoided.push({ text, reason, kind, steps: e.type === 'stairs' ? e.steps ?? 0 : undefined, name: e.name, edgeId: e.id });
+    }
   };
   // Lo que evitamos respecto a la ruta más corta sin restricciones
   const base = dijkstra(origin, place.nodeId, 'none', NO_BLOCKS);

@@ -44,7 +44,7 @@ export default function Report() {
   );
 
   const [kind, setKind] = useState<string | null>(null);
-  const [elevatorId, setElevatorId] = useState<string | undefined>(routeElevatorId ?? 'elev-c');
+  const [elevatorId, setElevatorId] = useState<string | undefined>(routeElevatorId);
   const [edgeId, setEdgeId] = useState<string | undefined>();
   const [nodeId, setNodeId] = useState<string | undefined>();
   const [description, setDescription] = useState('');
@@ -102,7 +102,14 @@ export default function Report() {
           <View style={styles.wrap}>
             {isElevator
               ? elevators.map((e) => (
-                  <Chip key={e.id} label={`Edif. ${e.building}`} icon="business" selected={elevatorId === e.id} onPress={() => setElevatorId(e.id)} />
+                  e.status === 'down' ? (
+                    <View key={e.id} style={styles.done} accessible accessibilityState={{ disabled: true }} accessibilityLabel={`Edif. ${e.building}, ya reportado`}>
+                      <Ionicons name="checkmark-circle" size={20} color={t.colors.textMuted} />
+                      <AppText variant="label" color="textMuted">Edif. {e.building} · Ya reportado</AppText>
+                    </View>
+                  ) : (
+                    <Chip key={e.id} label={`Edif. ${e.building}`} icon="business" selected={elevatorId === e.id} onPress={() => setElevatorId(e.id)} />
+                  )
                 ))
               : routeEdges.length
                 ? routeEdges.map((e) => (
@@ -156,6 +163,18 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
   StyleSheet.create({
     wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm },
     section: { gap: t.spacing.md },
+    done: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.spacing.xs,
+      minHeight: t.minTouch,
+      paddingHorizontal: t.spacing.md,
+      borderRadius: t.radius.pill,
+      borderWidth: 2,
+      borderColor: t.colors.border,
+      backgroundColor: t.colors.surfaceAlt,
+      opacity: 0.8,
+    },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     centerText: { textAlign: 'center' },
     check: {

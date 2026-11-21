@@ -1,0 +1,231 @@
+{
+  "_simulated": true,
+  "_note": "Datos simulados para la demo de Ruta Libre; no corresponden a planos oficiales.",
+  "buildings": [
+    {
+      "id": "A",
+      "name": "Edificio A",
+      "floors": [
+        {
+          "level": 1,
+          "label": "Piso 1",
+          "rooms": [
+            "Hall Edificio A",
+            "Aula Magna",
+            "Baño accesible",
+            "Conserjería"
+          ]
+        },
+        {
+          "level": 2,
+          "label": "Piso 2",
+          "rooms": [
+            "A-201",
+            "A-202",
+            "Sala de Profesores",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 3,
+          "label": "Piso 3",
+          "rooms": [
+            "A-301",
+            "A-302",
+            "Oficina Dirección",
+            "Baño accesible"
+          ]
+        }
+      ],
+      "elevator": {
+        "id": "elev-a",
+        "x": 0.82
+      },
+      "stairs": {
+        "x": 0.12
+      },
+      "entrances": [
+        {
+          "level": 1,
+          "side": "left",
+          "label": "Desde explanada Av. España"
+        },
+        {
+          "level": 1,
+          "side": "right",
+          "label": "Desde Patio Central"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Edificio B",
+      "floors": [
+        {
+          "level": 1,
+          "label": "Piso 1",
+          "rooms": [
+            "Casino Central",
+            "Biblioteca",
+            "Baño accesible",
+            "Entrada Edif. B"
+          ]
+        },
+        {
+          "level": 2,
+          "label": "Piso 2",
+          "rooms": [
+            "B-201",
+            "B-205",
+            "Lab. Física",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 3,
+          "label": "Piso 3",
+          "rooms": [
+            "B-301",
+            "B-304",
+            "Sala de Estudio",
+            "Baño accesible"
+          ]
+        }
+      ],
+      "elevator": {
+        "id": "elev-b",
+        "x": 0.8
+      },
+      "stairs": {
+        "x": 0.14
+      },
+      "entrances": [
+        {
+          "level": 1,
+          "side": "left",
+          "label": "Desde Patio Central"
+        },
+        {
+          "level": 1,
+          "side": "right",
+          "label": "Desde Biblioteca"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Edificio C",
+      "floors": [
+        {
+          "level": 1,
+          "label": "Piso 1",
+          "rooms": [
+            "C-105",
+            "Hall Edificio C",
+            "Copias y Apuntes",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 2,
+          "label": "Piso 2",
+          "rooms": [
+            "C-210",
+            "Lab. Redes",
+            "Sala de Computación",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 3,
+          "label": "Piso 3",
+          "rooms": [
+            "C-305",
+            "C-310",
+            "Lab. Electrónica",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 4,
+          "label": "Piso 4",
+          "rooms": [
+            "C-405",
+            "Sala de Tesistas",
+            "Oficinas Depto. Informática",
+            "Baño accesible"
+          ]
+        }
+      ],
+      "elevator": {
+        "id": "elev-c",
+        "x": 0.8
+      },
+      "stairs": {
+        "x": 0.14
+      },
+      "entrances": [
+        {
+          "level": 1,
+          "side": "left",
+          "label": "Desde Patio Central"
+        },
+        {
+          "level": 2,
+          "side": "right",
+          "label": "Desde pasarela norte"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Edificio D",
+      "floors": [
+        {
+          "level": 1,
+          "label": "Piso 1",
+          "rooms": [
+            "Hall Edificio D",
+            "D-101",
+            "Servicio de Salud",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 2,
+          "label": "Piso 2",
+          "rooms": [
+            "D-201",
+            "D-204",
+            "Lab. Química",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 3,
+          "label": "Piso 3",
+          "rooms": [
+            "D-301",
+            "D-305",
+            "Sala de Seminarios",
+            "Baño accesible"
+          ]
+        }
+      ],
+      "elevator": {
+        "id": "elev-d",
+        "x": 0.82
+      },
+      "stairs": {
+        "x": 0.12
+      },
+      "entrances": [
+        {
+          "level": 1,
+          "side": "left",
+          "label": "Desde Patio Central"
+        }
+      ]
+    }
+  ]
+}

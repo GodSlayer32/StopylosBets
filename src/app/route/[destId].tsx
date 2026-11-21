@@ -1,9 +1,10 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
 import { Banner } from '@/components/Banner';
@@ -32,6 +33,8 @@ export default function RouteScreen() {
   const [stepIdx, setStepIdx] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [fullMap, setFullMap] = useState(false);
+  const [showAvoided, setShowAvoided] = useState(false);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const prevRoute = useRef<RouteResult | null>(null);
   const spokeInitial = useRef(false);
   const [noticeAnim] = useState(() => new Animated.Value(0));
@@ -59,6 +62,7 @@ export default function RouteScreen() {
             : 'Recalculamos tu ruta: hay una barrera reportada en el camino anterior',
         );
         setStepIdx(0);
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
         noticeAnim.setValue(0);
         Animated.timing(noticeAnim, { toValue: 1, duration: 450, useNativeDriver: true }).start();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
@@ -108,8 +112,20 @@ export default function RouteScreen() {
     };
     incidents.forEach((i) => at(i.id, i.edgeId, i.nodeId, i.type === 'elevator' ? i.elevatorId : undefined));
     elevators.filter((e) => e.status === 'down').forEach((e) => at(`el-${e.id}`, undefined, undefined, e.id));
+    (route?.avoided ?? []).forEach((a) => {
+      if (a.kind !== 'stairs' || !a.edgeId) return;
+      const e = EDGES.find((x) => x.id === a.edgeId);
+      const f = e && getNode(e.from);
+      const to = e && getNode(e.to);
+      if (f && to) out.push({ id: `st-${a.edgeId}`, x: (f.x + to.x) / 2, y: (f.y + to.y) / 2, kind: 'stairs' });
+    });
     return out;
-  }, [incidents, elevators]);
+  }, [incidents, elevators, route]);
+
+  const stairItems = useMemo(() => (route?.avoided ?? []).filter((a) => a.kind === 'stairs' || a.kind === 'slope'), [route]);
+  const incidentItems = useMemo(() => (route?.avoided ?? []).filter((a) => a.kind === 'incident'), [route]);
+  const avoidedSteps = stairItems.reduce((s, a) => s + (a.steps ?? 0), 0);
+  const avoidedStairs = stairItems.filter((a) => a.kind === 'stairs').length;
 
   const styles = useMemo(() => makeStyles(t), [t]);
 
@@ -143,12 +159,15 @@ export default function RouteScreen() {
   }
 
   const mapW = width - t.spacing.lg * 2;
-  const lastIdx = route.steps.length - 1;
   const currentNode = step ? getNode(step.fromNodeId) : undefined;
+  const avoidedHeadline = avoidedSteps > 0
+    ? `Evitamos ${avoidedSteps} escalones en ${avoidedStairs} ${avoidedStairs === 1 ? 'escalera' : 'escaleras'}`
+    : `Evitamos ${stairItems.length} ${stairItems.length === 1 ? 'tramo exigente' : 'tramos exigentes'}`;
   const mapLabel = `Mapa de la ruta hacia ${place.name}. Toca para ampliar.`;
 
   return (
-    <Screen scroll>
+    <SafeAreaView style={styles.root} edges={['bottom', 'left', 'right']}>
+    <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <AppText variant="title" accessibilityRole="header">{place.name}</AppText>
         <AppText color="textMuted">
@@ -212,34 +231,53 @@ export default function RouteScreen() {
       <View style={styles.legend}>
         <LegendDot color={t.colors.success} label="Origen" t={t} />
         <LegendDot color={t.colors.text} label="Destino" t={t} />
-        <LegendDot color={t.colors.danger} label="Barrera" t={t} />
+        <LegendDot color={t.colors.textMuted} label="Escalera evitada" t={t} />
+        <LegendDot color={t.colors.danger} label="Barrera reportada" t={t} />
       </View>
 
-      {route.avoided.length > 0 ? (
-        <View style={styles.section}>
-          <AppText variant="heading" accessibilityRole="header">Lo que evitamos</AppText>
-          {route.avoided.map((a) => (
-            <View key={a.text} style={styles.avoided} accessible accessibilityLabel={`${a.text}. ${a.reason}`}>
-              <Ionicons name="close-circle" size={24} color={t.colors.danger} />
-              <View style={styles.flex}>
-                <AppText variant="label">{a.text}</AppText>
-                <AppText variant="caption" color="textMuted">{a.reason}</AppText>
-              </View>
-            </View>
-          ))}
+      {stairItems.length > 0 ? (
+        <View style={styles.avoidBox}>
+          <Pressable
+            onPress={() => setShowAvoided((v) => !v)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showAvoided }}
+            accessibilityLabel={`${avoidedHeadline}. ${showAvoided ? 'Ocultar' : 'Ver'} detalle`}
+            style={styles.avoidHead}>
+            <Ionicons name="shield-checkmark" size={24} color={t.colors.success} />
+            <AppText variant="label" style={styles.flex}>{avoidedHeadline}</AppText>
+            <Ionicons name={showAvoided ? 'chevron-up' : 'chevron-down'} size={20} color={t.colors.textMuted} />
+          </Pressable>
+          {showAvoided
+            ? stairItems.map((a) => (
+                <View key={a.text} style={styles.avoidRow} accessible accessibilityLabel={`${a.text}. ${a.reason}`}>
+                  <MaterialCommunityIcons name={a.kind === 'stairs' ? 'stairs' : 'slope-uphill'} size={22} color={t.colors.textMuted} />
+                  <AppText variant="caption" style={styles.flex}>{a.kind === 'stairs' ? (a.name ?? 'Escalera') : a.text}</AppText>
+                  {a.kind === 'stairs' ? <AppText variant="caption" color="textMuted">{a.steps} escalones</AppText> : null}
+                </View>
+              ))
+            : null}
         </View>
       ) : null}
+
+      {incidentItems.map((a) => (
+        <Banner
+          key={a.text}
+          tone={a.reason.startsWith('El ascensor') ? 'danger' : 'warning'}
+          text={`${a.text}. ${a.reason}`}
+        />
+      ))}
 
       <View style={styles.section}>
         <AppText variant="heading" accessibilityRole="header">Paso a paso</AppText>
         {route.steps.map((s, i) => {
           const active = i === stepIdx;
+          const slope = stepSlope(s.edgeIds);
           return (
             <Pressable
               key={`${s.fromNodeId}-${i}`}
               onPress={() => setStepIdx(i)}
               accessibilityRole="button"
-              accessibilityLabel={`Paso ${i + 1}: ${s.text}, ${s.distanceM} metros`}
+              accessibilityLabel={`Paso ${i + 1}: ${s.text}, ${Math.round(s.distanceM)} metros${slope ? `, pendiente ${slope}%` : ''}`}
               accessibilityState={{ selected: active }}
               style={[styles.step, active && styles.stepActive]}>
               <View style={[styles.stepNum, active && { backgroundColor: t.colors.primary }]}>
@@ -252,26 +290,17 @@ export default function RouteScreen() {
               />
               <View style={styles.flex}>
                 <AppText variant={active ? 'label' : 'body'}>{s.text}</AppText>
+                {slope ? (
+                  <View style={styles.slopeChip}>
+                    <Ionicons name="trending-up" size={14} color={t.colors.warning} />
+                    <AppText variant="caption" style={{ color: t.colors.warning }}>Pendiente {slope}%</AppText>
+                  </View>
+                ) : null}
               </View>
-              <AppText variant="caption" color="textMuted">{s.distanceM} m</AppText>
+              <AppText variant="caption" color="textMuted">{Math.round(s.distanceM)} m</AppText>
             </Pressable>
           );
         })}
-        <View style={styles.row}>
-          <View style={styles.flex}>
-            <Button label="Anterior" variant="secondary" fullWidth disabled={stepIdx === 0} onPress={() => setStepIdx((i) => Math.max(0, i - 1))} />
-          </View>
-          <View style={styles.flex}>
-            <Button label="Siguiente paso" fullWidth disabled={stepIdx >= lastIdx} onPress={() => setStepIdx((i) => Math.min(lastIdx, i + 1))} />
-          </View>
-        </View>
-        <Button
-          label="Escuchar ruta"
-          icon="volume-high"
-          variant="secondary"
-          fullWidth
-          onPress={() => step && speak(`Paso ${stepIdx + 1} de ${route.steps.length}. ${step.text}`)}
-        />
       </View>
 
       <Button
@@ -281,6 +310,31 @@ export default function RouteScreen() {
         fullWidth
         onPress={goReport}
       />
+    </ScrollView>
+
+      <View style={styles.footer}>
+        <Button
+          label="Iniciar ruta"
+          icon="navigate"
+          fullWidth
+          accessibilityLabel={`Iniciar ruta hacia ${place.name}`}
+          onPress={() => {
+            Speech.stop();
+            router.push(`/navigate/${destId}` as Href);
+          }}
+        />
+        <Button
+          label="Escuchar resumen"
+          icon="volume-high"
+          variant="secondary"
+          fullWidth
+          onPress={() =>
+            speak(
+              `Ruta hacia ${place.name}. ${route.minutes} minutos, ${route.distanceM} metros, ${route.stairsCount} escalones. ${route.steps.length} pasos. Primero: ${route.steps[0]?.text ?? ''}`,
+            )
+          }
+        />
+      </View>
 
       <Modal visible={fullMap} animationType="fade" transparent onRequestClose={() => setFullMap(false)}>
         <View style={[styles.modal, { backgroundColor: t.colors.overlay }]}>
@@ -298,7 +352,17 @@ export default function RouteScreen() {
           </View>
         </View>
       </Modal>
-    </Screen>
+    </SafeAreaView>
+  );
+}
+
+function stepSlope(edgeIds: string[]): number {
+  return Math.max(
+    0,
+    ...edgeIds.map((id) => {
+      const e = EDGES.find((x) => x.id === id);
+      return e && (e.type === 'slope' || e.type === 'ramp') ? (e.slopePct ?? 0) : 0;
+    }),
   );
 }
 
@@ -313,6 +377,15 @@ function LegendDot({ color, label, t }: { color: string; label: string; t: Retur
 
 const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
   StyleSheet.create({
+    root: { flex: 1, backgroundColor: t.colors.bg },
+    content: { paddingHorizontal: t.spacing.lg, paddingVertical: t.spacing.lg, gap: t.spacing.lg },
+    footer: {
+      gap: t.spacing.sm,
+      padding: t.spacing.lg,
+      borderTopWidth: 1,
+      borderTopColor: t.colors.border,
+      backgroundColor: t.colors.surface,
+    },
     flex: { flex: 1 },
     header: { gap: t.spacing.xs },
     row: { flexDirection: 'row', gap: t.spacing.md },
@@ -338,15 +411,26 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    legend: { flexDirection: 'row', gap: t.spacing.lg, justifyContent: 'center' },
+    legend: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.md, justifyContent: 'center' },
     section: { gap: t.spacing.md },
-    avoided: {
+    avoidBox: {
+      padding: t.spacing.md,
+      gap: t.spacing.sm,
+      borderRadius: t.radius.md,
+      backgroundColor: t.colors.successSoft,
+    },
+    avoidHead: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md, minHeight: t.minTouch },
+    avoidRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, paddingLeft: t.spacing.xs },
+    slopeChip: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: t.spacing.md,
-      padding: t.spacing.md,
-      borderRadius: t.radius.md,
-      backgroundColor: t.colors.dangerSoft,
+      alignSelf: 'flex-start',
+      gap: t.spacing.xs,
+      marginTop: t.spacing.xs,
+      paddingHorizontal: t.spacing.sm,
+      paddingVertical: 2,
+      borderRadius: t.radius.pill,
+      backgroundColor: t.colors.warningSoft,
     },
     step: {
       flexDirection: 'row',
