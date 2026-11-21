@@ -13,7 +13,7 @@ type Props = {
   onSelect?: (level: number) => void;
 };
 
-const ROW = 44;
+const ROW = 36;
 
 export function FloorRail({ levels, current, dest, onSelect }: Props) {
   const t = useTheme();
@@ -32,9 +32,9 @@ export function FloorRail({ levels, current, dest, onSelect }: Props) {
   if (levels.length === 0) {
     return (
       <View style={box} accessibilityLabel="Vista exterior">
-        <View style={[styles.row, { width: ROW + 12, backgroundColor: t.colors.primary, borderRadius: t.radius.sm }]}>
-          <Ionicons name="map-outline" size={20} color={t.colors.primaryText} />
-          <AppText variant="caption" style={{ color: t.colors.primaryText }}>Exterior</AppText>
+        <View style={[styles.row, { width: ROW + 8, backgroundColor: t.colors.primary, borderRadius: t.radius.sm }]}>
+          <Ionicons name="map-outline" size={18} color={t.colors.primaryText} />
+          <AppText variant="caption" style={{ color: t.colors.primaryText, fontSize: 11, lineHeight: 14 }}>Exterior</AppText>
         </View>
       </View>
     );
@@ -62,7 +62,7 @@ export function FloorRail({ levels, current, dest, onSelect }: Props) {
                 <MaterialCommunityIcons name="elevator-passenger" size={13} color={fg} />
               </Animated.View>
             ) : null}
-            <AppText variant="heading" style={{ color: fg }}>{lv}</AppText>
+            <AppText variant="label" style={{ color: fg, fontSize: 15, lineHeight: 20 }}>{lv}</AppText>
             {isDest ? (
               <Ionicons name="location" size={14} color={active ? t.colors.primaryText : t.colors.danger} style={styles.pin} />
             ) : null}

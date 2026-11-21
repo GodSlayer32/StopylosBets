@@ -15,6 +15,7 @@ export const colors = {
   success: '#15803D',
   successSoft: '#DCFCE7',
   overlay: 'rgba(15, 23, 42, 0.5)',
+  overlaySurface: 'rgba(255, 255, 255, 0.86)',
 };
 
 export type ColorToken = keyof typeof colors;
@@ -37,6 +38,7 @@ export const highContrast: Colors = {
   success: '#4ADE80',
   successSoft: '#002A10',
   overlay: 'rgba(0, 0, 0, 0.8)',
+  overlaySurface: '#000000',
 };
 
 export const mapColors = {

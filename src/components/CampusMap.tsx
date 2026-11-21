@@ -41,7 +41,7 @@ export type CampusMapProps = {
 const PLAN_W = 1313;
 const PLAN_H = 980;
 const CLOSEUP_ZOOM = 4;
-const LABEL_PX = 12;
+const LABEL_PX = 10;
 
 const toPlan = (p: XY): XY => [(p[0] / 100) * PLAN_W, (p[1] / 100) * PLAN_H];
 const ptPlan = (p: Pt): XY => toPlan([p.x, p.y]);
@@ -121,7 +121,8 @@ export function CampusMap(props: CampusMapProps) {
     }
     if (mode === 'floor' && activeB) {
       const box = bboxPts(activeB.polygon.map(toPlan));
-      const s = fitScale(box, width - insetRight, height, 20);
+      const usableW = width - insetRight;
+      const s = Math.min((usableW * 0.7) / (box.maxX - box.minX || 1), (height * 0.8) / (box.maxY - box.minY || 1));
       const c = centerOf(box);
       return { cx: c.cx + insetRight / (2 * s), cy: c.cy, s, rot: 0 };
     }
@@ -130,10 +131,10 @@ export function CampusMap(props: CampusMapProps) {
       const padX = Math.max(PLAN_W * 0.08, (box.maxX - box.minX) * 0.15);
       const padY = Math.max(PLAN_H * 0.08, (box.maxY - box.minY) * 0.15);
       const padded = { minX: box.minX - padX, minY: box.minY - padY, maxX: box.maxX + padX, maxY: box.maxY + padY };
-      const s = Math.min(fitScale(padded, width, height, 12), macroFit * 2.2);
+      const s = Math.min(fitScale(padded, width, height, 12) * 0.85, macroFit * 2.2);
       return { ...centerOf(padded), s, rot: 0 };
     }
-    return { ...centerOf(macroBox), s: macroFit, rot: 0 };
+    return { ...centerOf(macroBox), s: macroFit * 0.85, rot: 0 };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, width, height, insetRight, activeB, posXY?.[0], posXY?.[1], heading, routePoints.length]);
 
@@ -287,7 +288,7 @@ export function CampusMap(props: CampusMapProps) {
       const bb = bboxPts(b.polygon.map(toPlan));
       const wPx = (bb.maxX - bb.minX) * sK;
       const hPx = (bb.maxY - bb.minY) * sK;
-      return { b, area: wPx * hPx, size: Math.max(11, Math.min(26, Math.min(wPx, hPx) * 0.5)) };
+      return { b, area: wPx * hPx, size: Math.max(10, Math.min(22, Math.min(wPx, hPx) * 0.45)) };
     }).sort((a, c) => c.area - a.area);
     sized.forEach(({ b, size }) => {
       const [x, y] = toPlan(b.labelAt);
@@ -306,7 +307,7 @@ export function CampusMap(props: CampusMapProps) {
     });
   } else if (mode === 'floor' && indoorB && !plan) {
     const [x, y] = toPlan(indoorB.labelAt);
-    layers.push(label('fl-name', x, y, indoorB.name, 14, m.roomText, '800'));
+    layers.push(label('fl-name', x, y, indoorB.name, 12, m.roomText, '800'));
   }
 
   return layers;
@@ -390,7 +391,7 @@ export function CampusMap(props: CampusMapProps) {
       </Svg>
       {title ? (
         <View style={[styles.title, { backgroundColor: t.colors.surface, borderColor: t.colors.border, borderRadius: t.radius.sm, left: t.spacing.sm, top: t.spacing.sm, paddingHorizontal: t.spacing.md, paddingVertical: t.spacing.xs }]}>
-          <AppText variant="label">{title}</AppText>
+          <AppText variant="caption" style={{ fontSize: 13, lineHeight: 17, fontWeight: '700' }}>{title}</AppText>
         </View>
       ) : null}
       {noPlan ? (

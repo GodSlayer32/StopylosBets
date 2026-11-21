@@ -151,8 +151,8 @@ export default function NavigateScreen() {
           <Ionicons name="close" size={26} color={t.colors.text} />
         </Pressable>
         <View style={styles.flex}>
-          <AppText variant="caption" color="textMuted">Navegando hacia</AppText>
-          <AppText variant="heading" numberOfLines={1} accessibilityRole="header">{place.name}</AppText>
+          <AppText variant="caption" color="textMuted" style={{ fontSize: 12, lineHeight: 16 }}>Navegando hacia</AppText>
+          <AppText variant="heading" numberOfLines={1} accessibilityRole="header" style={accessibleMode ? undefined : { fontSize: 17, lineHeight: 22 }}>{place.name}</AppText>
         </View>
       </View>
 
@@ -169,7 +169,7 @@ export default function NavigateScreen() {
               level={floorLevel}
               destRoomId={destRoomId}
               height={topH}
-              insetRight={64}
+              insetRight={56}
               title={`Edificio ${floorB} | Piso ${floorLevel}`}
             />
             <View style={styles.rail} pointerEvents="none">
