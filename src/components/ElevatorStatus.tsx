@@ -1,8 +1,8 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
-import { minTouch, radius, shadow, spacing } from '@/constants/theme';
+import { minTouch, radius, shadow, spacing, thumbSize } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAgo, formatConfirmations } from '@/lib/time';
 import type { Elevator } from '@/types';
@@ -50,6 +50,17 @@ export function ElevatorStatus({ elevator: e, onPress }: Props) {
         <AppText variant="caption" color="textMuted">
           Fuente: {e.source === 'comunidad' ? 'comunidad' : e.source}
         </AppText>
+        {e.photoUri && e.status !== 'ok' ? (
+          <View style={styles.photoRow}>
+            <Image
+              source={{ uri: e.photoUri }}
+              style={[styles.thumb, { borderColor: colors.border }]}
+              accessibilityRole="image"
+              accessibilityLabel="Foto adjunta al reporte del ascensor"
+            />
+            <AppText variant="caption" color="textMuted">Foto del reporte</AppText>
+          </View>
+        ) : null}
       </View>
       {actionable ? <Ionicons name="chevron-forward" size={20} color={colors.textMuted} /> : null}
     </>
@@ -85,6 +96,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   iconWrap: { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  thumb: { width: thumbSize, height: thumbSize, borderRadius: radius.sm, borderWidth: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm },
   pill: {
     flexDirection: 'row',

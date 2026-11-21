@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
 import { useApp } from '@/context/app-context';
+import { thumbSize } from '@/constants/theme';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { EDGES, PLACES, getNode } from '@/lib/routing';
 import { formatAgo, formatConfirmations } from '@/lib/time';
@@ -49,6 +51,8 @@ export default function Report() {
   const [edgeId, setEdgeId] = useState<string | undefined>();
   const [nodeId, setNodeId] = useState<string | undefined>();
   const [description, setDescription] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | undefined>();
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [phase, setPhase] = useState<'form' | 'sending' | 'done'>('form');
   const [wasConfirm, setWasConfirm] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,6 +62,30 @@ export default function Report() {
   const isElevator = selected?.type === 'elevator';
   const pickedElevator = isElevator ? elevators.find((e) => e.id === elevatorId) : undefined;
   const alreadyReported = !!pickedElevator && pickedElevator.status !== 'ok' && !!pickedElevator.incidentId;
+
+  const pickPhoto = async (source: 'camera' | 'library') => {
+    setPhotoError(null);
+    try {
+      const perm = source === 'camera'
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setPhotoError(
+          source === 'camera'
+            ? 'No tenemos permiso para usar la cámara. Puedes activarlo en Ajustes o elegir una foto de la galería.'
+            : 'No tenemos permiso para ver tus fotos. Puedes activarlo en Ajustes o tomar una foto.',
+        );
+        return;
+      }
+      const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.5, allowsEditing: false };
+      const res = source === 'camera'
+        ? await ImagePicker.launchCameraAsync(opts)
+        : await ImagePicker.launchImageLibraryAsync(opts);
+      if (!res.canceled && res.assets[0]?.uri) setPhotoUri(res.assets[0].uri);
+    } catch {
+      setPhotoError('No pudimos abrir la cámara o la galería en este dispositivo. Puedes enviar el reporte sin foto.');
+    }
+  };
 
   const submit = () => {
     if (!selected) return;
@@ -70,6 +98,7 @@ export default function Report() {
         type: selected.type,
         description: description.trim() || selected.label,
         reportedBy: REPORTER,
+        ...(photoUri ? { photoUri } : {}),
         ...(isElevator ? { elevatorId } : { edgeId, nodeId }),
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -87,6 +116,9 @@ export default function Report() {
         <AppText variant="title" style={styles.centerText} accessibilityRole="alert">
           {wasConfirm ? '¡Gracias! Tu confirmación hace más confiable el estado del ascensor' : '¡Gracias! Ya avisamos a quienes pasan por aquí'}
         </AppText>
+        {photoUri && !wasConfirm ? (
+          <Image source={{ uri: photoUri }} style={styles.donePhoto} accessibilityRole="image" accessibilityLabel="Foto adjunta a tu reporte" />
+        ) : null}
       </Screen>
     );
   }
@@ -137,6 +169,24 @@ export default function Report() {
         </View>
       ) : null}
 
+      {selected && !alreadyReported ? (
+        <View style={styles.section}>
+          <AppText variant="heading" accessibilityRole="header">Foto (opcional, ayuda a confirmar)</AppText>
+          {photoUri ? (
+            <View style={styles.photoRow}>
+              <Image source={{ uri: photoUri }} style={styles.thumb} accessibilityRole="image" accessibilityLabel="Vista previa de la foto adjunta" />
+              <Button label="Quitar foto" icon="trash" variant="secondary" onPress={() => setPhotoUri(undefined)} accessibilityLabel="Quitar foto adjunta" />
+            </View>
+          ) : (
+            <View style={styles.wrap}>
+              <Button label="Tomar foto" icon="camera" variant="secondary" onPress={() => pickPhoto('camera')} accessibilityHint="Abre la cámara para fotografiar la barrera" />
+              <Button label="Elegir de la galería" icon="images" variant="secondary" onPress={() => pickPhoto('library')} accessibilityHint="Abre tu galería de fotos" />
+            </View>
+          )}
+          {photoError ? <AppText variant="caption" style={styles.photoError} accessibilityRole="alert">{photoError}</AppText> : null}
+        </View>
+      ) : null}
+
       <View style={styles.section}>
         <AppText variant="heading" accessibilityRole="header">Detalles (opcional)</AppText>
         <TextInput
@@ -170,6 +220,10 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     flex: { flex: 1 },
     wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm },
     section: { gap: t.spacing.md },
+    photoRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md },
+    thumb: { width: thumbSize, height: thumbSize, borderRadius: t.radius.md, borderWidth: 1, borderColor: t.colors.border },
+    donePhoto: { width: thumbSize * 2, height: thumbSize * 2, borderRadius: t.radius.md, marginTop: t.spacing.lg },
+    photoError: { color: t.colors.danger },
     done: {
       flexDirection: 'row',
       alignItems: 'center',
