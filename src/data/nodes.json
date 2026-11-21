@@ -166,48 +166,19 @@
     },
     {
       "id": "c_in",
-      "label": "Entrada Edif. C",
-      "x": 57.5,
-      "y": 42.5,
+      "label": "Hall de entrada Edif. C",
+      "x": 61.43,
+      "y": 36.35,
       "building": "C",
       "floor": 1,
       "zone": "Edificio C · Piso 1",
       "arrivalCue": "Puerta de vidrio doble, la de la derecha es la que abre; adentro está el mostrador de portería a la izquierda"
     },
     {
-      "id": "c_elev_p1",
-      "label": "Ascensor Edif. C (piso 1)",
-      "x": 59.5,
-      "y": 40.5,
-      "building": "C",
-      "floor": 1,
-      "zone": "Edificio C · Piso 1",
-      "arrivalCue": "El ascensor está al fondo del hall, de frente; el botón de llamada, con braille, está a la derecha y suena al llegar"
-    },
-    {
-      "id": "c_elev_p2",
-      "label": "Ascensor Edif. C (piso 2)",
-      "x": 59.5,
-      "y": 40.5,
-      "building": "C",
-      "floor": 2,
-      "zone": "Edificio C · Piso 2"
-    },
-    {
-      "id": "c_105",
-      "label": "C-105",
-      "x": 62,
-      "y": 41,
-      "building": "C",
-      "floor": 1,
-      "zone": "Edificio C · Piso 1",
-      "arrivalCue": "Puerta de madera, la primera a la izquierda frente al ascensor; el número va en relieve a la altura de la manilla"
-    },
-    {
       "id": "c_p2_hub",
-      "label": "Pasillo Edif. C piso 2",
-      "x": 59,
-      "y": 43.8,
+      "label": "Pasillo de salas piso 2",
+      "x": 55.82,
+      "y": 36.35,
       "building": "C",
       "floor": 2,
       "zone": "Edificio C · Piso 2"
@@ -215,30 +186,31 @@
     {
       "id": "c_210",
       "label": "C-210",
-      "x": 63,
+      "x": 54.39,
       "y": 37.5,
       "building": "C",
       "floor": 2,
       "zone": "Edificio C · Piso 2",
-      "arrivalCue": "Puerta de madera, la segunda a la derecha después del ascensor; el número va en relieve a la altura de la manilla"
+      "arrivalCue": "Al subir la escalera junto al baño universal, es la primera puerta a la izquierda"
     },
     {
       "id": "bano_c",
-      "label": "Baño accesible Edif. C",
-      "x": 61,
-      "y": 38.5,
+      "label": "Baño universal Edif. C",
+      "x": 56.58,
+      "y": 38.0,
       "building": "C",
-      "floor": 2,
-      "zone": "Edificio C · Piso 2"
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
     },
     {
       "id": "c_north",
-      "label": "Entrada norte Edif. C",
-      "x": 58.6,
-      "y": 32,
+      "label": "Entrada norte Edif. C (Calle Talleres)",
+      "x": 61.43,
+      "y": 34.37,
       "building": "C",
       "floor": 1,
-      "zone": "Edificio C · Entrada norte"
+      "zone": "Edificio C · Entrada norte",
+      "arrivalCue": "Fachada con portón vidriado bajo el escudo de la universidad; se entra a nivel, sin escalones"
     },
     {
       "id": "acc_placeres",
@@ -375,6 +347,101 @@
       "x": 58.3,
       "y": 58.0,
       "zone": "Patio Central"
+    },
+    {
+      "id": "c_st_n",
+      "label": "Escalera junto al baño universal",
+      "x": 55.91,
+      "y": 36.46,
+      "building": "C",
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
+    },
+    {
+      "id": "c_hall",
+      "label": "Hall Central Edif. C",
+      "x": 63.92,
+      "y": 40.31,
+      "building": "C",
+      "floor": 1,
+      "zone": "Edificio C · Piso 1",
+      "arrivalCue": "Hall alto con techo de vidrio y vigas rojas; letreros rojos de 'Edificio C · Laboratorios' a ambos lados"
+    },
+    {
+      "id": "c_labs",
+      "label": "Laboratorios Edif. C",
+      "x": 58.02,
+      "y": 42.39,
+      "building": "C",
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
+    },
+    {
+      "id": "c_sur",
+      "label": "Escalera sur Edif. C",
+      "x": 64.89,
+      "y": 44.04,
+      "building": "C",
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
+    },
+    {
+      "id": "c_st_e",
+      "label": "Escalera a la cafetería",
+      "x": 66.62,
+      "y": 39.48,
+      "building": "C",
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
+    },
+    {
+      "id": "c_cafe",
+      "label": "Cafetería Edif. C",
+      "x": 64.51,
+      "y": 37.67,
+      "building": "C",
+      "floor": 2,
+      "zone": "Edificio C · Piso 2",
+      "arrivalCue": "Al terminar la escalera del Hall Central; se escucha la máquina de café"
+    },
+    {
+      "id": "c_pas_c_e",
+      "label": "Pasillo central Edif. C (lado hall)",
+      "x": 59.54,
+      "y": 39.62,
+      "building": "C",
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
+    },
+    {
+      "id": "c_pas_c",
+      "label": "Pasillo central Edif. C",
+      "x": 54.14,
+      "y": 40.06,
+      "building": "C",
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
+    },
+    {
+      "id": "c_oeste",
+      "label": "Salida oeste Edif. C",
+      "x": 45.45,
+      "y": 40.06,
+      "building": "C",
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
+    },
+    {
+      "id": "c_oeste_ext",
+      "label": "Exterior oeste Edif. C",
+      "x": 44.6,
+      "y": 40.06
+    },
+    {
+      "id": "c_sur_pie",
+      "label": "Pie de la escalera sur Edif. C",
+      "x": 64.89,
+      "y": 47.01
     }
   ]
 }

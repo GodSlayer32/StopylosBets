@@ -197,7 +197,7 @@ export interface Building {
   name: string;
   /** Ordenados de abajo hacia arriba */
   floors: BuildingFloor[];
-  elevator: { id: string; x: number };
+  elevator?: { id: string; x: number };
   stairs: { x: number };
   entrances: BuildingEntrance[];
 }

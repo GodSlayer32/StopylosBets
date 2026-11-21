@@ -154,182 +154,6 @@
       "covered": false
     },
     {
-      "id": "c_plaza>c_in:flat",
-      "from": "c_plaza",
-      "to": "c_in",
-      "distanceM": 14,
-      "type": "flat",
-      "cues": [
-        {
-          "at": "start",
-          "side": "left",
-          "text": "una banca de madera"
-        },
-        {
-          "at": "mid",
-          "side": "right",
-          "text": "un pilar de hormigón"
-        },
-        {
-          "at": "end",
-          "side": "ahead",
-          "text": "la puerta de vidrio del Edificio C"
-        }
-      ],
-      "covered": false,
-      "widthCm": 120,
-      "curbCut": true
-    },
-    {
-      "id": "c_in>c_p2_hub:stairs",
-      "from": "c_in",
-      "to": "c_p2_hub",
-      "distanceM": 12,
-      "type": "stairs",
-      "steps": 16,
-      "covered": true,
-      "name": "Escalera interior Edif. C",
-      "cues": [
-        {
-          "at": "start",
-          "side": "right",
-          "text": "la baranda"
-        },
-        {
-          "at": "start",
-          "text": "el primer peldaño tiene borde amarillo"
-        },
-        {
-          "at": "end",
-          "text": "el último peldaño tiene borde amarillo"
-        }
-      ]
-    },
-    {
-      "id": "c_in>c_elev_p1:flat",
-      "from": "c_in",
-      "to": "c_elev_p1",
-      "distanceM": 8,
-      "type": "flat",
-      "covered": true,
-      "cues": [
-        {
-          "at": "start",
-          "side": "left",
-          "text": "el mostrador de portería"
-        },
-        {
-          "at": "mid",
-          "side": "right",
-          "text": "el pasamanos de la pared"
-        },
-        {
-          "at": "end",
-          "side": "ahead",
-          "text": "el timbre y el sonido de las puertas del ascensor"
-        }
-      ],
-      "widthCm": 90
-    },
-    {
-      "id": "c_elev_p1>c_elev_p2:elevator",
-      "from": "c_elev_p1",
-      "to": "c_elev_p2",
-      "distanceM": 10,
-      "type": "elevator",
-      "elevatorId": "elev-c",
-      "cues": [
-        {
-          "at": "mid",
-          "text": "La botonera está a la derecha de la puerta, con números en braille y un aviso de voz del piso"
-        }
-      ],
-      "covered": true
-    },
-    {
-      "id": "c_elev_p2>c_p2_hub:flat",
-      "from": "c_elev_p2",
-      "to": "c_p2_hub",
-      "distanceM": 6,
-      "type": "flat",
-      "covered": true,
-      "cues": [
-        {
-          "at": "start",
-          "side": "right",
-          "text": "el pasamanos"
-        }
-      ]
-    },
-    {
-      "id": "c_elev_p2>c_210:flat",
-      "from": "c_elev_p2",
-      "to": "c_210",
-      "distanceM": 10,
-      "type": "flat",
-      "covered": true,
-      "cues": [
-        {
-          "at": "start",
-          "side": "right",
-          "text": "la pared lisa"
-        },
-        {
-          "at": "mid",
-          "side": "left",
-          "text": "una banca bajo la ventana"
-        },
-        {
-          "at": "end",
-          "side": "right",
-          "text": "puertas de salas de madera, una tras otra"
-        }
-      ],
-      "widthCm": 85
-    },
-    {
-      "id": "c_elev_p2>bano_c:flat",
-      "from": "c_elev_p2",
-      "to": "bano_c",
-      "distanceM": 8,
-      "type": "flat",
-      "covered": true
-    },
-    {
-      "id": "c_p2_hub>c_210:flat",
-      "from": "c_p2_hub",
-      "to": "c_210",
-      "distanceM": 14,
-      "type": "flat",
-      "covered": true,
-      "cues": [
-        {
-          "at": "start",
-          "side": "left",
-          "text": "el muro del pasillo"
-        },
-        {
-          "at": "mid",
-          "side": "right",
-          "text": "una jardinera interior"
-        },
-        {
-          "at": "end",
-          "side": "right",
-          "text": "puertas de madera"
-        }
-      ],
-      "widthCm": 85
-    },
-    {
-      "id": "c_elev_p1>c_105:flat",
-      "from": "c_elev_p1",
-      "to": "c_105",
-      "distanceM": 6,
-      "type": "flat",
-      "covered": true
-    },
-    {
       "id": "acc_espana>rd_s:slope",
       "from": "acc_espana",
       "to": "rd_s",
@@ -664,36 +488,6 @@
       ]
     },
     {
-      "id": "b_p2>c_p2_hub:flat",
-      "from": "b_p2",
-      "to": "c_p2_hub",
-      "distanceM": 55,
-      "type": "flat",
-      "covered": true,
-      "name": "Pasarela Edif. B – Edif. C",
-      "cues": [
-        {
-          "at": "start",
-          "side": "left",
-          "text": "el ventanal de la pasarela"
-        },
-        {
-          "at": "mid",
-          "side": "right",
-          "text": "el pasamanos metálico"
-        },
-        {
-          "at": "mid",
-          "text": "el piso es de goma, con textura distinta a la del pasillo"
-        },
-        {
-          "at": "end",
-          "side": "ahead",
-          "text": "una puerta cortafuego abierta hacia el Edificio C"
-        }
-      ]
-    },
-    {
       "id": "b_in>acc_san_luis:flat",
       "from": "b_in",
       "to": "acc_san_luis",
@@ -753,15 +547,6 @@
       "type": "flat",
       "covered": false,
       "curbCut": true
-    },
-    {
-      "id": "c_north>c_elev_p1:flat",
-      "from": "c_north",
-      "to": "c_elev_p1",
-      "distanceM": 15,
-      "type": "flat",
-      "covered": true,
-      "widthCm": 90
     },
     {
       "id": "a_in>a_elev_p1:flat",
@@ -884,6 +669,211 @@
         }
       ],
       "covered": false
+    },
+    {
+      "id": "c_north>c_in:flat",
+      "from": "c_north",
+      "to": "c_in",
+      "distanceM": 7,
+      "type": "flat",
+      "covered": true,
+      "name": "Acceso norte Edif. C",
+      "cues": [
+        {
+          "at": "start",
+          "side": "ahead",
+          "text": "las puertas de vidrio del portón"
+        }
+      ]
+    },
+    {
+      "id": "c_in>c_st_n:flat",
+      "from": "c_in",
+      "to": "c_st_n",
+      "distanceM": 22,
+      "type": "flat",
+      "covered": true,
+      "cues": [
+        {
+          "at": "mid",
+          "side": "left",
+          "text": "puertas de salas una tras otra"
+        }
+      ]
+    },
+    {
+      "id": "c_st_n>bano_c:flat",
+      "from": "c_st_n",
+      "to": "bano_c",
+      "distanceM": 4,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_st_n>c_p2_hub:stairs",
+      "from": "c_st_n",
+      "to": "c_p2_hub",
+      "distanceM": 10,
+      "type": "stairs",
+      "steps": 18,
+      "covered": true,
+      "name": "Escalera a salas del piso 2",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda"
+        }
+      ]
+    },
+    {
+      "id": "c_p2_hub>c_210:flat",
+      "from": "c_p2_hub",
+      "to": "c_210",
+      "distanceM": 6,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_in>c_hall:flat",
+      "from": "c_in",
+      "to": "c_hall",
+      "distanceM": 13,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_hall>c_labs:flat",
+      "from": "c_hall",
+      "to": "c_labs",
+      "distanceM": 22,
+      "type": "flat",
+      "covered": true,
+      "cues": [
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "los letreros rojos de laboratorios"
+        }
+      ]
+    },
+    {
+      "id": "c_hall>c_st_e:flat",
+      "from": "c_hall",
+      "to": "c_st_e",
+      "distanceM": 9,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_st_e>c_cafe:stairs",
+      "from": "c_st_e",
+      "to": "c_cafe",
+      "distanceM": 10,
+      "type": "stairs",
+      "steps": 20,
+      "covered": true,
+      "name": "Escalera del Hall Central",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda roja"
+        }
+      ]
+    },
+    {
+      "id": "c_hall>c_sur:flat",
+      "from": "c_hall",
+      "to": "c_sur",
+      "distanceM": 12,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_sur>c_sur_pie:stairs",
+      "from": "c_sur",
+      "to": "c_sur_pie",
+      "distanceM": 8,
+      "type": "stairs",
+      "steps": 16,
+      "name": "Escalera sur Edif. C",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda metálica"
+        }
+      ]
+    },
+    {
+      "id": "c_sur_pie>c_plaza:flat",
+      "from": "c_sur_pie",
+      "to": "c_plaza",
+      "distanceM": 16,
+      "type": "flat",
+      "name": "Explanada Edif. C"
+    },
+    {
+      "id": "c_hall>c_pas_c_e:flat",
+      "from": "c_hall",
+      "to": "c_pas_c_e",
+      "distanceM": 17,
+      "type": "flat",
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "ahead",
+          "text": "la entrada al pasillo entre los dos muros"
+        }
+      ]
+    },
+    {
+      "id": "c_pas_c_e>c_pas_c:flat",
+      "from": "c_pas_c_e",
+      "to": "c_pas_c",
+      "distanceM": 21,
+      "type": "flat",
+      "covered": true,
+      "name": "Pasillo central Edif. C",
+      "cues": [
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "el muro liso"
+        },
+        {
+          "at": "mid",
+          "side": "left",
+          "text": "puertas de laboratorios"
+        }
+      ]
+    },
+    {
+      "id": "c_pas_c>c_oeste:flat",
+      "from": "c_pas_c",
+      "to": "c_oeste",
+      "distanceM": 34,
+      "type": "flat",
+      "covered": true,
+      "name": "Pasillo central Edif. C"
+    },
+    {
+      "id": "c_oeste>c_oeste_ext:flat",
+      "from": "c_oeste",
+      "to": "c_oeste_ext",
+      "distanceM": 3,
+      "type": "flat",
+      "name": "Salida oeste Edif. C"
+    },
+    {
+      "id": "c_oeste_ext>cancha_acc:flat",
+      "from": "c_oeste_ext",
+      "to": "cancha_acc",
+      "distanceM": 31,
+      "type": "flat",
+      "name": "Camino oeste Edif. C"
     }
   ]
 }

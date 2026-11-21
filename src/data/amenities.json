@@ -12,8 +12,7 @@
     { "id": "shade-patio", "type": "shade", "name": "Toldo del Patio Central", "x": 66.8, "y": 67.2, "accessible": true, "note": "Corredor techado con toldo, protege del sol y de la lluvia" },
     { "id": "shade-a-galeria", "type": "shade", "name": "Galería techada del Edif. A", "x": 62, "y": 78, "building": "A", "floor": 1, "accessible": true, "note": "Galería cubierta entre la explanada y el hall" },
     { "id": "wc-b1", "type": "wc", "name": "Baño accesible Edif. B, piso 1", "nodeId": "bano_b", "building": "B", "floor": 1, "accessible": true, "note": "Puerta de 90 cm, barras de apoyo y espacio de giro; junto al ascensor" },
-    { "id": "wc-c1", "type": "wc", "name": "Baño accesible Edif. C, piso 1", "x": 60.4, "y": 41.9, "building": "C", "floor": 1, "accessible": true, "note": "A la derecha del ascensor, con barras de apoyo" },
-    { "id": "wc-c2", "type": "wc", "name": "Baño accesible Edif. C, piso 2", "nodeId": "bano_c", "building": "C", "floor": 2, "accessible": true, "note": "Pasillo del ascensor, segunda puerta a la izquierda" },
+    { "id": "wc-c2", "type": "wc", "name": "Baño universal Edif. C, piso 1", "nodeId": "bano_c", "building": "C", "floor": 1, "accessible": true, "note": "Junto a la escalera que sube a las salas del piso 2" },
     { "id": "wc-d1", "type": "wc", "name": "Baño accesible Edif. D, piso 1", "x": 73.2, "y": 67.8, "building": "D", "floor": 1, "accessible": true, "note": "Cerca del ascensor, con puerta corredera" },
     { "id": "water-b1", "type": "water", "name": "Bebedero del Edif. B", "x": 68.4, "y": 55.6, "building": "B", "floor": 1, "accessible": true, "note": "Bebedero a dos alturas, accesible desde silla de ruedas" },
     { "id": "water-patio", "type": "water", "name": "Bebedero del Patio Central", "x": 65.4, "y": 65.4, "accessible": true, "note": "Junto a la banca principal del Patio" }
