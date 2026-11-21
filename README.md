@@ -52,13 +52,15 @@ Detalle de inclusión y código de vibraciones: [docs/INCLUSION.md](docs/INCLUSI
 
 ## Demo sugerida
 
-1. Elegir el perfil **Muletas**.
-2. Pedir ruta a **Laboratorios Edif. C** (416 m, evita 80 escalones) y pulsar **Simular** para recorrerla.
-3. Ir a **Mi día**: la **Ayudantía en C-210** (piso 2, Edif. C, sin ascensor) aparece como *Sin ruta accesible · piso sin ascensor*.
-4. Pulsar **Solicitar sala accesible**: se abre el mensaje cortés prearmado para compartir con Docencia o el profesor.
-5. Opcional: pedir ruta a **Lab. Física** (ascensor del Edif. D), reportar ese ascensor como caído y ver el estado *sin ruta* con alternativa.
-6. Cambiar a **Silla de ruedas**: desde Av. España no hay ruta autónoma. La app lo dice, calcula sola el punto más cercano al que sí se puede llegar y **levanta el ticket de apoyo** (folio, estado y detalle de lo que pidió por ti). Abajo quedan las alternativas: entrar por **Placeres** o ir con acompañante.
-7. Cambiar a **Baja visión** y repetir: alto contraste, voz y vibraciones.
+Historia de Camila Rojas, estudiante en silla de ruedas (perfil por defecto):
+
+1. En el perfil queda marcado **Silla de ruedas** → **Continuar**.
+2. En el inicio aparece su próxima clase, **Laboratorio de Ingeniería de Software en P401** (Edif. P, piso 4), con la hora a la que debe salir. Pulsar **Llévame**: ruta de 121 m con 0 escalones (evita 60), ascensor P apto para silla y puertas de 80 cm o más.
+3. **Iniciar ruta** → **Simular**: pantalla dividida, con el edificio y el piso arriba y la instrucción del próximo giro abajo, hasta llegar a la P401.
+4. De vuelta, ruta a **Laboratorios Edif. C**. Frente al ascensor de P aparece **"¿El ascensor no funciona? Repórtalo"**: al reportarlo, la app explica que no hay otra forma de bajar en silla y **pide apoyo sola** con un ticket que cambia de estado (enviado → apoyo en camino → *El apoyo llegó · te ayudan a bajar*).
+5. Pulsar **Ya me ayudaron**: el ticket se cierra, la ruta se recalcula desde el piso 1 de P y Camila llega sola al Edificio C (73 m, 0 escalones).
+6. Opcional: abrir **Mapa del campus** desde el inicio, tocar un edificio y recorrer sus pisos, ascensores y salas.
+7. Opcional: cambiar a **Baja visión** y repetir: alto contraste, voz y vibraciones distintas por giro.
 
 ## Cómo ejecutar
 
@@ -81,13 +83,13 @@ y abre `exp://127.0.0.1:8081` en Expo Go.
 
 ## Tecnologías
 
-Expo SDK 58, React Native, Expo Router, TypeScript, react-native-svg, react-native-gesture-handler, react-native-reanimated, expo-speech, expo-haptics y @expo/vector-icons. Sin backend: estado en Context y datos en JSON locales.
+Expo SDK 58, React Native, Expo Router, TypeScript, react-native-svg, react-native-gesture-handler, react-native-reanimated, expo-speech, expo-haptics, expo-image-picker (foto opcional en reportes) y @expo/vector-icons. Sin backend: estado en Context y datos en JSON locales.
 
 ## Estructura del proyecto
 
 ```
 src/
-  app/          pantallas (Expo Router): inicio, ruta, navegación, reporte
+  app/          pantallas (Expo Router): perfil, inicio, mapa, Mi día, ruta, navegación, reporte
   components/   UI reutilizable (mapas, tarjetas, selector de pisos, ascensores)
   constants/    theme.ts (colores, tipografía, espaciado, radios)
   context/      estado global (perfil, reportes, accesibilidad)
@@ -101,11 +103,13 @@ docs/           enunciado, presentación, plano e INCLUSION.md
 ## Datos, supuestos y limitaciones
 
 - El plano de Casa Central (`docs/casa-central-1.jpg`) es real y se trazó a mano a vectores.
-- **Edificio C relevado por el equipo** (plantas reales, sin ascensor).
+- **Edificios C y F dibujados por el equipo** (C: piso 1 real y sin ascensor; F: piso 1 y subterráneo).
+- **Edificio P**: esquema simple de 5 pisos (-1 a 4) con ascensor y túnel bajo Av. Placeres; los nombres de los pisos 1 y -1 vienen de la tesis USM 2024 y el resto es simulado.
 - **Simulados** (resto de edificios): escalones, pendientes, ascensores, plantas interiores, referencias físicas y horario.
 - Sin GPS ni posicionamiento interior: la posición es simulada.
 - El enfoque es baja visión, no ceguera total.
 - Sin backend: los reportes son locales al dispositivo.
+- El **ticket de apoyo** (folio, "portal de atención USM", apoyo en terreno de la DAE y sus estados) es **simulado**: no hay integración real con la universidad.
 
 ## Recursos externos
 
@@ -117,6 +121,8 @@ docs/           enunciado, presentación, plano e INCLUSION.md
 ## Uso de IA
 
 Desarrollo asistido con **Claude Code**: Claude Opus como arquitecto y revisor, y subagentes Claude Sonnet y Haiku para implementación, búsqueda y chequeos. El equipo definió el problema, el alcance y el diseño de interacción (boceto en pizarra), y validó en dispositivo. Todo el código fue revisado y probado en Expo Go en un Android real.
+
+El logo de Ruta Libre fue generado con **Google Gemini** (`docs/Gemini_Generated_Image_gqe186gqe186gqe1.jpg`) y elegido por el equipo.
 
 ## Trabajo futuro
 
