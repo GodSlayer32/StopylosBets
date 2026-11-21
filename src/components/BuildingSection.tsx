@@ -43,7 +43,7 @@ export function BuildingSection({
   };
   const slabX = LABEL_W;
   const slabW = Math.max(0, width - LABEL_W - spacing.sm);
-  const elevX = slabX + (building?.elevator.x ?? 0.8) * slabW;
+  const elevX = slabX + (building?.elevator?.x ?? 0.8) * slabW;
   const stairX = slabX + (building?.stairs.x ?? 0.14) * slabW;
 
   const [dotY] = useState(() => new Animated.Value(0));
@@ -85,12 +85,13 @@ export function BuildingSection({
   const destName = destLabel ?? '';
   const hasChange = destLevel != null && destLevel !== currentLevel;
   const cur = building.floors.find((f) => f.level === currentLevel);
-  const side = building.elevator.x >= 0.5 ? 'derecha' : 'izquierda';
+  const side = building.elevator ? (building.elevator.x >= 0.5 ? 'derecha' : 'izquierda') : undefined;
+  const stairSide = building.stairs.x >= 0.5 ? 'derecha' : 'izquierda';
   const viaText =
     via === 'elevator'
-      ? ` Usa el ascensor a la ${side}.`
+      ? side ? ` Usa el ascensor a la ${side}.` : ''
       : via === 'stairs'
-        ? ` Usa la escalera a la ${side === 'derecha' ? 'izquierda' : 'derecha'}.`
+        ? ` Usa la escalera a la ${stairSide}.`
         : '';
   const a11y =
     `Estás en el ${(cur?.label ?? `piso ${currentLevel}`).toLowerCase()} del ${building.name}.` +
@@ -146,9 +147,11 @@ export function BuildingSection({
               );
             })}
             {/* Columnas */}
-            <Line x1={elevX} x2={elevX} y1={TITLE_H + 2} y2={TITLE_H + n * bandH - 2}
-              stroke={elevatorDown ? colors.danger : colors.border} strokeWidth={2}
-              strokeDasharray={elevatorDown ? '4,4' : undefined} />
+            {building.elevator ? (
+              <Line x1={elevX} x2={elevX} y1={TITLE_H + 2} y2={TITLE_H + n * bandH - 2}
+                stroke={elevatorDown ? colors.danger : colors.border} strokeWidth={2}
+                strokeDasharray={elevatorDown ? '4,4' : undefined} />
+            ) : null}
             <Line x1={stairX} x2={stairX} y1={TITLE_H + 2} y2={TITLE_H + n * bandH - 2}
               stroke={colors.border} strokeWidth={2} strokeDasharray={stairsAvoided ? '4,4' : undefined} />
           </Svg>
@@ -178,10 +181,12 @@ export function BuildingSection({
             );
           })}
 
-          <View pointerEvents="none" style={[styles.iconAt, { left: elevX - ICON / 2, top: 6 }]}>
-            <MaterialCommunityIcons name="elevator" size={ICON} color={elevColor} />
-            {elevatorDown ? <View style={[styles.strike, { backgroundColor: colors.danger }]} /> : null}
-          </View>
+          {building.elevator ? (
+            <View pointerEvents="none" style={[styles.iconAt, { left: elevX - ICON / 2, top: 6 }]}>
+              <MaterialCommunityIcons name="elevator" size={ICON} color={elevColor} />
+              {elevatorDown ? <View style={[styles.strike, { backgroundColor: colors.danger }]} /> : null}
+            </View>
+          ) : null}
           <View pointerEvents="none" style={[styles.iconAt, { left: stairX - ICON / 2, top: 6 }]}>
             <MaterialCommunityIcons name="stairs" size={ICON} color={stairColor}
               style={stairsAvoided ? styles.dim : undefined} />

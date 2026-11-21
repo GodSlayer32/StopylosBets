@@ -12,13 +12,13 @@
       "icon": "school"
     },
     {
-      "id": "c-105",
-      "name": "C-105",
-      "nodeId": "c_105",
+      "id": "c-labs",
+      "name": "Laboratorios Edif. C",
+      "nodeId": "c_labs",
       "building": "C",
       "floor": 1,
-      "category": "sala",
-      "icon": "school"
+      "category": "laboratorio",
+      "icon": "flask"
     },
     {
       "id": "a-101",
@@ -85,10 +85,10 @@
     },
     {
       "id": "bano-c",
-      "name": "Baño accesible Edif. C",
+      "name": "Baño universal Edif. C",
       "nodeId": "bano_c",
       "building": "C",
-      "floor": 2,
+      "floor": 1,
       "category": "servicio",
       "icon": "human-wheelchair"
     },
@@ -135,6 +135,15 @@
       "floor": 1,
       "category": "estudio",
       "icon": "book-education-outline"
+    },
+    {
+      "id": "cafeteria-c",
+      "name": "Cafetería Edif. C",
+      "nodeId": "c_cafe",
+      "building": "C",
+      "floor": 2,
+      "category": "comida",
+      "icon": "coffee"
     }
   ]
 }

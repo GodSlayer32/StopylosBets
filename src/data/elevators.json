@@ -36,23 +36,6 @@
       }
     },
     {
-      "id": "elev-c",
-      "building": "C",
-      "floors": [
-        1,
-        2,
-        3,
-        4
-      ],
-      "status": "ok",
-      "lastUpdate": "2026-11-21T11:05:00.000Z",
-      "dailyUsers": 4,
-      "cabinCm": {
-        "widthCm": 140,
-        "depthCm": 160
-      }
-    },
-    {
       "id": "elev-d",
       "building": "D",
       "floors": [

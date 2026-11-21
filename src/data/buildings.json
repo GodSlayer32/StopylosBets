@@ -120,10 +120,10 @@
           "level": 1,
           "label": "Piso 1",
           "rooms": [
-            "C-105",
-            "Hall Edificio C",
-            "Copias y Apuntes",
-            "Baño accesible"
+            "Hall Central",
+            "Laboratorios",
+            "Baño universal",
+            "Escalera sur a la explanada"
           ]
         },
         {
@@ -131,49 +131,24 @@
           "label": "Piso 2",
           "rooms": [
             "C-210",
-            "Lab. Redes",
-            "Sala de Computación",
-            "Baño accesible"
-          ]
-        },
-        {
-          "level": 3,
-          "label": "Piso 3",
-          "rooms": [
-            "C-305",
-            "C-310",
-            "Lab. Electrónica",
-            "Baño accesible"
-          ]
-        },
-        {
-          "level": 4,
-          "label": "Piso 4",
-          "rooms": [
-            "C-405",
-            "Sala de Tesistas",
-            "Oficinas Depto. Informática",
-            "Baño accesible"
+            "Salas C-201 a C-211",
+            "Cafetería"
           ]
         }
       ],
-      "elevator": {
-        "id": "elev-c",
-        "x": 0.8
-      },
       "stairs": {
-        "x": 0.14
+        "x": 0.42
       },
       "entrances": [
         {
           "level": 1,
-          "side": "left",
-          "label": "Desde Patio Central"
+          "side": "right",
+          "label": "Desde Calle Talleres (a nivel, sin escalones)"
         },
         {
-          "level": 2,
-          "side": "right",
-          "label": "Desde pasarela norte"
+          "level": 1,
+          "side": "left",
+          "label": "Desde la explanada sur (solo escalera)"
         }
       ]
     },
