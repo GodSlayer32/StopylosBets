@@ -176,6 +176,46 @@ export interface NoRouteDiagnosis {
   elevatorBuilding?: string;
 }
 
+/**
+ * Lo mas cerca que se puede llegar cuando no existe ninguna ruta completa:
+ * la ruta hasta el punto alcanzable mas proximo al destino, y lo que queda.
+ */
+export interface PartialRoute {
+  route: RouteResult;
+  reachedNodeId: string;
+  reachedLabel: string;
+  /** Distancia en linea recta que queda sin cubrir, en metros. */
+  remainingM: number;
+}
+
+export type TicketStatus = 'sent' | 'assigned';
+
+/**
+ * Ticket de apoyo. Se levanta solo cuando no hay ruta: nadie deberia tener que
+ * pedir ayuda a mano justo cuando la app acaba de decirle que no puede llegar.
+ */
+export interface SupportTicket {
+  /** Folio visible, p. ej. USM-2026-4817 */
+  id: string;
+  /** Clave de deduplicacion: origen + destino + perfil */
+  key: string;
+  createdAt: string;
+  placeId: string;
+  placeName: string;
+  originLabel: string;
+  reachedLabel: string;
+  remainingM: number;
+  profile: Profile;
+  status: TicketStatus;
+  /** Demo: quien toma el ticket una vez asignado */
+  assignee?: string;
+  /** Demo: minutos estimados hasta que llega el apoyo */
+  etaMin: number;
+  /** El texto que se envia al portal */
+  detail: string;
+  portalUrl: string;
+}
+
 export interface RouteComparison {
   route: RouteResult;
   shortest: RouteResult;

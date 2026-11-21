@@ -217,6 +217,23 @@ ol.pasos li.activo{background:var(--primary-soft);border-radius:var(--r-md);marg
 
 .vacio{padding:var(--s-xl) var(--s-lg);text-align:center;color:var(--text-faint);border:2px dashed var(--border);border-radius:var(--r-lg);font-size:.85em}
 
+/* ================================================================ ticket */
+.ticket{margin-top:var(--s-lg);padding:var(--s-lg);border:1.5px solid var(--primary);
+  border-radius:var(--r-md);background:var(--primary-soft)}
+.ticket .rotulo{color:var(--primary-dark)}
+.ticket p{margin:var(--s-xs) 0 0;font-size:.85em;line-height:1.45}
+.ticket-acc{display:grid;gap:var(--s-sm);margin-top:var(--s-md)}
+.ticket-acc .btn{width:100%;text-decoration:none}
+.ticket > small{display:block;margin-top:var(--s-sm);font-size:.74em;color:var(--text-muted);line-height:1.45}
+.ticket-estado:not(:empty){margin-top:var(--s-md)}
+.ticket details{margin-top:var(--s-md)}
+.ticket summary{cursor:pointer;font-size:.78em;font-weight:700;color:var(--primary-dark);
+  min-height:32px;display:flex;align-items:center}
+.ticket pre{margin:var(--s-sm) 0 0;padding:var(--s-md);background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-sm);font-size:.72em;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
 ul.reportes{list-style:none;margin:0;padding:0;font-size:.82em}
 ul.reportes li{display:flex;gap:var(--s-sm);align-items:flex-start;padding:var(--s-md) 0;border-top:1px solid var(--border)}
 ul.reportes li:first-child{border-top:0}
@@ -347,6 +364,11 @@ svg#mapa.modo-reporte #cap-hit{pointer-events:none}
 @keyframes dibujar{from{stroke-dashoffset:var(--largo)}to{stroke-dashoffset:0}}
 .ruta-fantasma{stroke:var(--ruta-fantasma);stroke-width:3;fill:none;stroke-linecap:round;
   stroke-linejoin:round;stroke-dasharray:6 5;opacity:.75}
+/* el tramo que no se puede cubrir: puntos, no linea, porque no es un camino */
+.ruta-falta{stroke:var(--danger);stroke-width:3.6;fill:none;stroke-linecap:round;stroke-dasharray:.5 8}
+.rotulo-falta{font-size:7.4px;font-weight:800;fill:var(--danger);text-anchor:middle;
+  paint-order:stroke;stroke:var(--surface);stroke-width:2.8px;pointer-events:none}
+:root[data-contraste="alto"] .rotulo-falta{stroke:#000}
 
 .pin{cursor:default}
 .pin-cuerpo{stroke:#fff;stroke-width:1.6}
@@ -613,14 +635,16 @@ function costo(e, p, estricto) {
   return c;
 }
 
-function dijkstra(desde, hasta, p, estricto) {
+/** Dijkstra sobre todo lo alcanzable desde `desde`: costos y arbol de rutas.
+ *  Se recorre la red completa (son unos cientos de tramos) porque ademas de la
+ *  ruta pedida interesa saber hasta donde se puede llegar cuando esa ruta no existe. */
+function dijkstraDesde(desde, p, estricto) {
   const dist = { [desde]: 0 }, prev = {}, vistos = new Set();
   const pend = new Set([desde]);
   while (pend.size) {
     let u = null;
     for (const n of pend) if (u === null || dist[n] < dist[u]) u = n;
     pend.delete(u); vistos.add(u);
-    if (u === hasta) break;
     for (const e of (ADY[u] || [])) {
       const v = e.a === u ? e.b : e.a;
       if (vistos.has(v)) continue;
@@ -630,11 +654,56 @@ function dijkstra(desde, hasta, p, estricto) {
       if (dist[v] === undefined || nd < dist[v]) { dist[v] = nd; prev[v] = [u, e]; pend.add(v); }
     }
   }
-  if (dist[hasta] === undefined) return null;
+  return { dist, prev };
+}
+
+/** Rearma la lista de tramos a partir del arbol `prev`. */
+function reconstruir(prev, desde, hasta) {
   const tramos = [];
   let cur = hasta;
   while (cur !== desde) { const [u, e] = prev[cur]; tramos.unshift({ e, de: u, a: cur }); cur = u; }
   return tramos;
+}
+
+function dijkstra(desde, hasta, p, estricto) {
+  const { dist, prev } = dijkstraDesde(desde, p, estricto);
+  if (dist[hasta] === undefined) return null;
+  return reconstruir(prev, desde, hasta);
+}
+
+/** Distancia en linea recta, en metros. */
+const metrosEntre = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) * RED.m_por_px;
+
+/** Cuando no hay ninguna ruta al destino: la mejor ruta hasta el punto
+ *  alcanzable que queda mas cerca de el. Quedarse a 40 m de la puerta y pedir
+ *  ayuda ahi no es lo mismo que quedarse en la porteria sin nada. */
+function rutaParcial(p) {
+  const B = RED.nodos[estado.destino];
+  if (!B) return null;
+  // Entre todo lo alcanzable, el punto que queda mas cerca del destino.
+  const candidato = (estricto) => {
+    const { dist, prev } = dijkstraDesde(estado.origen, p, estricto);
+    let nodo = null, cerca = Infinity;
+    for (const id in dist) {
+      if (id === estado.destino || !RED.nodos[id]) continue;   // si fuera alcanzable no estariamos aqui
+      const d = metrosEntre(RED.nodos[id], B);
+      if (d < cerca - 0.5 || (d < cerca + 0.5 && dist[id] < dist[nodo])) { nodo = id; cerca = d; }
+    }
+    return nodo === null ? null : { nodo, restante: cerca, estricto, prev };
+  };
+  const sin = candidato(true), con = candidato(false);
+  // Se prefiere lo que se puede recorrer sin barreras. Pasar por tramos duros
+  // solo vale la pena si acercan de verdad al destino —o si, sin ellos, no se
+  // puede mover ni un metro— porque son justo los que exigen ayuda de otro.
+  let mejor = sin;
+  if (!sin) mejor = con;
+  else if (con && (sin.nodo === estado.origen
+                     ? con.nodo !== estado.origen
+                     : con.restante < sin.restante / 2 - 1)) mejor = con;
+  if (!mejor) return null;
+  const tramos = reconstruir(mejor.prev, estado.origen, mejor.nodo);
+  return { tramos, modo: 'parcial', hasta: mejor.nodo, estricto: mejor.estricto,
+           restante: Math.round(mejor.restante), ...resumir(tramos, p) };
 }
 
 function resumir(tramos, p) {
@@ -666,7 +735,10 @@ function calcular() {
   if (estricta) return { tramos: estricta, modo: 'estricta', ref, ...resumir(estricta, p) };
   const flexible = dijkstra(estado.origen, estado.destino, p, false);
   if (flexible) return { tramos: flexible, modo: 'flexible', ref, ...resumir(flexible, p) };
-  return null;
+  // No hay forma de llegar: se devuelve lo que si se puede recorrer, hasta el
+  // punto alcanzable mas cercano al destino. El resto se pide como ayuda.
+  const parcial = rutaParcial(p);
+  return parcial ? { ...parcial, ref } : null;
 }
 
 /* =======================================================================
@@ -933,8 +1005,22 @@ function trazarRuta() {
     }
   });
 
+  if (r.modo === 'parcial') trazarFalta(r);
+
   pin(RED.nodos[estado.origen], 'A', 'var(--success)', true);
-  pin(RED.nodos[estado.destino], 'B', 'var(--primary)', false);
+  pin(RED.nodos[estado.destino], 'B', r.modo === 'parcial' ? 'var(--danger)' : 'var(--primary)', false);
+}
+
+/** El tramo que queda sin cubrir: puntos entre el ultimo punto alcanzable y el
+ *  destino, con los metros que faltan. Se dibuja distinto a proposito: no es un
+ *  camino, es el hueco donde hace falta alguien. */
+function trazarFalta(r) {
+  const a = RED.nodos[r.hasta], b = RED.nodos[estado.destino];
+  gRuta.appendChild(el('polyline', { points: aPoly([[a.x, a.y], [b.x, b.y]]), class: 'ruta-falta' }));
+  const t = el('text', { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 - 5, class: 'rotulo-falta' });
+  t.textContent = 'faltan ' + r.restante + ' m';
+  gRuta.appendChild(t);
+  if (r.hasta !== estado.origen) pin(a, '!', 'var(--warning)', true);
 }
 
 function pin(n, letra, color, pulsa) {
@@ -991,6 +1077,7 @@ function llenarSelects() {
 
 /** Gráfico de altura de la ruta: el campus es un cerro y eso se tiene que ver. */
 function perfilAltura(r) {
+  if (!r.tramos.length) return '';
   const pts = [];
   let acum = 0;
   pts.push({ d: 0, z: RED.nodos[r.tramos[0].de].z, tipo: r.tramos[0].e.tipo });
@@ -1031,6 +1118,117 @@ function desvio(r) {
     por la escalera o los peldaños que aquí hay que rodear.</div></div>`;
 }
 
+/* =======================================================================
+   Ticket de apoyo — portal de atención USM
+   ======================================================================= */
+const PORTAL_AYUDA = 'https://usm.proactivanet.com/proactivanet/portal/';
+
+const nombreNodo = (id) => (RED.nodos[id] ? RED.nodos[id].n : id);
+const nombreDestino = (id) => (DEST_POR_NODO[id] ? DEST_POR_NODO[id].nombre : nombreNodo(id));
+
+/** El texto que se pega en la descripción del ticket. Lleva lo que necesita
+ *  saber quien va a acompañar: perfil, hasta dónde se llega sin ayuda, qué
+ *  tramo falta y qué barreras lo están cortando. */
+function textoTicket(r) {
+  const p = PERFILES[estado.perfil];
+  const L = ['Solicitud de acompañamiento para desplazarse en el campus Casa Central', ''];
+  L.push('Desde: ' + nombreDestino(estado.origen));
+  L.push('Hasta: ' + nombreDestino(estado.destino));
+  L.push('Perfil de movilidad: ' + p.nombre + ' — ' + p.sub.toLowerCase());
+  L.push('Solicitado: ' + new Date().toLocaleString('es-CL'));
+  L.push('');
+  if (!r) {
+    L.push('El planificador de rutas accesibles no encuentra ningún camino, ni siquiera parcial,');
+    L.push('entre esos dos puntos con este perfil de movilidad.');
+  } else if (r.modo === 'parcial') {
+    L.push('No existe una ruta completa con este perfil de movilidad.');
+    if (r.tramos.length) {
+      L.push('Puedo llegar por mi cuenta hasta ' + nombreNodo(r.hasta) +
+             ' (' + r.m + ' m, unos ' + r.min + ' min desde el origen).');
+      L.push('Necesito acompañamiento en los últimos ' + r.restante + ' m —distancia en línea recta,');
+      L.push('sin camino practicable— hasta ' + nombreDestino(estado.destino) + '.');
+    } else {
+      L.push('No puedo avanzar desde ' + nombreNodo(estado.origen) + ': con este perfil todas las');
+      L.push('salidas de ese punto están bloqueadas. Necesito acompañamiento desde el inicio.');
+    }
+  } else {
+    L.push('La ruta existe, pero tiene ' + r.obstaculos.length + ' punto(s) donde este perfil');
+    L.push('necesita ayuda de terceros.');
+  }
+  if (r && r.obstaculos.length) {
+    L.push('', 'Puntos del trayecto donde se necesita ayuda:');
+    r.obstaculos.forEach(t => L.push('  - ' + ETIQUETA_TIPO[t.e.tipo] + ' entre ' + nombreNodo(t.de) +
+      ' y ' + nombreNodo(t.a) + (t.e.esc ? ' (' + t.e.esc + ' peldaños)' : '') +
+      (t.e.nota ? '. ' + t.e.nota : '')));
+  }
+  if (r && r.tramos.length) {
+    L.push('', 'Trayecto que puedo hacer por mi cuenta:');
+    r.tramos.forEach((t, i) => L.push('  ' + (i + 1) + '. ' + ETIQUETA_TIPO[t.e.tipo] + ' hasta ' +
+      nombreNodo(t.a) + ' — ' + Math.round(t.e.m) + ' m' + (t.e.esc ? ', ' + t.e.esc + ' peldaños' : '')));
+  }
+  if (estado.reportes.length) {
+    L.push('', 'Barreras reportadas por la comunidad que hoy cortan el paso:');
+    estado.reportes.forEach(x => {
+      const [a, b] = x.k.split('|');
+      L.push('  - ' + x.motivo + ' (' + nombreNodo(a) + ' – ' + nombreNodo(b) + '; ' +
+             x.votos + ' reportes, ' + x.cuando + ')');
+    });
+  }
+  L.push('', 'Referencia: MAPA-ACC-' + Date.now().toString(36).toUpperCase());
+  L.push('Generado por el mapa de rutas accesibles de la USM (plano del campus y memoria de');
+  L.push('título de Cañas Escobar, 2018). Las cotas y pendientes son estimaciones.');
+  return L.join('\n');
+}
+
+/** Bloque «pedir ayuda»: abre el portal de atención y deja el detalle del
+ *  trayecto en el portapapeles, porque el portal no acepta datos por la URL. */
+function bloqueTicket(r) {
+  const txt = textoTicket(r);
+  const sinRuta = !r || r.modo === 'parcial';
+  const box = document.createElement('div');
+  box.className = 'ticket';
+  box.innerHTML = `
+    <div class="rotulo">Pedir que te acompañen</div>
+    <p>${sinRuta
+      ? 'Se puede levantar un ticket en el portal de atención de la USM para que alguien te acompañe en el tramo que falta.'
+      : 'Si prefieres no pasar sola o solo por esos puntos, se puede levantar un ticket en el portal de atención de la USM.'}
+      El detalle del trayecto ya está escrito.</p>
+    <div class="ticket-acc">
+      <a class="btn btn-primario" href="${PORTAL_AYUDA}" target="_blank" rel="noopener noreferrer">
+        Levantar el ticket en el portal USM<span class="sr"> (se abre en una pestaña nueva)</span></a>
+      <button class="btn btn-secundario" type="button">Copiar el detalle</button>
+    </div>
+    <small>El portal pide iniciar sesión con la cuenta institucional. Al abrirlo copiamos el
+    detalle al portapapeles para que lo pegues en la descripción de la solicitud.</small>
+    <div class="ticket-estado"></div><!-- el <section id="resultado"> ya es aria-live -->
+    <details><summary>Ver el detalle que se copia</summary><pre></pre></details>`;
+  const pre = box.querySelector('pre');
+  pre.textContent = txt;
+  const aviso = (clase, ico, html) => {
+    box.querySelector('.ticket-estado').innerHTML =
+      `<div class="aviso ${clase}"><span class="ico">${ico}</span><div>${html}</div></div>`;
+  };
+  const aMano = () => {
+    box.querySelector('details').open = true;
+    const sel = window.getSelection(), rg = document.createRange();
+    rg.selectNodeContents(pre); sel.removeAllRanges(); sel.addRange(rg);
+    aviso('aviso-warning', '!', '<b>El navegador no dejó copiar</b>El detalle quedó seleccionado aquí abajo: cópialo con Ctrl+C.');
+  };
+  const copiar = () => {
+    try {
+      const pr = navigator.clipboard && navigator.clipboard.writeText(txt);
+      if (pr) {
+        pr.then(() => aviso('aviso-success', '✓', '<b>Detalle copiado</b>Pégalo en la descripción del ticket.'), aMano);
+        return;
+      }
+    } catch (_) { /* sin portapapeles: plan B */ }
+    aMano();
+  };
+  box.querySelector('button').onclick = copiar;
+  box.querySelector('a').addEventListener('click', copiar);
+  return box;
+}
+
 function pintarResultado() {
   const cont = document.getElementById('resultado');
   const p = PERFILES[estado.perfil];
@@ -1040,12 +1238,13 @@ function pintarResultado() {
   if (!r) {
     cont.innerHTML = `<div class="aviso aviso-danger"><span class="ico">✕</span><div>
       <b>No hay ninguna forma de llegar</b>
-      Con las barreras reportadas activas no queda ningún camino entre esos dos puntos.
-      Quita un reporte o elige otro destino.</div></div>`;
+      Con las barreras reportadas activas no queda ningún camino entre esos dos puntos,
+      ni uno parcial. Quita un reporte, elige otro destino — o pide que te acompañen.</div></div>`;
+    cont.appendChild(bloqueTicket(null));
     return;
   }
 
-  if (!r.tramos.length) {
+  if (!r.tramos.length && r.modo !== 'parcial') {
     cont.innerHTML = `<div class="aviso aviso-info"><span class="ico">◎</span><div>
       <b>Ya estás ahí</b>El origen y el destino son el mismo punto.</div></div>`;
     return;
@@ -1055,24 +1254,46 @@ function pintarResultado() {
   const cab = document.createElement('div');
   cab.className = 'tarjeta';
 
-  const cabecera = r.modo === 'estricta'
-    ? `<div class="aviso aviso-success" style="margin-bottom:var(--s-lg)"><span class="ico">✓</span><div>
-         <b>Ruta sin barreras</b>Todo el trayecto cumple lo que necesita el perfil «${p.nombre}».</div></div>`
-    : `<div class="aviso aviso-warning" style="margin-bottom:var(--s-lg)"><span class="ico">!</span><div>
+  // Perezosas: la de 'parcial' lee r.hasta y r.restante, que solo existen en ese modo.
+  const CABECERA = {
+    estricta: () => `<div class="aviso aviso-success" style="margin-bottom:var(--s-lg)"><span class="ico">✓</span><div>
+         <b>Ruta sin barreras</b>Todo el trayecto cumple lo que necesita el perfil «${p.nombre}».</div></div>`,
+    flexible: () => `<div class="aviso aviso-warning" style="margin-bottom:var(--s-lg)"><span class="ico">!</span><div>
          <b>No existe una ruta sin barreras</b>
          Esta es la de menor dificultad, pero tiene ${r.obstaculos.length}
-         ${r.obstaculos.length === 1 ? 'punto' : 'puntos'} donde vas a necesitar ayuda. Van marcados abajo.</div></div>`;
+         ${r.obstaculos.length === 1 ? 'punto' : 'puntos'} donde vas a necesitar ayuda. Van marcados abajo.</div></div>`,
+    parcial: () => `<div class="aviso aviso-danger" style="margin-bottom:var(--s-lg)"><span class="ico">✕</span><div>
+         <b>No hay forma de llegar hasta aquí</b>
+         ${r.tramos.length
+           ? `Con el perfil «${p.nombre}» el trayecto se corta en <b>${RED.nodos[r.hasta].n}</b>: es lo más
+              cerca que se puede llegar. Desde ahí quedan ${r.restante} m en línea recta sin ningún
+              camino practicable.`
+           : `Con el perfil «${p.nombre}» no se puede avanzar nada desde ${RED.nodos[estado.origen].n}:
+              todas las salidas de ese punto están bloqueadas.`}</div></div>`
+  };
 
-  cab.innerHTML = cabecera + `
+  const metricas = r.modo === 'parcial'
+    ? (r.tramos.length
+        ? `<div class="metricas">
+             <div class="metrica"><b>${r.m}</b><span>m hasta ahí</span></div>
+             <div class="metrica"><b>${r.min}</b><span>min aprox.</span></div>
+             <div class="metrica alerta"><b>${r.restante}</b><span>m sin cubrir</span></div>
+           </div>`
+        : `<div class="metricas" style="grid-template-columns:1fr">
+             <div class="metrica alerta"><b>${r.restante}</b><span>m en línea recta hasta el destino</span></div>
+           </div>`)
+    : `<div class="metricas">
+         <div class="metrica"><b>${r.m}</b><span>metros</span></div>
+         <div class="metrica"><b>${r.min}</b><span>min aprox.</span></div>
+         <div class="metrica${r.peldanos ? ' alerta' : ''}"><b>${r.peldanos}</b><span>peldaños</span></div>
+       </div>`;
+
+  cab.innerHTML = CABECERA[r.modo]() + `
     <h3>${dest ? dest.nombre : RED.nodos[estado.destino].n}</h3>
     ${dest && dest.uso ? `<div class="sub">${dest.uso}</div>` : ''}
-    <div class="metricas">
-      <div class="metrica"><b>${r.m}</b><span>metros</span></div>
-      <div class="metrica"><b>${r.min}</b><span>min aprox.</span></div>
-      <div class="metrica${r.peldanos ? ' alerta' : ''}"><b>${r.peldanos}</b><span>peldaños</span></div>
-    </div>
+    ${metricas}
     ${perfilAltura(r)}
-    ${desvio(r)}`;
+    ${r.modo === 'parcial' ? '' : desvio(r)}`;
 
   if (dest && (dest.puntaje || dest.ascensor || dest.nota)) {
     const ficha = document.createElement('div');
@@ -1086,6 +1307,9 @@ function pintarResultado() {
     ficha.innerHTML = `<span class="ico">ℹ</span><div><b>Al llegar</b>${f.join(' · ')}.${dest.nota ? ' ' + dest.nota : ''}</div>`;
     cab.appendChild(ficha);
   }
+
+  // Sin ruta completa, o con puntos donde hace falta un tercero: se ofrece el ticket.
+  if (r.modo === 'parcial' || r.obstaculos.length) cab.appendChild(bloqueTicket(r));
 
   const ol = document.createElement('ol');
   ol.className = 'pasos';
@@ -1116,6 +1340,15 @@ function pintarResultado() {
     li.addEventListener('pointerleave', () => resaltarTramo(i, false));
     ol.appendChild(li);
   });
+  if (!r.tramos.length) { cont.appendChild(cab); return; }
+  if (r.modo === 'parcial') {
+    const rot = document.createElement('div');
+    rot.className = 'rotulo';
+    rot.style.marginTop = 'var(--s-lg)';
+    rot.textContent = 'Hasta donde sí se puede llegar';
+    cont.append(cab, rot, ol);
+    return;
+  }
   cont.append(cab, ol);
 }
 

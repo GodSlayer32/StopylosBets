@@ -4,7 +4,7 @@ import placesJson from '../data/places.json';
 import elevatorsJson from '../data/elevators.json';
 import type {
   AvoidedItem, Edge, Elevator, EdgeType, Incident, Node, Place, Profile,
-  NoRouteDiagnosis, RouteComparison, RouteResult, RouteStep, WheelchairChecks,
+  NoRouteDiagnosis, PartialRoute, RouteComparison, RouteResult, RouteStep, WheelchairChecks,
 } from '../types';
 
 export const NODES = nodesJson.nodes as Node[];
@@ -149,11 +149,13 @@ function edgeSeconds(e: Edge, profile: Profile): number {
   return t;
 }
 
-/** Dijkstra sobre el grafo; devuelve aristas recorridas o null. */
-export function dijkstra(
-  originId: string, destId: string, profile: Profile, b: Blocks,
-): { nodeIds: string[]; edges: Edge[] } | null {
-  if (!nodeById.has(originId) || !nodeById.has(destId)) return null;
+type Tree = { dist: Map<string, number>; prev: Map<string, { node: string; edge: Edge }> };
+
+/**
+ * Dijkstra desde un nodo. Sin `stopAt` recorre todo lo alcanzable, que es lo que
+ * permite responder "hasta donde se puede llegar" cuando no hay ruta completa.
+ */
+function explore(originId: string, profile: Profile, b: Blocks, stopAt?: string): Tree {
   const dist = new Map<string, number>([[originId, 0]]);
   const prev = new Map<string, { node: string; edge: Edge }>();
   const done = new Set<string>();
@@ -163,7 +165,7 @@ export function dijkstra(
     const [d, u] = queue.shift()!;
     if (done.has(u)) continue;
     done.add(u);
-    if (u === destId) break;
+    if (stopAt !== undefined && u === stopAt) break;
     for (const { edge, to } of adjacency.get(u) ?? []) {
       const c = edgeCost(edge, profile, b);
       if (c === null || done.has(to)) continue;
@@ -175,7 +177,11 @@ export function dijkstra(
       }
     }
   }
-  if (!prev.has(destId) && originId !== destId) return null;
+  return { dist, prev };
+}
+
+/** Rearma el camino origen -> destino a partir del arbol de `explore`. */
+function pathTo(prev: Tree['prev'], originId: string, destId: string) {
   const edges: Edge[] = [];
   const nodeIds = [destId];
   let cur = destId;
@@ -186,6 +192,81 @@ export function dijkstra(
     cur = p.node;
   }
   return { nodeIds, edges };
+}
+
+/** Dijkstra sobre el grafo; devuelve aristas recorridas o null. */
+export function dijkstra(
+  originId: string, destId: string, profile: Profile, b: Blocks,
+): { nodeIds: string[]; edges: Edge[] } | null {
+  if (!nodeById.has(originId) || !nodeById.has(destId)) return null;
+  const { prev } = explore(originId, profile, b, destId);
+  if (!prev.has(destId) && originId !== destId) return null;
+  return pathTo(prev, originId, destId);
+}
+
+/**
+ * Escala del plano. Los nodos estan en unidades de 0 a 100 y los tramos en
+ * metros, asi que la equivalencia se deduce de los propios datos: la mediana de
+ * metros por unidad sobre los tramos horizontales.
+ */
+const METERS_PER_UNIT = (() => {
+  const r: number[] = [];
+  for (const e of EDGES) {
+    const a = nodeById.get(e.from);
+    const b = nodeById.get(e.to);
+    if (!a || !b || e.type === 'elevator') continue;
+    const d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (d > 0.3) r.push(e.distanceM / d);
+  }
+  r.sort((x, y) => x - y);
+  return r.length ? r[Math.floor(r.length / 2)] : 1;
+})();
+
+/** Metros por piso, para que dos nodos superpuestos no queden "a 0 m". */
+const FLOOR_M = 4;
+
+/** Distancia en linea recta entre dos nodos, en metros. */
+export function straightMeters(aId: string, bId: string): number {
+  const a = nodeById.get(aId);
+  const b = nodeById.get(bId);
+  if (!a || !b) return 0;
+  const plano = Math.hypot(a.x - b.x, a.y - b.y) * METERS_PER_UNIT;
+  return plano + Math.abs((a.floor ?? 1) - (b.floor ?? 1)) * FLOOR_M;
+}
+
+/**
+ * Cuando no hay ninguna ruta: la ruta hasta el punto alcanzable que queda mas
+ * cerca del destino. Llegar a 30 m de la puerta y pedir ayuda ahi no es lo
+ * mismo que quedarse en la entrada del campus sin nada.
+ */
+export function findNearestReachable(
+  origin: string, destPlaceId: string, profile: Profile,
+  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS, raining = false, assisted = false,
+): PartialRoute | null {
+  const place = getPlace(destPlaceId);
+  if (!place || !nodeById.has(origin) || !nodeById.has(place.nodeId)) return null;
+  const dest = place.nodeId;
+  const b = buildBlocks(incidents, elevators, raining, assisted);
+  const { dist, prev } = explore(origin, profile, b);
+  let best: string | null = null;
+  let bestM = Infinity;
+  for (const id of dist.keys()) {
+    if (id === dest) continue;
+    const m = straightMeters(id, dest);
+    const mejorCamino = (dist.get(id) ?? Infinity) < (best ? dist.get(best) ?? Infinity : Infinity);
+    if (m < bestM - 0.5 || (m < bestM + 0.5 && mejorCamino)) {
+      best = id;
+      bestM = m;
+    }
+  }
+  if (!best) return null;
+  const path = pathTo(prev, origin, best);
+  return {
+    route: toResult(profile, destPlaceId, path, elevators, [], 0, assisted),
+    reachedNodeId: best,
+    reachedLabel: nodeById.get(best)!.label,
+    remainingM: Math.round(bestM),
+  };
 }
 
 const ICON: Record<EdgeType, string> = {

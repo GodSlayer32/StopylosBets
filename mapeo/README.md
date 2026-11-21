@@ -57,6 +57,45 @@ cuánto se sube y se baja y para ordenar los tramos por dificultad, pero las pen
 de magnitud. Por eso `build()` las recorta: máximo 20 % en caminos, 12 % en rampas, 45 % en
 escaleras y taludes.
 
+## Cuando no hay ruta
+
+Antes, si el perfil no tenía ningún camino hasta el destino, no se calculaba nada. Ahora
+`calcular()` tiene un tercer modo:
+
+1. **estricta** — ruta que cumple todo lo que el perfil necesita.
+2. **flexible** — no existe una limpia: se da la de menor dificultad y se marcan los puntos
+   donde hace falta ayuda.
+3. **parcial** — no existe ninguna. `rutaParcial()` recorre toda la red alcanzable y devuelve la
+   ruta hasta el **nodo alcanzable que queda más cerca del destino** (distancia en línea recta).
+   El hueco que falta se dibuja con puntos rojos y los metros que quedan, el último punto
+   alcanzable lleva una chincheta «!» y el pin del destino se pone en rojo.
+
+Entre el candidato sin barreras y el que las acepta se prefiere **siempre el primero**: pasar por
+un tramo duro solo se elige si acerca al destino a menos de la mitad de lo que falta, o si sin él
+no se puede avanzar ni un metro. Son justo los tramos que exigen ayuda de otra persona, así que
+usarlos para «llegar más cerca» sería hacer trampa con el dato.
+
+Si ni siquiera hay un trayecto parcial (origen aislado, todas sus salidas reportadas), el panel lo
+dice y ofrece lo mismo.
+
+## Pedir ayuda: ticket en el portal USM
+
+En los modos **parcial** y **flexible** el panel agrega el bloque «Pedir que te acompañen»:
+
+- un enlace al portal de atención <https://usm.proactivanet.com/proactivanet/portal/>, que se abre
+  en una pestaña nueva;
+- `textoTicket()` arma la descripción de la solicitud: origen, destino, perfil de movilidad, hasta
+  dónde se llega sin ayuda, los metros que faltan, los puntos del trayecto donde se necesita
+  acompañamiento, el detalle paso a paso y las barreras reportadas que están cortando el paso;
+- al abrir el portal (o con el botón «Copiar el detalle») ese texto se copia al portapapeles para
+  pegarlo en la descripción. Si el navegador niega el portapapeles —pasa al abrir el archivo con
+  `file://` en algunos navegadores— el texto queda desplegado y seleccionado para copiarlo a mano.
+
+El portal no acepta datos por la URL ni tiene API pública conocida, así que **el ticket no se crea
+solo**: la persona lo envía desde el portal con su cuenta institucional. Si más adelante hay un
+endpoint para crear solicitudes, el único cambio es reemplazar el enlace por un POST con el mismo
+texto que ya genera `textoTicket()`.
+
 ## Fuentes
 
 - **Plano:** `plano-campus.jpg` (el plano del campus que entregó el equipo).

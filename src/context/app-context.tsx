@@ -1,11 +1,16 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import incidentsJson from '../data/incidents.json';
-import { BASE_ELEVATORS, compareWithShortest, explainNoRoute, findRoute } from '../lib/routing';
+import { BASE_ELEVATORS, compareWithShortest, explainNoRoute, findNearestReachable, findRoute, getPlace } from '../lib/routing';
+import { buildTicket, SUPPORT_TEAM } from '../lib/support-ticket';
 import { NOW_ISO, STALE_HOURS, formatAgo, minutesSince } from '../lib/time';
-import type { Elevator, Incident, NoRouteDiagnosis, Profile, RouteComparison, RouteResult } from '../types';
+import type {
+  Elevator, Incident, NoRouteDiagnosis, PartialRoute, Profile, RouteComparison, RouteResult, SupportTicket,
+} from '../types';
 
 export const DEFAULT_ORIGIN = 'acc_placeres';
 const LATENCY_MS = 400;
+/** Demo: cuanto tarda el portal en asignar el ticket a alguien. */
+const ASSIGN_MS = 3500;
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export type NewIncident = Omit<
@@ -42,6 +47,15 @@ interface AppContextValue {
   /** Simula 400 ms de latencia. Resuelve null si no hay ruta. */
   getRoute: (destPlaceId: string) => Promise<RouteResult | null>;
   getComparison: (destPlaceId: string) => Promise<RouteComparison | null>;
+  /** Hasta donde se puede llegar cuando no hay ruta completa (null si no aplica) */
+  getNearestReachable: (destPlaceId: string) => PartialRoute | null;
+  /** Tickets de apoyo levantados en esta sesion */
+  tickets: SupportTicket[];
+  /**
+   * Levanta el ticket de apoyo para un destino sin ruta. Es idempotente: el
+   * mismo trayecto devuelve el ticket que ya existe en vez de duplicarlo.
+   */
+  openTicket: (destPlaceId: string, partial: PartialRoute) => SupportTicket | null;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -156,12 +170,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [origin, profile, incidents, routingElevators, raining, assisted],
   );
 
+  const getNearestReachable = useCallback(
+    (destPlaceId: string) =>
+      findNearestReachable(origin, destPlaceId, profile, incidents, routingElevators, raining, assisted),
+    [origin, profile, incidents, routingElevators, raining, assisted],
+  );
+
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const ticketsRef = useRef(tickets);
+  useEffect(() => { ticketsRef.current = tickets; }, [tickets]);
+  const assignTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => { assignTimers.current.forEach(clearTimeout); }, []);
+
+  const openTicket = useCallback(
+    (destPlaceId: string, partial: PartialRoute) => {
+      const place = getPlace(destPlaceId);
+      if (!place) return null;
+      const nuevo = buildTicket(partial, place, profile, origin, NOW_ISO);
+      const ya = ticketsRef.current.find((x) => x.key === nuevo.key);
+      if (ya) return ya;
+      ticketsRef.current = [nuevo, ...ticketsRef.current];
+      setTickets(ticketsRef.current);
+      // El portal responde: queda asignado a alguien de apoyo en terreno.
+      assignTimers.current.push(
+        setTimeout(() => {
+          setTickets((prev) =>
+            prev.map((x) => (x.id === nuevo.id ? { ...x, status: 'assigned' as const, assignee: SUPPORT_TEAM } : x)),
+          );
+        }, ASSIGN_MS),
+      );
+      return nuevo;
+    },
+    [origin, profile],
+  );
+
   const value = useMemo<AppContextValue>(
     () => ({
       profile, setProfile, accessibleMode: profile === 'lowVision', origin, setOrigin, raining, setRaining,
       assisted, setAssisted, getNoRouteReason, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison,
+      getNearestReachable, tickets, openTicket,
     }),
-    [profile, origin, raining, assisted, getNoRouteReason, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison],
+    [profile, origin, raining, assisted, getNoRouteReason, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison,
+     getNearestReachable, tickets, openTicket],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
