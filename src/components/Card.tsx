@@ -3,9 +3,9 @@ import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 import { radius, shadow, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type Props = ViewProps & { onPress?: () => void; accessibilityLabel?: string };
+type Props = ViewProps & { onPress?: () => void; accessibilityLabel?: string; accessibilityHint?: string };
 
-export function Card({ onPress, accessibilityLabel, style, children, ...rest }: Props) {
+export function Card({ onPress, accessibilityLabel, accessibilityHint, style, children, ...rest }: Props) {
   const { colors } = useTheme();
   const themed = { backgroundColor: colors.surface, borderColor: colors.border };
   if (onPress) {
@@ -14,13 +14,14 @@ export function Card({ onPress, accessibilityLabel, style, children, ...rest }: 
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
         style={({ pressed }) => [styles.card, themed, pressed && styles.pressed, style]}>
         {children}
       </Pressable>
     );
   }
   return (
-    <View {...rest} accessibilityLabel={accessibilityLabel} style={[styles.card, themed, style]}>
+    <View {...rest} accessible={accessibilityLabel ? true : rest.accessible} accessibilityLabel={accessibilityLabel} style={[styles.card, themed, style]}>
       {children}
     </View>
   );

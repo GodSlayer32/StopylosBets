@@ -9,7 +9,23 @@
       "distanceM": 11,
       "type": "stairs",
       "steps": 30,
-      "name": "Escalera Av. España (tramo bajo)"
+      "name": "Escalera Av. España (tramo bajo)",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda metálica"
+        },
+        {
+          "at": "start",
+          "text": "el primer peldaño tiene borde amarillo"
+        },
+        {
+          "at": "mid",
+          "side": "left",
+          "text": "el muro de contención"
+        }
+      ]
     },
     {
       "id": "esp_mid>a_front:stairs",
@@ -18,14 +34,41 @@
       "distanceM": 8,
       "type": "stairs",
       "steps": 18,
-      "name": "Escalera Av. España (tramo alto)"
+      "name": "Escalera Av. España (tramo alto)",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda metálica"
+        },
+        {
+          "at": "end",
+          "text": "el último peldaño tiene borde amarillo"
+        }
+      ]
     },
     {
       "id": "a_front>a_in:flat",
       "from": "a_front",
       "to": "a_in",
       "distanceM": 10,
-      "type": "flat"
+      "type": "flat",
+      "cues": [
+        {
+          "at": "start",
+          "text": "el piso cambia a baldosa podotáctil"
+        },
+        {
+          "at": "mid",
+          "side": "left",
+          "text": "una jardinera baja"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "las puertas de vidrio del hall"
+        }
+      ]
     },
     {
       "id": "a_in>patio:flat",
@@ -33,7 +76,23 @@
       "to": "patio",
       "distanceM": 45,
       "type": "flat",
-      "covered": true
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "el muro del pasillo"
+        },
+        {
+          "at": "mid",
+          "text": "el eco del pasillo techado"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "la luz y el ruido de la fuente del patio"
+        }
+      ]
     },
     {
       "id": "patio>c_stairs_mid:stairs",
@@ -42,7 +101,22 @@
       "distanceM": 30,
       "type": "stairs",
       "steps": 16,
-      "name": "Escalera Patio Central – Edif. C"
+      "name": "Escalera Patio Central – Edif. C",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda"
+        },
+        {
+          "at": "start",
+          "text": "el primer peldaño tiene borde amarillo"
+        },
+        {
+          "at": "end",
+          "text": "el último peldaño tiene borde amarillo"
+        }
+      ]
     },
     {
       "id": "patio>c_plaza:ramp",
@@ -51,14 +125,52 @@
       "distanceM": 70,
       "type": "ramp",
       "slopePct": 6,
-      "name": "Rampa Patio Central – Edif. C"
+      "name": "Rampa Patio Central – Edif. C",
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "la baranda metálica"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "el borde de la solera"
+        },
+        {
+          "at": "mid",
+          "text": "el piso es de adoquín"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "el piso vuelve a ser liso"
+        }
+      ]
     },
     {
       "id": "c_plaza>c_in:flat",
       "from": "c_plaza",
       "to": "c_in",
       "distanceM": 14,
-      "type": "flat"
+      "type": "flat",
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "una banca de madera"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "un pilar de hormigón"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "la puerta de vidrio del Edificio C"
+        }
+      ]
     },
     {
       "id": "c_in>c_p2_hub:stairs",
@@ -68,7 +180,22 @@
       "type": "stairs",
       "steps": 16,
       "covered": true,
-      "name": "Escalera interior Edif. C"
+      "name": "Escalera interior Edif. C",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda"
+        },
+        {
+          "at": "start",
+          "text": "el primer peldaño tiene borde amarillo"
+        },
+        {
+          "at": "end",
+          "text": "el último peldaño tiene borde amarillo"
+        }
+      ]
     },
     {
       "id": "c_in>c_elev_p1:flat",
@@ -76,7 +203,24 @@
       "to": "c_elev_p1",
       "distanceM": 8,
       "type": "flat",
-      "covered": true
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "el mostrador de portería"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "el pasamanos de la pared"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "el timbre y el sonido de las puertas del ascensor"
+        }
+      ]
     },
     {
       "id": "c_elev_p1>c_elev_p2:elevator",
@@ -84,7 +228,13 @@
       "to": "c_elev_p2",
       "distanceM": 10,
       "type": "elevator",
-      "elevatorId": "elev-c"
+      "elevatorId": "elev-c",
+      "cues": [
+        {
+          "at": "mid",
+          "text": "La botonera está a la derecha de la puerta, con números en braille y un aviso de voz del piso"
+        }
+      ]
     },
     {
       "id": "c_elev_p2>c_p2_hub:flat",
@@ -92,7 +242,14 @@
       "to": "c_p2_hub",
       "distanceM": 6,
       "type": "flat",
-      "covered": true
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "el pasamanos"
+        }
+      ]
     },
     {
       "id": "c_elev_p2>c_210:flat",
@@ -100,7 +257,24 @@
       "to": "c_210",
       "distanceM": 10,
       "type": "flat",
-      "covered": true
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la pared lisa"
+        },
+        {
+          "at": "mid",
+          "side": "left",
+          "text": "una banca bajo la ventana"
+        },
+        {
+          "at": "end",
+          "side": "right",
+          "text": "puertas de salas de madera, una tras otra"
+        }
+      ]
     },
     {
       "id": "c_elev_p2>bano_c:flat",
@@ -116,7 +290,24 @@
       "to": "c_210",
       "distanceM": 14,
       "type": "flat",
-      "covered": true
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "el muro del pasillo"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "una jardinera interior"
+        },
+        {
+          "at": "end",
+          "side": "right",
+          "text": "puertas de madera"
+        }
+      ]
     },
     {
       "id": "c_elev_p1>c_105:flat",
@@ -133,7 +324,23 @@
       "distanceM": 32,
       "type": "slope",
       "slopePct": 5,
-      "name": "Calle Agustín Edwards"
+      "name": "Calle Agustín Edwards",
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "la solera de la vereda"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "el muro del cerro"
+        },
+        {
+          "at": "mid",
+          "text": "el piso es de hormigón con ranuras antideslizantes"
+        }
+      ]
     },
     {
       "id": "rd_s>rd_f:slope",
@@ -142,7 +349,19 @@
       "distanceM": 35,
       "type": "slope",
       "slopePct": 6,
-      "name": "Calle Agustín Edwards"
+      "name": "Calle Agustín Edwards",
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "la baranda de seguridad"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "un poste de luz"
+        }
+      ]
     },
     {
       "id": "rd_f>rd_e:slope",
@@ -151,7 +370,23 @@
       "distanceM": 45,
       "type": "slope",
       "slopePct": 7,
-      "name": "Calle Agustín Edwards"
+      "name": "Calle Agustín Edwards",
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "la baranda de seguridad"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "el muro del cerro"
+        },
+        {
+          "at": "end",
+          "text": "el cruce peatonal con baldosa podotáctil"
+        }
+      ]
     },
     {
       "id": "rd_e>rd_ne:slope",
@@ -160,7 +395,24 @@
       "distanceM": 27,
       "type": "slope",
       "slopePct": 6,
-      "name": "Calle Agustín Edwards"
+      "name": "Calle Agustín Edwards",
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "la solera"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "el muro"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "la entrada peatonal con portón metálico"
+        }
+      ]
     },
     {
       "id": "rd_ne>d_in:ramp",
@@ -169,14 +421,47 @@
       "distanceM": 24,
       "type": "ramp",
       "slopePct": 6,
-      "name": "Rampa de acceso Edif. D"
+      "name": "Rampa de acceso Edif. D",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda"
+        },
+        {
+          "at": "mid",
+          "side": "left",
+          "text": "el borde de la rampa con solera"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "las puertas de vidrio del Edificio D"
+        }
+      ]
     },
     {
       "id": "d_in>patio:flat",
       "from": "d_in",
       "to": "patio",
       "distanceM": 30,
-      "type": "flat"
+      "type": "flat",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "el muro del pasillo"
+        },
+        {
+          "at": "mid",
+          "text": "el eco del pasillo techado"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "el sonido de la fuente del patio"
+        }
+      ]
     },
     {
       "id": "d_in>d_elev_p1:flat",
@@ -184,7 +469,19 @@
       "to": "d_elev_p1",
       "distanceM": 12,
       "type": "flat",
-      "covered": true
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "el muro liso"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "las puertas del ascensor"
+        }
+      ]
     },
     {
       "id": "d_elev_p1>d_elev_p2:elevator",
@@ -192,7 +489,13 @@
       "to": "d_elev_p2",
       "distanceM": 10,
       "type": "elevator",
-      "elevatorId": "elev-d"
+      "elevatorId": "elev-d",
+      "cues": [
+        {
+          "at": "mid",
+          "text": "La botonera está a la derecha de la puerta, con números en braille"
+        }
+      ]
     },
     {
       "id": "d_elev_p2>lab_fisica:flat",
@@ -240,7 +543,23 @@
       "from": "patio",
       "to": "b_in",
       "distanceM": 22,
-      "type": "flat"
+      "type": "flat",
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "una banca de madera"
+        },
+        {
+          "at": "mid",
+          "text": "el piso es de adoquín"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "la puerta de vidrio del Edificio B"
+        }
+      ]
     },
     {
       "id": "b_in>biblioteca:flat",
@@ -256,7 +575,24 @@
       "to": "b_elev_p1",
       "distanceM": 40,
       "type": "flat",
-      "covered": true
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "el mostrador de la biblioteca"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "el pasamanos"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "las puertas del ascensor"
+        }
+      ]
     },
     {
       "id": "b_elev_p1>bano_b:flat",
@@ -272,7 +608,13 @@
       "to": "b_elev_p2",
       "distanceM": 10,
       "type": "elevator",
-      "elevatorId": "elev-b"
+      "elevatorId": "elev-b",
+      "cues": [
+        {
+          "at": "mid",
+          "text": "La botonera está a la derecha de la puerta, con números en braille y aviso de voz"
+        }
+      ]
     },
     {
       "id": "b_elev_p2>b_p2:flat",
@@ -280,7 +622,18 @@
       "to": "b_p2",
       "distanceM": 25,
       "type": "flat",
-      "covered": true
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la pared"
+        },
+        {
+          "at": "end",
+          "text": "el cambio a piso de goma de la pasarela"
+        }
+      ]
     },
     {
       "id": "b_p2>c_p2_hub:flat",
@@ -289,7 +642,28 @@
       "distanceM": 55,
       "type": "flat",
       "covered": true,
-      "name": "Pasarela Edif. B – Edif. C"
+      "name": "Pasarela Edif. B – Edif. C",
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "el ventanal de la pasarela"
+        },
+        {
+          "at": "mid",
+          "side": "right",
+          "text": "el pasamanos metálico"
+        },
+        {
+          "at": "mid",
+          "text": "el piso es de goma, con textura distinta a la del pasillo"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "una puerta cortafuego abierta hacia el Edificio C"
+        }
+      ]
     },
     {
       "id": "b_in>acc_san_luis:flat",
@@ -358,7 +732,19 @@
       "to": "a_elev_p1",
       "distanceM": 14,
       "type": "flat",
-      "covered": true
+      "covered": true,
+      "cues": [
+        {
+          "at": "start",
+          "side": "left",
+          "text": "el muro"
+        },
+        {
+          "at": "end",
+          "side": "ahead",
+          "text": "las puertas del ascensor"
+        }
+      ]
     },
     {
       "id": "a_elev_p1>a_elev_p2:elevator",
@@ -384,7 +770,22 @@
       "type": "stairs",
       "steps": 18,
       "covered": true,
-      "name": "Escalera interior Edif. A"
+      "name": "Escalera interior Edif. A",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda"
+        },
+        {
+          "at": "start",
+          "text": "el primer peldaño tiene borde amarillo"
+        },
+        {
+          "at": "end",
+          "text": "el último peldaño tiene borde amarillo"
+        }
+      ]
     },
     {
       "id": "a_in>aula_magna:flat",
@@ -424,7 +825,23 @@
       "to": "c_plaza",
       "distanceM": 25,
       "type": "flat",
-      "name": "Explanada Edif. C"
+      "name": "Explanada Edif. C",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda"
+        },
+        {
+          "at": "mid",
+          "text": "el piso de adoquín"
+        },
+        {
+          "at": "end",
+          "side": "left",
+          "text": "una banca de madera"
+        }
+      ]
     }
   ]
 }

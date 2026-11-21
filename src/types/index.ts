@@ -14,6 +14,15 @@ export interface Node {
   floor?: number;
   /** Zona corta para mostrar ("Av. España", "Edificio C · Piso 1") */
   zone?: string;
+  /** Cómo reconocer el lugar al llegar (puertas, texturas, braille...). Simulado. */
+  arrivalCue?: string;
+}
+
+/** Hito táctil/visual en una arista; `side` es relativo al sentido from -> to. */
+export interface EdgeCue {
+  at: 'start' | 'mid' | 'end';
+  side?: 'left' | 'right' | 'ahead';
+  text: string;
 }
 
 export interface Edge {
@@ -27,6 +36,7 @@ export interface Edge {
   elevatorId?: string;
   covered?: boolean;
   name?: string;
+  cues?: EdgeCue[];
 }
 
 export interface Place {

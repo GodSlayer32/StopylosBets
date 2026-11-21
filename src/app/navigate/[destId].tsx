@@ -1,9 +1,8 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { AccessibilityInfo, Animated, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
@@ -15,6 +14,7 @@ import { ScreenState } from '@/components/ScreenState';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { useRouteSimulation } from '@/hooks/use-route-simulation';
+import { HAPTIC_CODE, HAPTIC_LEGEND_SHORT, playManeuverHaptic, playPreAlert } from '@/lib/haptics';
 import { getBuilding } from '@/lib/buildings';
 import { CAMPUS_MAP, FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
@@ -58,6 +58,24 @@ export default function NavigateScreen() {
   const speakOn = profile === 'lowVision' || voice;
   const step = route?.steps[sim.stepIndex];
 
+  // Lector de pantalla: si TalkBack está activo se anuncia con él y no se usa expo-speech
+  const [screenReader, setScreenReader] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  useEffect(() => {
+    AccessibilityInfo.isScreenReaderEnabled().then(setScreenReader).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('screenReaderChanged', setScreenReader);
+    return () => sub.remove();
+  }, []);
+
+  const say = useCallback((text: string, force = false) => {
+    if (screenReader) {
+      AccessibilityInfo.announceForAccessibility(text);
+    } else if (speakOn || force) {
+      Speech.stop();
+      Speech.speak(text, { language: 'es-CL' });
+    }
+  }, [screenReader, speakOn]);
+
   // Voz + háptico al cambiar de maniobra (no en cada paso interno) y aviso previo a 15 m
   const lastSpoken = useRef<string>('');
   const warned = useRef<string>('');
@@ -68,25 +86,28 @@ export default function NavigateScreen() {
     if (key === lastSpoken.current) return;
     lastSpoken.current = key;
     if (sim.finished) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      if (speakOn) { Speech.stop(); Speech.speak(`Llegaste a ${place?.name ?? 'tu destino'}`, { language: 'es-CL' }); }
+      playManeuverHaptic('arrive');
+      say(`Llegaste a ${place?.name ?? 'tu destino'}`);
       return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    if (speakOn) {
-      Speech.stop();
-      Speech.speak(m.text, { language: 'es-CL' });
-    }
-  }, [route, m, sim.maneuverIndex, sim.finished, speakOn, place?.name]);
+    playManeuverHaptic(m.type);
+    say(m.spoken ?? m.text);
+  }, [route, m, sim.maneuverIndex, sim.finished, place?.name, say]);
 
   useEffect(() => {
-    if (!m || sim.finished || !speakOn || m.type === 'straight' || m.type === 'arrive') return;
+    if (!m || sim.finished || m.type === 'straight' || m.type === 'arrive') return;
     const key = `w${sim.maneuverIndex}`;
     if (warned.current === key || sim.distanceToManeuverM > 15 || sim.distanceToManeuverM < 8) return;
     warned.current = key;
-    Speech.stop();
-    Speech.speak(`En 15 metros, ${m.verb}`, { language: 'es-CL' });
-  }, [m, sim.maneuverIndex, sim.distanceToManeuverM, sim.finished, speakOn]);
+    playPreAlert();
+    say(`En 15 metros, ${m.verb}`);
+  }, [m, sim.maneuverIndex, sim.distanceToManeuverM, sim.finished, say]);
+
+  const repeat = useCallback(() => {
+    if (!m) return;
+    playManeuverHaptic(sim.finished ? 'arrive' : m.type);
+    say(sim.finished ? `Llegaste a ${place?.name ?? 'tu destino'}` : (m.spoken ?? m.text), true);
+  }, [m, sim.finished, place?.name, say]);
 
   useEffect(() => () => { Speech.stop(); }, []);
 
@@ -207,13 +228,21 @@ export default function NavigateScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <Pressable onPress={close} accessibilityRole="button" accessibilityLabel="Cerrar navegación" style={styles.iconBtn}>
+        <Pressable onPress={close} accessibilityRole="button" accessibilityLabel="Cerrar navegación" accessibilityHint="Termina la guía y vuelve atrás" style={styles.iconBtn}>
           <Ionicons name="close" size={26} color={t.colors.text} />
         </Pressable>
         <View style={styles.flex}>
           <AppText variant="caption" color="textMuted" style={{ fontSize: 12, lineHeight: 16 }}>Navegando hacia</AppText>
           <AppText variant="heading" numberOfLines={1} accessibilityRole="header" style={accessibleMode ? undefined : { fontSize: 17, lineHeight: 22 }}>{place.name}</AppText>
         </View>
+        <Pressable
+          onPress={() => setHelpOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Ayuda de vibraciones"
+          accessibilityHint="Abre la leyenda de patrones de vibración"
+          style={styles.iconBtn}>
+          <Ionicons name="help-circle-outline" size={28} color={t.colors.text} />
+        </Pressable>
       </View>
 
       <Animated.View style={[styles.top, { height: topH, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
@@ -234,7 +263,7 @@ export default function NavigateScreen() {
               camera={explore.camera}
               onCameraChange={onCamera}
               onBuildingPress={onBuildingPress}
-              accessibilityLabel={`Mapa de la planta del edificio ${dispB}, piso ${dispLevel}. Arrastra y pellizca para explorar.`}
+              accessibilityLabel={`Mapa: planta del edificio ${dispB}, piso ${dispLevel}${sim.zone ? `. Estás en ${sim.zone}` : ''}. Tu destino es ${place.name}.`}
               title={`Edificio ${dispB} | Piso ${dispLevel}${exploring ? ' · explorando' : ''}`}
             />
             <View style={styles.rail}>
@@ -260,7 +289,7 @@ export default function NavigateScreen() {
             camera={explore.camera}
             onCameraChange={onCamera}
             onBuildingPress={onBuildingPress}
-            accessibilityLabel={`Mapa general del campus con la ruta hacia ${place.name}. Arrastra y pellizca para explorar.`}
+            accessibilityLabel={`Mapa: campus${sim.zone ? `. Estás en ${sim.zone}` : ''}. Tu destino es ${place.name}.`}
             title={`Mapa | Exterior${exploring ? ' · explorando' : ''}`}
           />
         )}
@@ -299,6 +328,7 @@ export default function NavigateScreen() {
           avoidStairs={avoidStairs}
           anchorY={Math.max(40, (mapH - (cardH + t.spacing.md * 2 + insets.bottom)) * 0.6) / mapH}
           height={mapH}
+          accessibilityLabel={`Vista cercana${sim.zone ? `: estás en ${sim.zone}` : ''}. Sigue las instrucciones de la tarjeta inferior.`}
         /> : null}
       </View>
 
@@ -309,9 +339,26 @@ export default function NavigateScreen() {
         accessibleMode={accessibleMode}
         speakOn={speakOn}
         onToggleVoice={() => { Speech.stop(); setVoice((v) => !v); }}
+        onRepeat={repeat}
         onHome={() => { Speech.stop(); router.replace('/home'); }}
         onLayout={(e) => setCardH(Math.round(e.nativeEvent.layout.height))}
       />
+
+      <Modal visible={helpOpen} transparent animationType="fade" onRequestClose={() => setHelpOpen(false)}>
+        <View style={styles.backdrop}>
+          <View style={styles.sheet} accessibilityViewIsModal>
+            <AppText variant="title" accessibilityRole="header">Código de vibraciones</AppText>
+            <AppText color="textMuted" accessibilityLabel={HAPTIC_LEGEND_SHORT}>{HAPTIC_LEGEND_SHORT}</AppText>
+            {Object.values(HAPTIC_CODE).map((c) => (
+              <View key={c.label} accessible accessibilityLabel={`${c.label}: ${c.pattern}`} style={styles.codeRow}>
+                <AppText variant="label" style={styles.flex}>{c.label}</AppText>
+                <AppText variant="label" color="primary" style={styles.codePattern}>{c.pattern}</AppText>
+              </View>
+            ))}
+            <Button label="Entendido" fullWidth onPress={() => setHelpOpen(false)} />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -330,5 +377,9 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
       position: 'absolute', left: t.spacing.sm, top: t.spacing.sm + 34, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs,
       paddingHorizontal: t.spacing.md, borderRadius: t.radius.pill, backgroundColor: t.colors.primary, ...t.shadow,
     },
+    backdrop: { flex: 1, justifyContent: 'center', padding: t.spacing.lg, backgroundColor: t.colors.overlaySurface },
+    sheet: { gap: t.spacing.md, padding: t.spacing.lg, borderRadius: t.radius.lg, borderWidth: 2, borderColor: t.colors.border, backgroundColor: t.colors.surface },
+    codeRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md, minHeight: 44 },
+    codePattern: { flexShrink: 1, maxWidth: '60%', textAlign: 'right' },
     rail: { position: 'absolute', right: t.spacing.sm, top: t.spacing.sm },
   });

@@ -167,7 +167,7 @@ export default function RouteScreen() {
   const avoidedHeadline = avoidedSteps > 0
     ? `Evitamos ${avoidedSteps} escalones en ${avoidedStairs} ${avoidedStairs === 1 ? 'escalera' : 'escaleras'}`
     : `Evitamos ${stairItems.length} ${stairItems.length === 1 ? 'tramo exigente' : 'tramos exigentes'}`;
-  const mapLabel = `Mapa de la ruta hacia ${place.name}. Toca para ampliar.`;
+  const mapLabel = `Mapa: ruta desde ${getNode(route.nodeIds[0])?.label ?? 'tu origen'} hasta ${place.name}.`;
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom', 'left', 'right']}>
@@ -189,7 +189,9 @@ export default function RouteScreen() {
         </Animated.View>
       ) : null}
 
-      <Card accessibilityLabel={`${route.minutes} minutos, ${route.distanceM} metros, ${route.stairsCount} escalones`} style={styles.summary}>
+      <Card accessible
+        accessibilityLabel={`${route.minutes} ${route.minutes === 1 ? 'minuto' : 'minutos'}, ${route.distanceM} metros, ${route.stairsCount === 0 ? 'sin escaleras' : `${route.stairsCount} escalones`}${route.stepsAvoided > 0 ? `, evitas ${route.stepsAvoided} escalones` : ''}`}
+        style={styles.summary}>
         <View style={styles.row}>
           <View style={styles.stat}>
             <AppText variant="display">{route.minutes}</AppText>
@@ -217,7 +219,7 @@ export default function RouteScreen() {
         </View>
       </Card>
 
-      <Pressable onPress={() => setFullMap(true)} accessibilityRole="button" accessibilityLabel={mapLabel}>
+      <Pressable onPress={() => setFullMap(true)} accessibilityRole="button" accessibilityLabel={mapLabel} accessibilityHint="Toca para ampliar el mapa">
         <CampusMap
           mode="macro"
           routePoints={routePts}
@@ -232,7 +234,7 @@ export default function RouteScreen() {
         </View>
       </Pressable>
 
-      <View style={styles.legend}>
+      <View style={styles.legend} accessible accessibilityLabel="Leyenda del mapa: origen, destino, escalera evitada y barrera reportada">
         <LegendItem t={t} label="Origen"><View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: t.map.routeCasing, borderWidth: 3, borderColor: t.map.route }} /></LegendItem>
         <LegendItem t={t} label="Destino"><Ionicons name="location" size={20} color={t.map.pin} /></LegendItem>
         <LegendItem t={t} label="Escalera evitada"><LegendDot color={t.map.stairsMark}><MaterialCommunityIcons name="stairs" size={12} color={t.colors.bg} /></LegendDot></LegendItem>
@@ -283,6 +285,7 @@ export default function RouteScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Paso ${i + 1}: ${s.text}, ${Math.round(s.distanceM)} metros${slope ? `, pendiente ${slope}%` : ''}`}
               accessibilityState={{ selected: active }}
+              accessibilityHint="Resalta este paso en el mapa"
               style={[styles.step, active && styles.stepActive]}>
               <View style={[styles.stepNum, active && { backgroundColor: t.colors.primary }]}>
                 <AppText variant="label" style={{ color: active ? t.colors.primaryText : t.colors.text }}>{i + 1}</AppText>
@@ -322,6 +325,7 @@ export default function RouteScreen() {
           icon="navigate"
           fullWidth
           accessibilityLabel={`Iniciar ruta hacia ${place.name}`}
+          accessibilityHint="Abre la navegación paso a paso"
           onPress={() => {
             Speech.stop();
             router.push(`/navigate/${destId}` as Href);
@@ -352,6 +356,7 @@ export default function RouteScreen() {
               activeBuildingId={place.building}
               height={Math.round(height * 0.7)}
               title="Mapa | Exterior"
+              accessibilityLabel={mapLabel}
             />
           </View>
           <View style={styles.modalBtn}>

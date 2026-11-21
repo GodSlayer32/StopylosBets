@@ -1,5 +1,5 @@
 import { EDGES, getNode } from '@/lib/routing';
-import type { RouteResult } from '@/types';
+import type { EdgeCue, RouteResult } from '@/types';
 
 const IMG_W = 1313;
 const IMG_H = 980;
@@ -24,6 +24,10 @@ export type Maneuver = {
   level?: number;
   /** Nombre de MaterialCommunityIcons */
   icon: string;
+  /** Pista breve de referencia (p. ej. "puerta de vidrio a tu derecha") */
+  cue?: string;
+  /** Texto optimizado para voz (si difiere de `text`) */
+  spoken?: string;
 };
 
 const edgeById = new Map(EDGES.map((e) => [e.id, e]));
@@ -174,7 +178,118 @@ export function buildManeuvers(route: RouteResult): Maneuver[] {
       : d < 5 ? capitalize(e.verb) : `En ${d} m, ${e.verb}`;
     out.push({ ...e, distanceM: d, text });
   });
+  addCues(out, route);
   return out;
+}
+
+// ---------- Referencias físicas (cue / spoken) ----------
+
+const SIDE: Record<string, string> = { left: 'a tu izquierda', right: 'a tu derecha', ahead: 'al frente' };
+const FLIP: Record<string, 'left' | 'right' | 'ahead'> = { left: 'right', right: 'left', ahead: 'ahead' };
+const CLOCK: Record<string, number> = {
+  'turn-right': 3, 'turn-left': 9, 'slight-right': 2, 'slight-left': 10,
+};
+const meters = (n: number) => `${n} ${n === 1 ? 'metro' : 'metros'}`;
+const COUNT = ['', 'un', 'dos', 'tres', 'cuatro'];
+
+/** Hitos de un tramo orientados según el sentido real de marcha. */
+function orientedCues(edgeId: string, fromNodeId: string): EdgeCue[] {
+  const e = edgeById.get(edgeId);
+  if (!e?.cues) return [];
+  if (e.from === fromNodeId) return e.cues;
+  return e.cues.map((c) => ({
+    at: c.at === 'start' ? 'end' : c.at === 'end' ? 'start' : 'mid',
+    side: c.side ? FLIP[c.side] : undefined,
+    text: c.text,
+  }));
+}
+
+const shortPhrase = (c: EdgeCue) => (c.side && c.side !== 'ahead' ? `con ${c.text} ${SIDE[c.side]}` : c.side ? `${c.text} ${SIDE.ahead}` : c.text);
+
+function addCues(out: Maneuver[], route: RouteResult) {
+  const segEdges = route.steps.flatMap((s) => s.edgeIds);
+  const nSeg = route.polyline.length - 1;
+  for (let k = 0; k < out.length; k++) {
+    const m = out[k];
+    const next = out[k + 1];
+    const a = m.atIndex;
+    const b = next ? next.atIndex : nSeg;
+    const leg: EdgeCue[] = [];
+    const legByEdge: EdgeCue[][] = [];
+    for (let s = a; s < b && s < segEdges.length; s++) {
+      const cs = orientedCues(segEdges[s], route.nodeIds[s]);
+      legByEdge.push(cs);
+      leg.push(...cs);
+    }
+    const lastEdge = legByEdge[legByEdge.length - 1] ?? [];
+    const rank = { start: 0, mid: 1, end: 2 } as const;
+    const sided = leg.filter((c) => c.side === 'left' || c.side === 'right').sort((x, y) => rank[x.at] - rank[y.at])[0];
+    const texture = leg.filter((c) => !c.side && c.at !== 'end')[0];
+    const endCue = lastEdge.filter((c) => c.at === 'end' && c.text !== sided?.text)[0];
+    const lead = m.distanceM >= 5 && m.type !== 'straight' ? `En ${meters(m.distanceM)}, ` : '';
+    const node = getNode(route.nodeIds[a]);
+    const arrival = node?.arrivalCue;
+    const first = (s: string) => s.split(';')[0];
+    const nat = (s: string) => capitalize(s);
+    const where = endCue?.side === 'ahead' ? 'al frente, ' : endCue?.side ? `${SIDE[endCue.side]}, ` : '';
+    const endPart = endCue ? `Al final, ${where}${endCue.text}.` : '';
+    const along = sided ? shortPhrase(sided) : '';
+    const noticed = !sided && texture ? `Notarás que ${texture.text}.` : '';
+    const clean = (s: string) => s.replace(/\.\./g, '.').replace(/\s+/g, ' ').replace(/ \./g, '.').trim();
+
+    if (m.type === 'arrive') {
+      const label = getNode(route.nodeIds[route.nodeIds.length - 1])?.label;
+      m.spoken = clean(`Llegaste a ${label ?? 'tu destino'}.${arrival ? ` ${nat(arrival)}.` : ' Tu destino está frente a ti.'}`);
+      if (arrival) m.cue = first(arrival);
+      continue;
+    }
+    if (m.type === 'elevator') {
+      const inside = leg.find((c) => !c.side && /botonera/i.test(c.text));
+      m.spoken = clean(`${nat(lead + m.verb)}.${arrival ? ` ${nat(arrival)}.` : ''}${inside ? ` ${nat(inside.text)}.` : ''}`);
+      m.cue = inside ? inside.text : arrival ? first(arrival) : undefined;
+      continue;
+    }
+    if (m.type === 'enter') {
+      m.spoken = clean(`${nat(lead + m.verb)}.${arrival ? ` ${nat(arrival)}.` : ''}`);
+      if (arrival) m.cue = first(arrival);
+      continue;
+    }
+    const isStairs = m.icon.startsWith('stairs');
+    if (isStairs || m.icon.startsWith('slope')) {
+      const up = m.type === 'ramp-up';
+      const edges = segEdges.slice(a, b).map((id) => edgeById.get(id));
+      if (isStairs) {
+        const n = edges.reduce((t, e) => t + (e?.steps ?? 0), 0);
+        const flights = edges.filter((e) => e?.type === 'stairs').length;
+        const rail = sided && /baranda/i.test(sided.text) ? sided : leg.find((c) => /baranda/i.test(c.text) && c.side);
+        const yellow = leg.some((c) => /borde amarillo/i.test(c.text));
+        const size = n ? ` de ${n} peldaños${flights > 1 ? ` en ${COUNT[flights] ?? flights} tramos` : ''}` : '';
+        const railTxt = rail?.side ? `baranda ${rail.side === 'left' ? 'a la izquierda' : 'a la derecha'}` : '';
+        const yellowTxt = yellow ? 'primer y último peldaño con borde amarillo' : '';
+        m.spoken = clean(
+          `${nat(lead + (up ? 'sube' : 'baja'))} por la escalera${size}.${railTxt ? ` ${nat(railTxt)}.` : ''}${yellowTxt ? ` ${nat(yellowTxt)}.` : ''}`,
+        );
+        m.cue = [railTxt, yellowTxt].filter(Boolean).join(', ') || undefined;
+      } else {
+        const len = Math.round(edges.reduce((t, e) => t + (e?.type === 'ramp' ? e.distanceM : 0), 0));
+        const pct = Math.max(0, ...edges.map((e) => e?.slopePct ?? 0));
+        const slope = pct > 0 ? `, con pendiente ${slopeLabel(pct)}` : '';
+        m.spoken = clean(`${nat(lead + (up ? 'sube' : 'baja'))} por la rampa de ${meters(len)}${slope}${along ? `${slope ? ' y' : ','} ${along}` : ''}. ${noticed} ${endPart}`);
+        m.cue = sided ? shortPhrase(sided) : texture?.text;
+      }
+      continue;
+    }
+    // Tramos a pie: recto, giros, salidas
+    const isTurn = m.type !== 'straight' && m.type !== 'exit';
+    const hour = m.verb === 'da la vuelta' ? 6 : CLOCK[m.type];
+    const action = m.type === 'straight'
+      ? `Sigue recto ${meters(m.distanceM)}`
+      : `${nat(lead + m.verb)}${isTurn && hour ? `, hacia las ${hour}` : ''}.`;
+    m.spoken = m.type === 'straight'
+      ? clean(`${action}${along ? `, ${along}` : ''}. ${noticed} ${endPart}`)
+      : clean(`${action} ${along ? `Sigue ${along}.` : ''} ${noticed} ${endPart}`);
+    m.cue = sided ? shortPhrase(sided) : texture?.text;
+  }
 }
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

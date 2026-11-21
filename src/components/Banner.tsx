@@ -34,13 +34,13 @@ export function Banner({ tone = 'info', text, onPress }: Props) {
   const style = [styles.base, { backgroundColor: t.bg, borderColor: t.fg }];
   if (onPress) {
     return (
-      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={text} style={style}>
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={text} accessibilityHint="Toca para ver el detalle" style={style}>
         {content}
       </Pressable>
     );
   }
   return (
-    <View accessibilityRole="alert" style={style}>
+    <View accessible accessibilityRole="alert" accessibilityLabel={text} accessibilityLiveRegion="polite" style={style}>
       {content}
     </View>
   );

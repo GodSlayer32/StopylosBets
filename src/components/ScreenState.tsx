@@ -27,7 +27,7 @@ export function ScreenState({ variant, title, message, actionLabel, onAction }: 
   return (
     <View style={styles.wrap} accessibilityRole={isError ? 'alert' : undefined} accessibilityLiveRegion="polite">
       {variant === 'loading' ? (
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} accessibilityLabel="Cargando" />
       ) : (
         <View style={[styles.icon, { backgroundColor: isError ? colors.dangerSoft : colors.primarySoft }]}>
           <Ionicons
@@ -37,7 +37,7 @@ export function ScreenState({ variant, title, message, actionLabel, onAction }: 
           />
         </View>
       )}
-      <AppText variant="heading" style={styles.center}>
+      <AppText variant="heading" accessibilityRole="header" style={styles.center}>
         {title ?? d.title}
       </AppText>
       <AppText color="textMuted" style={styles.center}>

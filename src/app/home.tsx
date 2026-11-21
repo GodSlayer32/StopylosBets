@@ -103,6 +103,7 @@ export default function Home() {
         <Chip
           icon="person-circle"
           label={`Perfil: ${PROFILE_LABEL[profile]}`}
+          accessibilityHint="Cambiar tu perfil de movilidad"
           onPress={() => router.replace('/')}
         />
       </View>
@@ -112,7 +113,7 @@ export default function Home() {
           <AppText variant="label" color="primary">
             Tu próxima clase
           </AppText>
-          <AppText variant="title">{nextClass.course}</AppText>
+          <AppText variant="title" accessibilityRole="header">{nextClass.course}</AppText>
           <AppText color="textMuted">
             Sala {classPlace.name} · Edif. {classPlace.building} · {nextClass.start} a {nextClass.end}
           </AppText>
@@ -165,6 +166,7 @@ export default function Home() {
               key={id}
               label={getNode(id)?.label ?? id}
               selected={id === origin}
+              accessibilityHint="Usar como punto de partida"
               onPress={() => {
                 setOrigin(id);
                 setPickingOrigin(false);
@@ -206,6 +208,7 @@ export default function Home() {
             icon={c.icon}
             label={c.label}
             selected={quick === c.id}
+            accessibilityHint="Filtra los lugares por esta categoría"
             onPress={() => setQuick(quick === c.id ? null : c.id)}
           />
         ))}
@@ -224,7 +227,8 @@ export default function Home() {
               <Card
                 key={p.id}
                 onPress={() => router.push(`/route/${p.id}`)}
-                accessibilityLabel={`${p.name}, ${placeSub(p)}. Ver ruta`}
+                accessibilityLabel={`${p.name}, ${placeSub(p)}`}
+                accessibilityHint="Ver la ruta accesible hasta aquí"
                 style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: colors.primarySoft }]}>
                   <MaterialCommunityIcons

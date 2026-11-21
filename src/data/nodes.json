@@ -23,7 +23,8 @@
       "y": 80,
       "building": "A",
       "floor": 1,
-      "zone": "Explanada Edif. A"
+      "zone": "Explanada Edif. A",
+      "arrivalCue": "Explanada abierta; al frente están las puertas de vidrio del hall y el piso cambia a baldosa podotáctil"
     },
     {
       "id": "a_in",
@@ -32,7 +33,8 @@
       "y": 76.5,
       "building": "A",
       "floor": 1,
-      "zone": "Edificio A · Piso 1"
+      "zone": "Edificio A · Piso 1",
+      "arrivalCue": "Hall con puertas de vidrio; el piso cambia a baldosa podotáctil y el mostrador de conserjería queda a la izquierda"
     },
     {
       "id": "a_elev_p1",
@@ -41,7 +43,8 @@
       "y": 73.5,
       "building": "A",
       "floor": 1,
-      "zone": "Edificio A · Piso 1"
+      "zone": "Edificio A · Piso 1",
+      "arrivalCue": "El ascensor está al fondo del hall; las puertas son de acero y el botón de llamada, con braille, está a la derecha"
     },
     {
       "id": "a_elev_p2",
@@ -59,7 +62,8 @@
       "y": 71.5,
       "building": "A",
       "floor": 2,
-      "zone": "Edificio A · Piso 2"
+      "zone": "Edificio A · Piso 2",
+      "arrivalCue": "Puerta de madera, la primera a la izquierda al salir del ascensor; el número va en relieve a la altura de la manilla"
     },
     {
       "id": "aula_magna",
@@ -93,7 +97,8 @@
       "y": 61.5,
       "building": "B",
       "floor": 1,
-      "zone": "Edificio B · Piso 1"
+      "zone": "Edificio B · Piso 1",
+      "arrivalCue": "Se siente el murmullo y el olor a comida; la caja queda a la derecha de la entrada"
     },
     {
       "id": "b_in",
@@ -102,7 +107,8 @@
       "y": 57.8,
       "building": "B",
       "floor": 1,
-      "zone": "Edificio B · Piso 1"
+      "zone": "Edificio B · Piso 1",
+      "arrivalCue": "Puerta de vidrio automática con marco metálico oscuro; adentro se siente el eco del hall de la biblioteca"
     },
     {
       "id": "biblioteca",
@@ -111,7 +117,8 @@
       "y": 54.5,
       "building": "B",
       "floor": 1,
-      "zone": "Edificio B · Piso 1"
+      "zone": "Edificio B · Piso 1",
+      "arrivalCue": "Mostrador de atención al frente y torniquete de acceso a la derecha; se oye el silencio de la sala de lectura"
     },
     {
       "id": "bano_b",
@@ -129,7 +136,8 @@
       "y": 52.5,
       "building": "B",
       "floor": 1,
-      "zone": "Edificio B · Piso 1"
+      "zone": "Edificio B · Piso 1",
+      "arrivalCue": "El ascensor está al fondo del pasillo, a la derecha; el botón de llamada tiene braille y suena al llegar"
     },
     {
       "id": "b_elev_p2",
@@ -163,7 +171,8 @@
       "y": 42.5,
       "building": "C",
       "floor": 1,
-      "zone": "Edificio C · Piso 1"
+      "zone": "Edificio C · Piso 1",
+      "arrivalCue": "Puerta de vidrio doble, la de la derecha es la que abre; adentro está el mostrador de portería a la izquierda"
     },
     {
       "id": "c_elev_p1",
@@ -172,7 +181,8 @@
       "y": 40.5,
       "building": "C",
       "floor": 1,
-      "zone": "Edificio C · Piso 1"
+      "zone": "Edificio C · Piso 1",
+      "arrivalCue": "El ascensor está al fondo del hall, de frente; el botón de llamada, con braille, está a la derecha y suena al llegar"
     },
     {
       "id": "c_elev_p2",
@@ -190,7 +200,8 @@
       "y": 41,
       "building": "C",
       "floor": 1,
-      "zone": "Edificio C · Piso 1"
+      "zone": "Edificio C · Piso 1",
+      "arrivalCue": "Puerta de madera, la primera a la izquierda frente al ascensor; el número va en relieve a la altura de la manilla"
     },
     {
       "id": "c_p2_hub",
@@ -208,7 +219,8 @@
       "y": 37.5,
       "building": "C",
       "floor": 2,
-      "zone": "Edificio C · Piso 2"
+      "zone": "Edificio C · Piso 2",
+      "arrivalCue": "Puerta de madera, la segunda a la derecha después del ascensor; el número va en relieve a la altura de la manilla"
     },
     {
       "id": "bano_c",
@@ -274,7 +286,8 @@
       "y": 70.5,
       "building": "D",
       "floor": 1,
-      "zone": "Edificio D · Piso 1"
+      "zone": "Edificio D · Piso 1",
+      "arrivalCue": "Puertas de vidrio con manilla larga de acero; el piso interior es de baldosa lisa"
     },
     {
       "id": "d_elev_p1",
@@ -283,7 +296,8 @@
       "y": 66.5,
       "building": "D",
       "floor": 1,
-      "zone": "Edificio D · Piso 1"
+      "zone": "Edificio D · Piso 1",
+      "arrivalCue": "El ascensor está a la izquierda del hall; el botón de llamada, con braille, está a la derecha de la puerta"
     },
     {
       "id": "d_elev_p2",
@@ -301,7 +315,8 @@
       "y": 63,
       "building": "D",
       "floor": 2,
-      "zone": "Edificio D · Piso 2"
+      "zone": "Edificio D · Piso 2",
+      "arrivalCue": "Puerta metálica gris con ventana angosta, al final del pasillo a la derecha; el letrero tiene relieve y braille"
     },
     {
       "id": "f_in",

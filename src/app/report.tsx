@@ -90,7 +90,7 @@ export default function Report() {
 
       <View style={styles.wrap}>
         {KINDS.map((k) => (
-          <Chip key={k.key} label={k.label} icon={k.icon} selected={kind === k.key} onPress={() => setKind(k.key)} />
+          <Chip key={k.key} label={k.label} icon={k.icon} selected={kind === k.key} onPress={() => setKind(k.key)} accessibilityHint="Elige el tipo de barrera" />
         ))}
       </View>
 
@@ -108,7 +108,7 @@ export default function Report() {
                       <AppText variant="label" color="textMuted">Edif. {e.building} · Ya reportado</AppText>
                     </View>
                   ) : (
-                    <Chip key={e.id} label={`Edif. ${e.building}`} icon="business" selected={elevatorId === e.id} onPress={() => setElevatorId(e.id)} />
+                    <Chip key={e.id} label={`Edif. ${e.building}`} icon="business" selected={elevatorId === e.id} onPress={() => setElevatorId(e.id)} accessibilityLabel={`Ascensor del edificio ${e.building}`} accessibilityHint="Selecciona este ascensor" />
                   )
                 ))
               : routeEdges.length
@@ -117,6 +117,7 @@ export default function Report() {
                       key={e.id}
                       label={e.name ?? `${getNode(e.from)?.label ?? ''} → ${getNode(e.to)?.label ?? ''}`}
                       selected={edgeId === e.id}
+                      accessibilityHint="Selecciona este tramo"
                       onPress={() => { setEdgeId(e.id); setNodeId(undefined); }}
                     />
                   ))
@@ -125,6 +126,7 @@ export default function Report() {
                       key={p.id}
                       label={p.name}
                       selected={nodeId === p.nodeId}
+                      accessibilityHint="Selecciona este lugar"
                       onPress={() => { setNodeId(p.nodeId); setEdgeId(undefined); }}
                     />
                   ))}
@@ -133,7 +135,7 @@ export default function Report() {
       ) : null}
 
       <View style={styles.section}>
-        <AppText variant="heading">Detalles (opcional)</AppText>
+        <AppText variant="heading" accessibilityRole="header">Detalles (opcional)</AppText>
         <TextInput
           value={description}
           onChangeText={setDescription}

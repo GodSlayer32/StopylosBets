@@ -53,7 +53,8 @@ export default function MobilityProfile() {
               onPress={() => choose(o.id)}
               accessibilityRole="radio"
               accessibilityLabel={`${o.name}. ${o.desc}`}
-              accessibilityState={{ selected }}
+              accessibilityState={{ selected, checked: selected }}
+              accessibilityHint="Selecciona este perfil de movilidad"
               style={[
                 styles.card,
                 {

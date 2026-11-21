@@ -15,6 +15,7 @@ type Props = {
   disabled?: boolean;
   fullWidth?: boolean;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
 };
 
 const makePalette = (colors: Colors): Record<Variant, { bg: string; fg: string; border: string }> => ({
@@ -33,6 +34,7 @@ export function Button({
   disabled,
   fullWidth,
   accessibilityLabel,
+  accessibilityHint,
 }: Props) {
   const { colors } = useTheme();
   const p = makePalette(colors)[variant];
@@ -43,6 +45,7 @@ export function Button({
       disabled={inactive}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!inactive, busy: !!loading }}
       style={({ pressed }) => [
         styles.base,

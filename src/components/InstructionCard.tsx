@@ -21,6 +21,8 @@ type Props = {
   speakOn: boolean;
   onToggleVoice: () => void;
   onHome: () => void;
+  /** Repite la instrucción actual por voz + háptico */
+  onRepeat?: () => void;
   onLayout?: (e: LayoutChangeEvent) => void;
 };
 
@@ -34,7 +36,7 @@ function split(m: Maneuver, dist: number): { strong: string; rest: string } {
   return { strong: dist < 5 ? 'Ahora' : `En ${dist} m`, rest: m.verb };
 }
 
-export function InstructionCard({ sim, route, place, accessibleMode, speakOn, onToggleVoice, onHome, onLayout }: Props) {
+export function InstructionCard({ sim, route, place, accessibleMode, speakOn, onToggleVoice, onHome, onRepeat, onLayout }: Props) {
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const compact = !accessibleMode;
@@ -44,12 +46,12 @@ export function InstructionCard({ sim, route, place, accessibleMode, speakOn, on
 
   if (sim.finished) {
     return (
-      <View style={wrapStyle} accessibilityLiveRegion="polite" onLayout={onLayout}>
+      <View style={wrapStyle} onLayout={onLayout}>
         <View style={styles.arrived}>
           <View style={[styles.check, { backgroundColor: t.colors.successSoft }]}>
             <Ionicons name="checkmark-circle" size={40} color={t.colors.success} />
           </View>
-          <View style={styles.flex}>
+          <View style={styles.flex} accessible accessibilityRole="header" accessibilityLabel={`Llegaste a ${place.name}. ${place.building ? `Edificio ${place.building}, ` : ''}piso ${place.floor}`}>
             <AppText variant="title">Llegaste a {place.name}</AppText>
             <AppText color="textMuted">{place.building ? `Edif. ${place.building} · ` : ''}Piso {place.floor}</AppText>
           </View>
@@ -64,11 +66,11 @@ export function InstructionCard({ sim, route, place, accessibleMode, speakOn, on
   const { strong, rest } = split(m, sim.distanceToManeuverM);
   const minutes = Math.max(1, Math.ceil((sim.remainingM / Math.max(1, route.distanceM)) * route.minutes));
   const then = sim.nextManeuver;
-  const label = `${sim.zone}. ${strong} ${rest}.${then ? ` Luego: ${lueg(then)}.` : ''} Faltan ${sim.remainingM} metros, ${minutes} minutos.`;
+  const label = `${sim.zone}. ${strong} ${rest}.${then ? ` Luego: ${lueg(then)}.` : ''}${m.cue ? ` ${m.cue}.` : ''} Faltan ${sim.remainingM} metros, ${minutes} minutos.`;
 
   return (
     <View style={wrapStyle} onLayout={onLayout}>
-      <View accessible accessibilityLabel={label} accessibilityLiveRegion="polite" style={styles.info}>
+      <View accessible accessibilityLabel={label} style={styles.info}>
         {sim.zone ? (
           <View style={styles.zoneRow}>
             <Ionicons name="location" size={compact ? 12 : 16} color={t.colors.textMuted} />
@@ -84,6 +86,15 @@ export function InstructionCard({ sim, route, place, accessibleMode, speakOn, on
             {` ${rest}`}
           </AppText>
         </View>
+        {m.cue ? (
+          <AppText
+            variant={compact ? 'caption' : 'heading'}
+            color="textMuted"
+            numberOfLines={compact ? 1 : 3}
+            style={compact ? styles.small13 : undefined}>
+            {m.cue.charAt(0).toUpperCase() + m.cue.slice(1)}
+          </AppText>
+        ) : null}
         <View style={styles.metaRow}>
           {then ? (
             <AppText variant="label" color="textMuted" numberOfLines={1} style={[compact && styles.small13, compact && styles.flex]}>Luego: {lueg(then)}</AppText>
@@ -91,6 +102,17 @@ export function InstructionCard({ sim, route, place, accessibleMode, speakOn, on
           <AppText variant="caption" color="textMuted" style={compact && styles.small13}>Faltan {sim.remainingM} m · {minutes} min</AppText>
         </View>
       </View>
+      {!compact && onRepeat ? (
+        <Pressable
+          onPress={onRepeat}
+          accessibilityRole="button"
+          accessibilityLabel="Repetir instrucción"
+          accessibilityHint="Vuelve a decir la instrucción y repite la vibración"
+          style={({ pressed }) => [styles.repeat, { backgroundColor: t.colors.primary }, pressed && { opacity: 0.85 }]}>
+          <MaterialCommunityIcons name="replay" size={36} color={t.colors.primaryText} />
+          <AppText variant="title" style={{ color: t.colors.primaryText }}>Repetir instrucción</AppText>
+        </Pressable>
+      ) : null}
       <View style={styles.controls}>
         <Ctl compact={compact} label="Paso anterior" icon="chevron-back" onPress={sim.prev} disabled={sim.stepIndex === 0 && sim.progress < 0.01} t={t} />
         <Pressable
@@ -178,6 +200,16 @@ const makeStyles = (t: Theme, compact: boolean) =>
       alignItems: 'center',
       justifyContent: 'center',
       gap: t.spacing.xs,
+    },
+    repeat: {
+      alignSelf: 'stretch',
+      minHeight: 72,
+      borderRadius: t.radius.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: t.spacing.md,
+      paddingHorizontal: t.spacing.lg,
     },
     arrived: { gap: t.spacing.md },
     check: { width: 64, height: 64, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' },

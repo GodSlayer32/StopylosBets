@@ -10,16 +10,19 @@ type Props = {
   selected?: boolean;
   onPress?: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 };
 
-export function Chip({ label, selected, onPress, icon }: Props) {
+export function Chip({ label, selected, onPress, icon, accessibilityLabel, accessibilityHint }: Props) {
   const { colors } = useTheme();
   const fg = selected ? colors.primaryText : colors.text;
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ selected: !!selected }}
       style={[
         styles.chip,
