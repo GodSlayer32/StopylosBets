@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Keyboard, type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,7 +53,12 @@ export default function MapScreen() {
   const { origin, incidents, elevators } = useApp();
   const { colors, minTouch, typography } = useTheme();
   const insets = useSafeAreaInsets();
-  const [sel, setSel] = useState<Sel>({});
+  const params = useLocalSearchParams<{ building?: string; level?: string }>();
+  const [sel, setSel] = useState<Sel>(() =>
+    params.building && FLOORPLANS[params.building]
+      ? { building: params.building, level: Number(params.level) || FLOORPLANS[params.building]?.levels?.[0] }
+      : {},
+  );
   const [camera, setCamera] = useState<MapCamera | null>(null);
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState(false);

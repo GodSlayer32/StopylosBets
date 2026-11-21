@@ -2,7 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
-import { AccessibilityInfo, Alert, findNodeHandle, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Alert, findNodeHandle, Modal, Pressable, Share, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
@@ -19,7 +19,7 @@ import { useApp } from '@/context/app-context';
 import { useTheme } from '@/hooks/use-theme';
 import { getNode, getPlace, PLACES } from '@/lib/routing';
 import scheduleJson from '@/data/schedule.json';
-import { computeSchedule, placeDetail, type ClassPlan } from '@/lib/schedule';
+import { accessibleRoomRequest, computeSchedule, isNoElevatorLeg, placeDetail, type ClassPlan } from '@/lib/schedule';
 import { formatClock } from '@/lib/time';
 import type { Elevator, Place, Profile } from '@/types';
 
@@ -104,6 +104,7 @@ export default function Home() {
   }, [profile, origin, incidents, elevators, raining]);
   const nextPlan = plans.find((p) => p.cls.id === scheduleJson.nextClassId) ?? null;
   const warnPlan = plans.find((p) => p.startMin > (nextPlan?.startMin ?? 0) && (p.status === 'tarde' || p.status === 'justo' || p.status === 'sin-ruta'));
+  const noElevPlan = plans.find((p) => p.startMin > (nextPlan?.startMin ?? 0) && isNoElevatorLeg(p, profile));
   const leaveTone = nextPlan?.status === 'tarde' || nextPlan?.status === 'sin-ruta' ? 'danger' : nextPlan?.status === 'justo' ? 'warning' : 'success';
   const leaveText =
     !nextPlan || !nextPlan.status ? null
@@ -242,6 +243,30 @@ export default function Home() {
             <Ionicons name="calendar-outline" size={20} color={colors.primary} />
             <AppText variant="label" color="primary">Ver mi día</AppText>
           </Pressable>
+          {noElevPlan ? (
+            <View
+              accessible
+              accessibilityLabel={`A las ${noElevPlan.cls.start}, ${noElevPlan.cls.course}: sin ruta accesible, piso sin ascensor`}
+              style={[styles.leave, { backgroundColor: colors.dangerSoft, borderColor: colors.danger }]}>
+              <Ionicons name="warning" size={22} color={colors.danger} />
+              <View style={styles.flex}>
+                <AppText variant="label">{noElevPlan.cls.start} · {noElevPlan.cls.course}</AppText>
+                <AppText variant="caption">Sin ruta accesible · piso sin ascensor ({noElevPlan.place.name}, Edif. {noElevPlan.place.building})</AppText>
+              </View>
+            </View>
+          ) : null}
+          {noElevPlan ? (
+            <Button
+              label="Solicitar sala accesible"
+              icon="share-outline"
+              variant="secondary"
+              fullWidth
+              accessibilityLabel={`Solicitar sala accesible para ${noElevPlan.cls.course}`}
+              onPress={() => {
+                Share.share({ message: accessibleRoomRequest(profile, noElevPlan.place, noElevPlan.cls.course) }).catch(() => {});
+              }}
+            />
+          ) : null}
           {warnPlan && warnPlan.leaveAt != null ? (
             <Pressable
               onPress={() => router.push('/my-day')}

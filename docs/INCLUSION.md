@@ -42,7 +42,7 @@ La leyenda también está en la app: botón **?** en la pantalla de navegación.
 ### Voz y vibraciones
 1. Sube el volumen y quita el modo silencio.
 2. En la pantalla de perfil elige **Baja visión**: la app pasa a alto contraste.
-3. Inicio → **Llévame** (C-210) → **Iniciar ruta**.
+3. Inicio → **Llévame** (Laboratorios Edif. C) → **Iniciar ruta**.
 4. Toca **Repetir instrucción**: debe leer la instrucción con su referencia física y vibrar según la maniobra.
 5. Avanza con ▶ y comprueba que cada giro vibre distinto (2 pulsos = izquierda, 3 = derecha).
 

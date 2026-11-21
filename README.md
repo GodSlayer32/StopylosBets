@@ -38,11 +38,12 @@ Detalle de inclusión y código de vibraciones: [docs/INCLUSION.md](docs/INCLUSI
 ## Demo sugerida
 
 1. Elegir el perfil **Muletas**.
-2. Pedir ruta a **C-210**.
-3. Ver la vista previa y pulsar **Simular** para recorrerla.
-4. **Reportar** el ascensor del edificio C como caído.
-5. La app **recalcula** la ruta por el edificio B.
-6. Cambiar a **Baja visión** y repetir: alto contraste, voz y vibraciones.
+2. Pedir ruta a **Laboratorios Edif. C** (416 m, evita 80 escalones) y pulsar **Simular** para recorrerla.
+3. Ir a **Mi día**: la **Ayudantía en C-210** (piso 2, Edif. C, sin ascensor) aparece como *Sin ruta accesible · piso sin ascensor*.
+4. Pulsar **Solicitar sala accesible**: se abre el mensaje cortés prearmado para compartir con Docencia o el profesor.
+5. Opcional: pedir ruta a **Lab. Física** (ascensor del Edif. D), reportar ese ascensor como caído y ver el estado *sin ruta* con alternativa.
+6. Cambiar a **Silla de ruedas**: sin ruta autónoma desde Av. España, alternativa por **Placeres** o con acompañante.
+7. Cambiar a **Baja visión** y repetir: alto contraste, voz y vibraciones.
 
 ## Cómo ejecutar
 
@@ -85,7 +86,8 @@ docs/           enunciado, presentación, plano e INCLUSION.md
 ## Datos, supuestos y limitaciones
 
 - El plano de Casa Central (`docs/casa-central-1.jpg`) es real y se trazó a mano a vectores.
-- **Simulados**: escalones, pendientes, ascensores, plantas interiores, referencias físicas y horario.
+- **Edificio C relevado por el equipo** (plantas reales, sin ascensor).
+- **Simulados** (resto de edificios): escalones, pendientes, ascensores, plantas interiores, referencias físicas y horario.
 - Sin GPS ni posicionamiento interior: la posición es simulada.
 - El enfoque es baja visión, no ceguera total.
 - Sin backend: los reportes son locales al dispositivo.

@@ -19,19 +19,27 @@
     },
     {
       "id": "cls-2",
-      "course": "Ingeniería de Software",
+      "course": "Laboratorio de Ingeniería de Software",
       "professor": "Prof. Carolina Vidal",
       "start": "11:30",
       "end": "13:00",
-      "placeId": "c-210"
+      "placeId": "c-labs"
     },
     {
       "id": "cls-3",
       "course": "Física General Laboratorio",
       "professor": "Prof. Rodrigo Sepúlveda",
-      "start": "13:05",
-      "end": "14:35",
+      "start": "13:10",
+      "end": "14:40",
       "placeId": "lab-fisica"
+    },
+    {
+      "id": "cls-4",
+      "course": "Ayudantía Ing. de Software",
+      "professor": "Ayud. Tomás Araya",
+      "start": "15:45",
+      "end": "17:00",
+      "placeId": "c-210"
     }
   ]
 }

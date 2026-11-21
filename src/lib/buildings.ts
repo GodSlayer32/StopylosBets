@@ -16,3 +16,10 @@ export function floorOfNode(nodeId: string): number | undefined {
 export function buildingOfNode(nodeId: string): string | undefined {
   return nodes.find((n) => n.id === nodeId)?.building;
 }
+
+/** El destino está sobre el piso 1 de un edificio sin ascensor (no hay ruta posible sin escaleras). */
+export function lacksElevatorAccess(place: { building?: string; floor?: number }): boolean {
+  if (!place.building || (place.floor ?? 1) <= 1) return false;
+  const b = getBuilding(place.building);
+  return !!b && !b.elevator;
+}

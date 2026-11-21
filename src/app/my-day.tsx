@@ -11,8 +11,9 @@ import { ScreenState } from '@/components/ScreenState';
 import { StatusPill } from '@/components/StatusPill';
 import { spacing } from '@/constants/theme';
 import { useApp } from '@/context/app-context';
+import { lacksElevatorAccess } from '@/lib/buildings';
 import { useTheme } from '@/hooks/use-theme';
-import { computeSchedule, placeDetail, STUDENT, type ClassPlan } from '@/lib/schedule';
+import { accessibleRoomRequest, computeSchedule, isNoElevatorLeg, placeDetail, STUDENT, type ClassPlan } from '@/lib/schedule';
 import { formatClock, NOW_ISO, NOW_MINUTES } from '@/lib/time';
 import type { Profile } from '@/types';
 
@@ -25,6 +26,7 @@ const REASON: Record<Profile, string> = {
 
 export function legSentence(p: ClassPlan): string {
   const fromName = p.fromOrigin ? `tu ubicación (${p.fromLabel})` : p.fromLabel ?? '';
+  if (p.status === 'sin-ruta' && lacksElevatorAccess(p.place)) return `De ${fromName} a ${p.cls.course}: sin ruta accesible, la sala está en el piso ${p.place.floor} de un edificio sin ascensor.`;
   if (p.status === 'sin-ruta') return `De ${fromName} a ${p.cls.course}: no hay ruta accesible disponible ahora.`;
   const base = `De ${fromName} a ${p.cls.course}: ${p.minutes} minutos con ruta accesible, tienes ${p.available}.`;
   if (p.status === 'tarde') return `${base} No alcanzas por ${p.lateBy} ${p.lateBy === 1 ? 'minuto' : 'minutos'}.`;
@@ -76,6 +78,10 @@ export default function MyDay() {
     Share.share({ message: msg }).catch(() => {});
   };
 
+  const requestRoom = (p: ClassPlan) => {
+    Share.share({ message: accessibleRoomRequest(profile, p.place, p.cls.course) }).catch(() => {});
+  };
+
   if (error) {
     return (
       <Screen>
@@ -107,6 +113,7 @@ export default function MyDay() {
       {plans.map((p) => {
         const tone = p.status === 'tarde' || p.status === 'sin-ruta' ? 'danger' : p.status === 'justo' ? 'warning' : 'success';
         const finished = p.phase === 'terminada';
+        const noElev = isNoElevatorLeg(p, profile);
         return (
           <Card key={p.cls.id} style={[styles.classCard, { minHeight: minTouch }]}>
             <View style={styles.row}>
@@ -135,7 +142,7 @@ export default function MyDay() {
                       p.status === 'a-tiempo' ? 'A tiempo'
                       : p.status === 'justo' ? 'Vas justo'
                       : p.status === 'tarde' ? `No alcanzas por ${p.lateBy} min`
-                      : 'Sin ruta'
+                      : noElev ? 'Sin ruta accesible' : 'Sin ruta'
                     }
                   />
                   {p.leaveAt != null && p.status !== 'sin-ruta' ? (
@@ -145,10 +152,19 @@ export default function MyDay() {
                   ) : null}
                   <AppText variant="caption" color="textMuted">
                     {p.status === 'sin-ruta'
-                      ? 'Sin ruta accesible ahora'
+                      ? noElev ? `Sin ruta accesible · piso sin ascensor (piso ${p.place.floor}, Edif. ${p.place.building})` : 'Sin ruta accesible ahora'
                       : `${p.fromOrigin ? `Desde ${p.fromLabel}: ` : ''}${p.minutes} min · tienes ${p.available}${p.extraMinutes > 0 ? ` · +${p.extraMinutes} min por ruta accesible` : ''}`}
                   </AppText>
                 </View>
+                {noElev ? (
+                  <Button
+                    label="Solicitar sala accesible"
+                    icon="share-outline"
+                    fullWidth
+                    accessibilityLabel={`Solicitar sala accesible para ${p.cls.course}`}
+                    onPress={() => requestRoom(p)}
+                  />
+                ) : null}
                 {p.status === 'justo' || p.status === 'tarde' ? (
                   <Button
                     label="Avisar al profesor"
@@ -161,6 +177,7 @@ export default function MyDay() {
                 <Button
                   label="Llévame"
                   icon="navigate"
+                  variant={noElev ? 'secondary' : 'primary'}
                   fullWidth
                   accessibilityLabel={`Llévame a ${p.place.name}`}
                   onPress={() => {

@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { Stack, useFocusEffect, type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Modal, Pressable, ScrollView, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Animated, Modal, Pressable, ScrollView, Share, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
@@ -18,6 +18,8 @@ import { useAppTheme } from '@/hooks/use-app-theme';
 import { AMENITY_ICON, amenitiesAlongRoute, amenityWord } from '@/lib/amenities';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
 import { formatAgo, formatConfirmations } from '@/lib/time';
+import { lacksElevatorAccess } from '@/lib/buildings';
+import { accessibleRoomRequest, courseAt } from '@/lib/schedule';
 import type { AmenityType, RouteResult } from '@/types';
 
 type MapBarrier = { id: string; x: number; y: number; kind?: 'incident' | 'stairs' };
@@ -115,7 +117,7 @@ export default function RouteScreen() {
     return () => {
       cancelled = true;
     };
-  }, [getRoute, destId, elevators, noticeAnim, raining, assisted]);
+  }, [getRoute, destId, elevators, noticeAnim, raining, assisted, setNotice, setStepIdx]);
 
   useFocusEffect(load);
 
@@ -234,6 +236,41 @@ export default function RouteScreen() {
     return (
       <Screen>
         <ScreenState variant="loading" title="Buscando tu ruta accesible" message="Evitando escaleras y barreras reportadas…" />
+      </Screen>
+    );
+  }
+
+  const noElevator = status === 'error' && !!place && (profile === 'crutches' || profile === 'wheelchair') && lacksElevatorAccess(place);
+  if (noElevator && place) {
+    const reqCourse = courseAt(place.id);
+    return (
+      <Screen scroll contentStyle={styles.noRouteScreen}>
+        <View style={styles.noRoute}>
+          <View style={styles.noRouteIcon}>
+            <MaterialCommunityIcons name="elevator-passenger-outline" size={t.iconSize.lg + 8} color={t.colors.danger} />
+          </View>
+          <AppText variant="title" accessibilityRole="header" style={styles.center}>{place.name} no tiene ruta accesible</AppText>
+          <AppText color="textMuted" style={styles.center}>
+            Está en el piso {place.floor} del Edificio {place.building}, que no tiene ascensor.
+          </AppText>
+        </View>
+        <View style={styles.noRouteActions}>
+          <Button
+            label="Solicitar sala accesible"
+            icon="share-outline"
+            fullWidth
+            accessibilityLabel={`Solicitar sala accesible en lugar de ${place.name}`}
+            onPress={() => { Share.share({ message: accessibleRoomRequest(profile, place, reqCourse) }).catch(() => {}); }}
+          />
+          <Button
+            label="Ver salas accesibles cercanas"
+            icon="map-outline"
+            variant="secondary"
+            fullWidth
+            onPress={() => router.push({ pathname: '/map', params: { building: place.building ?? '', level: '1' } })}
+          />
+          <Button label="Volver" variant="ghost" fullWidth onPress={() => router.back()} />
+        </View>
       </Screen>
     );
   }

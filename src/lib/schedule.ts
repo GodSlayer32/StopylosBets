@@ -1,4 +1,5 @@
 import scheduleJson from '@/data/schedule.json';
+import { lacksElevatorAccess } from '@/lib/buildings';
 import { findRoute, getNode, getPlace } from '@/lib/routing';
 import { NOW_MINUTES, parseClock } from '@/lib/time';
 import type { Elevator, Incident, Place, Profile } from '@/types';
@@ -122,4 +123,31 @@ export function computeSchedule(
 export function placeDetail(p: Place): string {
   const name = p.category === 'sala' ? `Sala ${p.name}` : p.name;
   return p.building && !/edif/i.test(p.name) ? `${name} · Edif. ${p.building}` : name;
+}
+
+const REQUEST_REASON: Record<Profile, string> = {
+  crutches: 'Por una lesión me desplazo con muletas',
+  wheelchair: 'Me desplazo en silla de ruedas',
+  lowVision: 'Tengo baja visión',
+  none: 'Necesito una ruta accesible',
+};
+
+/** Mensaje cortés para pedir una sala accesible (Share nativo). */
+export function accessibleRoomRequest(profile: Profile, place: Place, course?: string): string {
+  const where = `la sala ${place.name} (piso ${place.floor}, Edif. ${place.building})`;
+  const access = profile === 'wheelchair' || profile === 'crutches' ? 'no tiene acceso sin escaleras' : 'no es accesible para mí';
+  const what = course ? `la ${course.replace(/^la /i, '')}` : 'la actividad';
+  return (
+    `Hola, soy ${STUDENT.name} (Ing. Civil Informática). ${REQUEST_REASON[profile]} y ${where} ${access}. ` +
+    `¿Sería posible reasignar ${what} a una sala accesible del primer piso? Gracias.`
+  );
+}
+
+/** Tramo sin ruta porque la sala está en un piso sin ascensor. */
+export function isNoElevatorLeg(p: ClassPlan, profile: Profile): boolean {
+  return p.status === 'sin-ruta' && (profile === 'crutches' || profile === 'wheelchair') && lacksElevatorAccess(p.place);
+}
+
+export function courseAt(placeId: string): string | undefined {
+  return SCHEDULE_CLASSES.find((c) => c.placeId === placeId)?.course;
 }
