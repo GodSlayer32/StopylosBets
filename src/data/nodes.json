@@ -293,8 +293,8 @@
     {
       "id": "f_in",
       "label": "Sala de Estudio (Edif. F)",
-      "x": 79.6,
-      "y": 82.5,
+      "x": 81.35,
+      "y": 81.45,
       "building": "F",
       "floor": 1,
       "zone": "Edificio F · Piso 1"
@@ -442,6 +442,43 @@
       "label": "Pie de la escalera sur Edif. C",
       "x": 64.89,
       "y": 47.01
+    },
+    {
+      "id": "f_acc",
+      "label": "Acceso Edif. F (calle Edwards)",
+      "x": 80.05,
+      "y": 85.3,
+      "building": "F",
+      "floor": 1,
+      "zone": "Edificio F · Piso 1"
+    },
+    {
+      "id": "f_hub",
+      "label": "Pasillo central Edif. F",
+      "x": 79.5,
+      "y": 82.35,
+      "building": "F",
+      "floor": 1,
+      "zone": "Edificio F · Piso 1"
+    },
+    {
+      "id": "f_norte",
+      "label": "Salida al patio interior Edif. F",
+      "x": 79.5,
+      "y": 81.0,
+      "building": "F",
+      "floor": 1,
+      "zone": "Edificio F · Piso 1"
+    },
+    {
+      "id": "f_inf",
+      "label": "Sala de Informática (Edif. F)",
+      "x": 77.2,
+      "y": 81.45,
+      "building": "F",
+      "floor": 1,
+      "zone": "Edificio F · Piso 1",
+      "arrivalCue": "Puerta del laboratorio de Informática, a la izquierda del paso hacia el patio interior"
     }
   ]
 }
