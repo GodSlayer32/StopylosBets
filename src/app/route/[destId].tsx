@@ -624,8 +624,8 @@ function ToggleRow({ t, icon, title, caption, value, onChange, hint }: {
         accessibilityLabel={title}
         accessibilityHint={hint}
         accessibilityState={{ checked: value }}
-        trackColor={{ false: t.colors.borderStrong, true: t.colors.primary }}
-        thumbColor={t.colors.surface}
+        trackColor={{ false: t.colors.switchTrackOff, true: t.colors.primary }}
+        thumbColor={t.colors.switchThumb}
       />
     </View>
   );
