@@ -74,7 +74,8 @@ export function cumulativeMeters(route: RouteResult): number[] {
   return cum;
 }
 
-export function buildManeuvers(route: RouteResult): Maneuver[] {
+/** `partial`: la ruta termina en un punto de encuentro, no en el destino final. */
+export function buildManeuvers(route: RouteResult, partial = false): Maneuver[] {
   const pts = route.polyline;
   const nSeg = pts.length - 1;
   if (nSeg < 1) return [];
@@ -160,7 +161,7 @@ export function buildManeuvers(route: RouteResult): Maneuver[] {
   // Llegada
   const last = getNode(route.nodeIds[route.nodeIds.length - 1]);
   push({
-    type: 'arrive', verb: 'tu destino está frente a ti', text: '', atIndex: pts.length - 1,
+    type: 'arrive', verb: partial ? 'el punto de encuentro está frente a ti' : 'tu destino está frente a ti', text: '', atIndex: pts.length - 1,
     level: last?.floor, icon: 'flag-checkered',
   });
 
@@ -175,11 +176,11 @@ export function buildManeuvers(route: RouteResult): Maneuver[] {
     const d = Math.max(0, Math.round(cum[e.atIndex] - prevCum));
     prevCum = cum[e.atIndex];
     const text = e.type === 'arrive'
-      ? 'Tu destino está frente a ti'
+      ? (partial ? 'El punto de encuentro está frente a ti' : 'Tu destino está frente a ti')
       : d < 5 ? capitalize(e.verb) : `En ${d} m, ${e.verb}`;
     out.push({ ...e, distanceM: d, text });
   });
-  addCues(out, route);
+  addCues(out, route, partial);
   return out;
 }
 
@@ -207,7 +208,7 @@ function orientedCues(edgeId: string, fromNodeId: string): EdgeCue[] {
 
 const shortPhrase = (c: EdgeCue) => (c.side && c.side !== 'ahead' ? `con ${c.text} ${SIDE[c.side]}` : c.side ? `${c.text} ${SIDE.ahead}` : c.text);
 
-function addCues(out: Maneuver[], route: RouteResult) {
+function addCues(out: Maneuver[], route: RouteResult, partial = false) {
   const segEdges = route.steps.flatMap((s) => s.edgeIds);
   const nSeg = route.polyline.length - 1;
   for (let k = 0; k < out.length; k++) {
@@ -240,7 +241,9 @@ function addCues(out: Maneuver[], route: RouteResult) {
 
     if (m.type === 'arrive') {
       const label = getNode(route.nodeIds[route.nodeIds.length - 1])?.label;
-      m.spoken = clean(`Llegaste a ${label ?? 'tu destino'}.${arrival ? ` ${nat(arrival)}.` : ' Tu destino está frente a ti.'}`);
+      m.spoken = clean(partial
+        ? `Llegaste al punto de encuentro${label ? `, ${label}` : ''}.${arrival ? ` ${nat(arrival)}.` : ''}`
+        : `Llegaste a ${label ?? 'tu destino'}.${arrival ? ` ${nat(arrival)}.` : ' Tu destino está frente a ti.'}`);
       if (arrival) m.cue = first(arrival);
       continue;
     }

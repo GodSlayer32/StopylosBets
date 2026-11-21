@@ -21,7 +21,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { getNode, getPlace, PLACES } from '@/lib/routing';
 import scheduleJson from '@/data/schedule.json';
 import { computeSchedule, isNoElevatorLeg, SCHEDULE_CLASSES, placeDetail, type ClassPlan } from '@/lib/schedule';
-import { formatClock } from '@/lib/time';
+import { formatClock, NOW_MINUTES, parseClock } from '@/lib/time';
 import type { Elevator, Place, Profile } from '@/types';
 
 const PROFILE_LABEL: Record<Profile, string> = {
@@ -119,7 +119,14 @@ export default function Home() {
         ? `Sal a las ${formatClock(nextPlan.leaveAt)} · llegas ${formatClock(nextPlan.arriveAt ?? 0)}`
         : `Sales de ${nextPlan.fromLabel} a las ${formatClock(nextPlan.leaveAt)} · llegas ${formatClock(nextPlan.arriveAt ?? 0)}`
       : null;
-  const leaveLine = [leaveText, leaveDetail].filter(Boolean).join('. ');
+  // Ya en la sala de la próxima clase: no tiene sentido "Sal a las…".
+  const inRoom = !!nextClass && !!classPlace && origin === classPlace.nodeId;
+  const classStarted = !!nextClass && parseClock(nextClass.start) <= NOW_MINUTES;
+  const followingClass = nextClass ? SCHEDULE_CLASSES[SCHEDULE_CLASSES.indexOf(nextClass) + 1] : undefined;
+  const followingPlace = followingClass ? getPlace(followingClass.placeId) : undefined;
+  const leaveLine = inRoom
+    ? (classStarted && nextClass ? `Estás en clase · termina a las ${nextClass.end}` : 'Ya estás en la sala')
+    : [leaveText, leaveDetail].filter(Boolean).join('. ');
   const firstName = scheduleJson.student.name.split(' ')[0];
 
   const downElevators = elevators.filter(
@@ -225,26 +232,39 @@ export default function Home() {
             <View
               accessible
               accessibilityLabel={leaveLine}
-              style={[styles.leave, { backgroundColor: colors[`${leaveTone}Soft` as 'successSoft'], borderColor: colors[leaveTone] }]}>
-              <Ionicons name={leaveTone === 'success' ? 'time' : 'warning'} size={22} color={colors[leaveTone]} />
+              style={[styles.leave, { backgroundColor: colors[`${inRoom ? 'success' : leaveTone}Soft` as 'successSoft'], borderColor: colors[inRoom ? 'success' : leaveTone] }]}>
+              <Ionicons name={inRoom ? 'checkmark-circle' : leaveTone === 'success' ? 'time' : 'warning'} size={22} color={colors[inRoom ? 'success' : leaveTone]} />
               <View style={styles.flex}>
-                {leaveText ? <AppText variant="label">{leaveText}</AppText> : null}
-                {leaveDetail ? <AppText variant={leaveText ? 'caption' : 'label'}>{leaveDetail}</AppText> : null}
+                {inRoom ? <AppText variant="label">{leaveLine}</AppText> : null}
+                {inRoom ? null : leaveText ? <AppText variant="label">{leaveText}</AppText> : null}
+                {!inRoom && leaveDetail ? <AppText variant={leaveText ? 'caption' : 'label'}>{leaveDetail}</AppText> : null}
               </View>
             </View>
           ) : null}
-          {nextPlan && nextPlan.extraMinutes > 0 ? (
+          {!inRoom && nextPlan && nextPlan.extraMinutes > 0 ? (
             <AppText variant="caption" color="textMuted">+{nextPlan.extraMinutes} min por ruta accesible</AppText>
           ) : null}
-          <Button
-            label="Llévame"
-            icon="navigate"
-            fullWidth
-            accessibilityLabel={`Llévame a ${classPlace.name}`}
-            onPress={() => {
-              router.push(`/route/${classPlace.id}`);
-            }}
-          />
+          {!inRoom ? (
+            <Button
+              label="Llévame"
+              icon="navigate"
+              fullWidth
+              accessibilityLabel={`Llévame a ${classPlace.name}`}
+              onPress={() => {
+                router.push(`/route/${classPlace.id}`);
+              }}
+            />
+          ) : followingClass && followingPlace ? (
+            <Button
+              label={`Siguiente: ${followingClass.course}`}
+              icon="navigate"
+              fullWidth
+              accessibilityLabel={`Llévame a la siguiente clase, ${followingClass.course}, en ${followingPlace.name}`}
+              onPress={() => {
+                router.push(`/route/${followingPlace.id}`);
+              }}
+            />
+          ) : null}
           <Pressable
             onPress={() => router.push('/my-day')}
             accessibilityRole="button"

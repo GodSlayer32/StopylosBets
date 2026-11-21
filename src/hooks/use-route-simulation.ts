@@ -57,7 +57,7 @@ export type SimState = {
   pause: () => void;
 };
 
-export function useRouteSimulation(route: RouteResult | null): SimState {
+export function useRouteSimulation(route: RouteResult | null, partial = false): SimState {
   const geo = useMemo(() => {
     if (!route) return null;
     const pts = route.polyline;
@@ -92,10 +92,10 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
     const edgeM = route.steps.flatMap((s) => s.edgeIds.map(() => s.distanceM / s.edgeIds.length));
     const cum = [0];
     weights.forEach((w) => cum.push(cum[cum.length - 1] + w));
-    const maneuvers = buildManeuvers(route);
+    const maneuvers = buildManeuvers(route, partial);
     const ptM = cumulativeMeters(route);
     return { pts, weights, headings, cum, total: cum[cum.length - 1], stepStartSeg, stepOfSeg, edgeM, maneuvers, ptM };
-  }, [route]);
+  }, [route, partial]);
 
   const amenities = useMemo(() => (route ? amenitiesAlongRoute(route) : []), [route]);
 

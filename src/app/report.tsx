@@ -30,7 +30,7 @@ const SEND_MS = 600;
 export default function Report() {
   const router = useRouter();
   const params = useLocalSearchParams<{ edgeIds?: string }>();
-  const { elevators, addIncident, confirmIncident, accessibleMode } = useApp();
+  const { elevators, addIncident, confirmIncident, accessibleMode, origin } = useApp();
   const t = useAppTheme(accessibleMode);
   const styles = useMemo(() => makeStyles(t), [t]);
 
@@ -62,6 +62,15 @@ export default function Report() {
   const isElevator = selected?.type === 'elevator';
   const pickedElevator = isElevator ? elevators.find((e) => e.id === elevatorId) : undefined;
   const alreadyReported = !!pickedElevator && pickedElevator.status !== 'ok' && !!pickedElevator.incidentId;
+
+  const selectKind = (k: Kind) => {
+    setKind(k.key);
+    if (k.type === 'elevator' && !elevatorId) {
+      const b = getNode(origin)?.building;
+      const near = b ? elevators.find((e) => e.building === b) : undefined;
+      if (near) setElevatorId(near.id);
+    }
+  };
 
   const pickPhoto = async (source: 'camera' | 'library') => {
     setPhotoError(null);
@@ -130,7 +139,7 @@ export default function Report() {
 
       <View style={styles.wrap} accessibilityRole="radiogroup">
         {KINDS.map((k) => (
-          <Chip key={k.key} label={k.label} icon={k.icon} selected={kind === k.key} role="radio" checked={kind === k.key} onPress={() => setKind(k.key)} />
+          <Chip key={k.key} label={k.label} icon={k.icon} selected={kind === k.key} role="radio" checked={kind === k.key} onPress={() => selectKind(k)} />
         ))}
       </View>
 

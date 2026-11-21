@@ -18,10 +18,10 @@ import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { AMENITY_ICON, amenitiesAlongRoute, amenityWord } from '@/lib/amenities';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
-import { detectElevatorCause } from '@/lib/support-ticket';
+import { detectElevatorCause, remainingText } from '@/lib/support-ticket';
 import { formatAgo, formatConfirmations } from '@/lib/time';
 import { floorLabel, lacksElevatorAccess } from '@/lib/buildings';
-import { accessibleRoomRequest, courseAt } from '@/lib/schedule';
+import { accessibleRoomRequest, courseAt, STUDENT } from '@/lib/schedule';
 import type { AmenityType, RouteResult } from '@/types';
 
 type MapBarrier = { id: string; x: number; y: number; kind?: 'incident' | 'stairs' };
@@ -29,7 +29,7 @@ type MapBarrier = { id: string; x: number; y: number; kind?: 'incident' | 'stair
 type Status = 'loading' | 'ready' | 'error';
 
 export default function RouteScreen() {
-  const { destId } = useLocalSearchParams<{ destId: string }>();
+  const { destId, resumed } = useLocalSearchParams<{ destId: string; resumed?: string }>();
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const {
@@ -262,6 +262,13 @@ export default function RouteScreen() {
 
   const elevatorCause = partial && place ? detectElevatorCause(origin, place, partial, elevators) : null;
   const stayLabel = getNode(origin)?.label ?? 'tu origen';
+  const downElevator = elevatorCause ? elevators.find((e) => e.building === elevatorCause.building && e.status !== 'ok') : undefined;
+  const ownReport = !!downElevator && incidents.some((i) => i.elevatorId === downElevator.id && i.reportedBy === STUDENT.name.split(' ')[0]);
+  const causeText = elevatorCause
+    ? `El ascensor del Edif. ${elevatorCause.building} está fuera de servicio${downElevator?.reportedAt ? ` · ${ownReport ? 'lo reportaste' : 'reportado'} ${formatAgo(downElevator.reportedAt)}` : ''}`
+    : null;
+  const resumedNode = getNode(origin);
+  const resumedText = `Ticket cerrado · continúas desde ${resumedNode?.building ? `Edif. ${resumedNode.building}, piso ${resumedNode.floor ?? 1}` : resumedNode?.label ?? 'tu nuevo punto de partida'}`;
   const diagnosis = status === 'error' && profile === 'wheelchair' && destId ? getNoRouteReason(destId) : null;
   const autoPlan = partial && place ? (
     <View style={styles.noRouteActions}>
@@ -295,6 +302,11 @@ export default function RouteScreen() {
                 <AppText variant="caption" color="textMuted">m sin cubrir</AppText>
               </View>
             </View>
+            {place && remainingText(partial.reachedNodeId, place, partial.remainingM) !== `${partial.remainingM} m` ? (
+              <AppText variant="caption" color="danger">
+                Faltan {remainingText(partial.reachedNodeId, place, partial.remainingM)} hasta {place.name}
+              </AppText>
+            ) : null}
             <Button
               label="Ir hasta ese punto"
               icon="navigate"
@@ -425,14 +437,13 @@ export default function RouteScreen() {
           <>
             <View style={styles.noRoute}>
               <View style={styles.noRouteIcon}>
-                <MaterialCommunityIcons name="map-marker-alert" size={t.iconSize.lg + 8} color={t.colors.danger} />
+                <MaterialCommunityIcons name={causeText ? 'elevator-passenger-outline' : 'map-marker-alert'} size={t.iconSize.lg + 8} color={t.colors.danger} />
               </View>
               <AppText variant="title" accessibilityRole="header" style={styles.center}>
                 No hay ruta hasta {place?.name ?? 'el destino'}
               </AppText>
               <AppText color="textMuted" style={styles.center}>
-                Con tu perfil no existe ningún camino completo: puede haber un ascensor fuera de
-                servicio o un tramo bloqueado.
+                {causeText ?? 'Con tu perfil no existe ningún camino completo: puede haber un ascensor fuera de servicio o un tramo bloqueado.'}
               </AppText>
             </View>
             {autoPlan}
@@ -464,6 +475,8 @@ export default function RouteScreen() {
       <AppText color="textMuted">
         {place.building ? `Edif. ${place.building} · ` : ''}Piso {place.floor}
       </AppText>
+
+      {resumed === '1' ? <Banner tone="info" text={resumedText} /> : null}
 
       {notice ? (
         <Animated.View

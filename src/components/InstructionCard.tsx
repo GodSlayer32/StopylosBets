@@ -29,6 +29,8 @@ type Props = {
   partial?: {
     reachedLabel: string;
     remainingM: number;
+    /** Lo que falta hasta el destino, p. ej. "4 pisos y 69 m" */
+    remainingText: string;
     assignee?: string;
     etaMin?: number;
     onViewTicket: () => void;
@@ -37,12 +39,12 @@ type Props = {
 };
 
 /** Frase corta para "Luego: …" */
-const lueg = (m: Maneuver) => (m.type === 'arrive' ? 'llegas a tu destino' : m.verb);
+const lueg = (m: Maneuver, meet: boolean) => (m.type === 'arrive' ? (meet ? 'llegas al punto de encuentro' : 'llegas a tu destino') : m.verb);
 
 /** Parte en negrita y parte normal de la instrucción grande. */
-function split(m: Maneuver, dist: number): { strong: string; rest: string } {
+function split(m: Maneuver, dist: number, meet: boolean): { strong: string; rest: string } {
   if (m.type === 'straight') return { strong: 'Sigue recto', rest: `${m.distanceM} m` };
-  if (m.type === 'arrive') return { strong: dist < 5 ? 'Llegaste' : `En ${dist} m`, rest: dist < 5 ? 'a tu destino' : 'llegas a tu destino' };
+  if (m.type === 'arrive') return { strong: dist < 5 ? 'Llegaste' : `En ${dist} m`, rest: dist < 5 ? (meet ? 'al punto de encuentro' : 'a tu destino') : (meet ? 'llegas al punto de encuentro' : 'llegas a tu destino') };
   return { strong: dist < 5 ? 'Ahora' : `En ${dist} m`, rest: m.verb };
 }
 
@@ -69,9 +71,9 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
             style={styles.flex}
             accessible
             accessibilityRole="header"
-            accessibilityLabel={`Llegaste a ${partial.reachedLabel}. Faltan ${partial.remainingM} metros hasta ${place.name}. ${status}`}>
+            accessibilityLabel={`Llegaste a ${partial.reachedLabel}. Faltan ${partial.remainingText} hasta ${place.name}. ${status}`}>
             <AppText variant="title">Llegaste a {partial.reachedLabel}</AppText>
-            <AppText color="textMuted">Faltan {partial.remainingM} m hasta {place.name}</AppText>
+            <AppText color="textMuted">Faltan {partial.remainingText} hasta {place.name}</AppText>
           </View>
           <View style={[styles.statusRow, { backgroundColor: t.colors.successSoft }]}>
             <Ionicons name={partial.assignee ? 'person-circle' : 'hourglass'} size={t.iconSize.sm} color={t.colors.success} />
@@ -104,13 +106,13 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
 
   if (!m) return <View style={wrapStyle} onLayout={onLayout} />;
 
-  const { strong, rest } = split(m, sim.distanceToManeuverM);
+  const { strong, rest } = split(m, sim.distanceToManeuverM, !!partial);
   const minutes = Math.max(1, Math.ceil((sim.remainingM / Math.max(1, route.distanceM)) * route.minutes));
   const then = sim.nextManeuver;
   const near = sim.nextAmenities.slice(0, 2);
   const amenityText = near.map((a) => (a.distM < 5 ? `${amenityShort(a.amenity.type)} aquí` : `${amenityShort(a.amenity.type)} a ${a.distM} m`)).join(' · ');
   const amenityLabel = near.length ? `Cerca: ${near.map((a) => (a.distM < 5 ? `${a.amenity.name} aquí` : `${a.amenity.name} a ${a.distM} metros`)).join(', ')}` : '';
-  const label = `${sim.zone}. ${strong} ${rest}.${then ? ` Luego: ${lueg(then)}.` : ''}${m.cue ? ` ${m.cue}.` : ''} Faltan ${sim.remainingM} metros, ${minutes} minutos.${amenityLabel ? ` ${amenityLabel}.` : ''}`;
+  const label = `${sim.zone}. ${strong} ${rest}.${then ? ` Luego: ${lueg(then, !!partial)}.` : ''}${m.cue ? ` ${m.cue}.` : ''} Faltan ${sim.remainingM} metros, ${minutes} minutos.${amenityLabel ? ` ${amenityLabel}.` : ''}`;
 
   const toggle = (
     <Pressable
@@ -158,7 +160,7 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
             ) : null}
             <View style={styles.metaRow}>
               {then ? (
-                <AppText variant="label" color="textMuted" numberOfLines={compact ? 2 : 1} style={compact ? undefined : styles.flex}>Luego: {lueg(then)}</AppText>
+                <AppText variant="label" color="textMuted" numberOfLines={compact ? 2 : 1} style={compact ? undefined : styles.flex}>Luego: {lueg(then, !!partial)}</AppText>
               ) : null}
               <AppText variant="caption" color="textMuted" tabular>Faltan {sim.remainingM} m · {minutes} min</AppText>
             </View>

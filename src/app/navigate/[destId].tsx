@@ -20,6 +20,7 @@ import { HAPTIC_CODE, HAPTIC_LEGEND_SHORT, playManeuverHaptic, playPreAlert } fr
 import { getBuilding, floorLabel } from '@/lib/buildings';
 import { CAMPUS_MAP, FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
+import { remainingText } from '@/lib/support-ticket';
 import type { RouteResult } from '@/types';
 import type { LayoutChangeEvent } from 'react-native';
 
@@ -56,7 +57,7 @@ export default function NavigateScreen() {
   const [attempt, setAttempt] = useState(0);
   const [mapH, setMapH] = useState(0);
   const [cardH, setCardH] = useState(180);
-  const sim = useRouteSimulation(route);
+  const sim = useRouteSimulation(route, esParcial);
   const reduceMotion = useReduceMotion();
   // Ruta congelada: solo se calcula al montar y en "Reintentar"
   const getRouteRef = useRef(getRoute);
@@ -121,7 +122,7 @@ export default function NavigateScreen() {
     lastSpoken.current = key;
     if (sim.finished) {
       playManeuverHaptic('arrive');
-      say(esParcial ? `Llegaste a ${destLabel}. Aquí te espera el apoyo` : `Llegaste a ${destLabel}`);
+      say(esParcial ? `Llegaste al punto de encuentro, ${destLabel}. Aquí te espera el apoyo` : `Llegaste a ${destLabel}`);
       return;
     }
     playManeuverHaptic(m.type);
@@ -140,8 +141,8 @@ export default function NavigateScreen() {
   const repeat = useCallback(() => {
     if (!m) return;
     playManeuverHaptic(sim.finished ? 'arrive' : m.type);
-    say(sim.finished ? `Llegaste a ${destLabel}` : (m.spoken ?? m.text), true);
-  }, [m, sim.finished, destLabel, say]);
+    say(sim.finished ? (esParcial ? `Llegaste al punto de encuentro, ${destLabel}` : `Llegaste a ${destLabel}`) : (m.spoken ?? m.text), true);
+  }, [m, sim.finished, destLabel, esParcial, say]);
 
   const toggleVoice = useCallback(() => {
     Speech.stop();
@@ -333,7 +334,7 @@ export default function NavigateScreen() {
           <AppText variant="heading" numberOfLines={1} accessibilityRole="header" style={accessibleMode ? undefined : { fontSize: 17, lineHeight: 22 }}>{destLabel}</AppText>
           {nearest ? (
             <AppText variant="caption" color="textMuted" numberOfLines={1}>
-              Faltan {nearest.remainingM} m hasta {place.name} · te acompanan desde ahi
+              Faltan {remainingText(nearest.reachedNodeId, place, nearest.remainingM)} hasta {place.name} · te acompañan desde ahí
             </AppText>
           ) : null}
         </View>
@@ -474,6 +475,7 @@ export default function NavigateScreen() {
         partial={nearest ? {
           reachedLabel: nearest.reachedLabel,
           remainingM: nearest.remainingM,
+          remainingText: remainingText(nearest.reachedNodeId, place, nearest.remainingM),
           assignee: ticket?.status === 'assigned' ? ticket.assignee : undefined,
           etaMin: ticket?.etaMin,
           onViewTicket: close,
@@ -481,7 +483,7 @@ export default function NavigateScreen() {
             Speech.stop();
             const resume = ticket ? resolveTicket(ticket.id) : null;
             if (!resume) return;
-            router.replace((resume === place.nodeId ? '/home' : { pathname: '/route/[destId]', params: { destId: place.id } }) as Href);
+            router.replace((resume === place.nodeId ? '/home' : { pathname: '/route/[destId]', params: { destId: place.id, resumed: '1' } }) as Href);
           },
         } : undefined}
         onLayout={onCardLayout}

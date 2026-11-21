@@ -147,3 +147,11 @@ export function buildTicket(
     portalUrl: PORTAL_URL,
   };
 }
+
+/** "4 pisos y 69 m" / "69 m": lo que falta entre el punto alcanzado y el destino. */
+export function remainingText(reachedNodeId: string, place: Place, remainingM: number): string {
+  const rf = getNode(reachedNodeId)?.floor;
+  const floors = rf !== undefined && place.floor !== undefined ? Math.abs(place.floor - rf) : 0;
+  const m = `${remainingM} m`;
+  return floors > 0 ? `${floors} ${floors === 1 ? 'piso' : 'pisos'} y ${m}` : m;
+}

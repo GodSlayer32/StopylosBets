@@ -85,7 +85,7 @@ export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Pr
         onPress={() => {
           const resume = resolveTicket(ticket.id);
           if (!resume) return;
-          router.replace((resume === place.nodeId ? '/home' : { pathname: '/route/[destId]', params: { destId: place.id } }) as Href);
+          router.replace((resume === place.nodeId ? '/home' : { pathname: '/route/[destId]', params: { destId: place.id, resumed: '1' } }) as Href);
         }}
       />
 
