@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { buildManeuvers, cumulativeMeters, zoneOfNode, type Maneuver } from '@/lib/maneuvers';
 import { getNode } from '@/lib/routing';
 import type { RouteResult } from '@/types';
 
@@ -33,6 +34,16 @@ export type SimState = {
   progress: number;
   /** Metros que faltan */
   remainingM: number;
+  /** Maniobras de la ruta (estilo GPS) */
+  maneuvers: Maneuver[];
+  /** Índice de la maniobra próxima (la que se muestra) */
+  maneuverIndex: number;
+  currentManeuver: Maneuver | null;
+  nextManeuver: Maneuver | null;
+  /** Metros que faltan hasta ejecutar la maniobra próxima (en vivo) */
+  distanceToManeuverM: number;
+  /** Zona legible del nodo más cercano */
+  zone: string;
   playing: boolean;
   finished: boolean;
   next: () => void;
@@ -76,7 +87,9 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
     const edgeM = route.steps.flatMap((s) => s.edgeIds.map(() => s.distanceM / s.edgeIds.length));
     const cum = [0];
     weights.forEach((w) => cum.push(cum[cum.length - 1] + w));
-    return { pts, weights, headings, cum, total: cum[cum.length - 1], stepStartSeg, stepOfSeg, edgeM };
+    const maneuvers = buildManeuvers(route);
+    const ptM = cumulativeMeters(route);
+    return { pts, weights, headings, cum, total: cum[cum.length - 1], stepStartSeg, stepOfSeg, edgeM, maneuvers, ptM };
   }, [route]);
 
   const [prog, setProg] = useState(0); // en unidades de peso
@@ -148,7 +161,8 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
     if (!geo || !route || geo.weights.length === 0) {
       return {
         stepIndex: 0, point: { x: 50, y: 50 }, heading: 0, segIndex: 0, nodeId: '', inside: false, stepProgress: 0, progress: 0,
-        remainingM: 0, playing: false, finished: false, next, prev, play, pause,
+        remainingM: 0, maneuvers: [], maneuverIndex: 0, currentManeuver: null, nextManeuver: null, distanceToManeuverM: 0,
+        zone: '', playing: false, finished: false, next, prev, play, pause,
       };
     }
     const k = segAt(prog);
@@ -168,7 +182,26 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
     let done = 0;
     for (let i = 0; i < k; i++) done += geo.edgeM[i] ?? 0;
     done += (geo.edgeM[k] ?? 0) * frac;
+    const ms = geo.maneuvers;
+    let mi = ms.length - 1;
+    if (!finished && ms.length) {
+      if (step.type === 'elevator') {
+        // Dentro del ascensor se mantiene "Toma el ascensor"
+        const e = ms.findIndex((m, idx) => m.type === 'elevator' && m.atIndex <= k && (ms[idx + 1]?.atIndex ?? Infinity) > k);
+        mi = e >= 0 ? e : mi;
+      } else {
+        const found = ms.findIndex((m) => geo.ptM[m.atIndex] >= done - 1.5);
+        mi = found >= 0 ? found : mi;
+      }
+    }
+    const cur = ms[mi] ?? null;
     return {
+      maneuvers: ms,
+      maneuverIndex: mi,
+      currentManeuver: cur,
+      nextManeuver: ms[mi + 1] ?? null,
+      distanceToManeuverM: cur && !finished ? Math.max(0, Math.round(geo.ptM[cur.atIndex] - done)) : 0,
+      zone: zoneOfNode(nodeId),
       stepIndex,
       point,
       heading: geo.headings[k],

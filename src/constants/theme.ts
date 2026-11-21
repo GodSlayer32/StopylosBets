@@ -39,6 +39,67 @@ export const highContrast: Colors = {
   overlay: 'rgba(0, 0, 0, 0.8)',
 };
 
+export const mapColors = {
+  bg: '#F3EFE6',
+  street: '#E3DDCF',
+  green: '#CFE3B8',
+  patio: '#EADFC4',
+  court: '#D9C7B0',
+  plaza: '#E8E1D0',
+  building: '#B7B2A6',
+  buildingDim: '#D6D2C8',
+  buildingActive: '#1747D1',
+  buildingText: '#2A2A2A',
+  buildingActiveText: '#FFFFFF',
+  outline: '#8C877B',
+  room: '#F8F5EE',
+  roomActive: '#F5A524',
+  corridor: '#FFFFFF',
+  wc: '#A9D3E8',
+  elevator: '#C9B8E8',
+  stairs: '#F0C7A8',
+  service: '#D9D5CB',
+  roomText: '#2A2A2A',
+  halo: '#FFFFFF',
+  route: '#1747D1',
+  routeCasing: '#FFFFFF',
+  routeDone: '#8FA6E6',
+  position: '#1747D1',
+  pin: '#D93025',
+  barrier: '#B45309',
+};
+export type MapColors = typeof mapColors;
+
+export const mapHighContrast: MapColors = {
+  bg: '#000000',
+  street: '#141414',
+  green: '#0F2A12',
+  patio: '#1C1C1C',
+  court: '#222222',
+  plaza: '#1A1A1A',
+  building: '#CFCFCF',
+  buildingDim: '#555555',
+  buildingActive: '#FFD400',
+  buildingText: '#000000',
+  buildingActiveText: '#000000',
+  outline: '#FFFFFF',
+  room: '#E5E5E5',
+  roomActive: '#FFD400',
+  corridor: '#000000',
+  wc: '#8FD3FF',
+  elevator: '#D8B4FE',
+  stairs: '#FFB38A',
+  service: '#9A9A9A',
+  roomText: '#000000',
+  halo: '#000000',
+  route: '#FFD400',
+  routeCasing: '#000000',
+  routeDone: '#8A7300',
+  position: '#FFD400',
+  pin: '#FF6B6B',
+  barrier: '#FFB020',
+};
+
 export const largeTextScale = 1.25;
 
 export type TypographyVariant = 'display' | 'title' | 'heading' | 'body' | 'label' | 'caption';
@@ -71,8 +132,9 @@ export const shadow = {
   elevation: 2,
 } as const;
 
-export const theme = { colors, typography, spacing, radius, minTouch, shadow, accessible: false };
-export type AppTheme = Omit<typeof theme, 'colors' | 'accessible'> & {
+export const theme = { colors, map: mapColors, typography, spacing, radius, minTouch, shadow, accessible: false };
+export type AppTheme = Omit<typeof theme, 'colors' | 'map' | 'accessible'> & {
   colors: Colors;
+  map: MapColors;
   accessible: boolean;
 };

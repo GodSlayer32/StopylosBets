@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
@@ -7,15 +7,16 @@ import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'reac
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
-import { BuildingSection } from '@/components/BuildingSection';
+import { CampusMap } from '@/components/CampusMap';
+import { FloorRail } from '@/components/FloorRail';
 import { Button } from '@/components/Button';
-import { NearbyMap } from '@/components/NearbyMap';
-import { RouteMap } from '@/components/RouteMap';
+import { InstructionCard } from '@/components/InstructionCard';
 import { ScreenState } from '@/components/ScreenState';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { useRouteSimulation } from '@/hooks/use-route-simulation';
-import { getPlace } from '@/lib/routing';
+import { FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
+import { getNode, getPlace } from '@/lib/routing';
 import type { RouteResult } from '@/types';
 
 type Status = 'loading' | 'ready' | 'error';
@@ -23,8 +24,8 @@ type Status = 'loading' | 'ready' | 'error';
 export default function NavigateScreen() {
   const { destId } = useLocalSearchParams<{ destId: string }>();
   const router = useRouter();
-  const { width, height } = useWindowDimensions();
-  const { getRoute, accessibleMode, profile, elevators } = useApp();
+  const { height } = useWindowDimensions();
+  const { getRoute, accessibleMode, profile } = useApp();
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -52,13 +53,14 @@ export default function NavigateScreen() {
 
   const speakOn = profile === 'lowVision' || voice;
   const step = route?.steps[sim.stepIndex];
-  const total = route?.steps.length ?? 0;
 
-  // Voz + háptico al cambiar de paso (y al llegar)
+  // Voz + háptico al cambiar de maniobra (no en cada paso interno) y aviso previo a 15 m
   const lastSpoken = useRef<string>('');
+  const warned = useRef<string>('');
+  const m = sim.currentManeuver;
   useEffect(() => {
-    if (!route || !step) return;
-    const key = sim.finished ? 'done' : `s${sim.stepIndex}`;
+    if (!route || !m) return;
+    const key = sim.finished ? 'done' : `m${sim.maneuverIndex}`;
     if (key === lastSpoken.current) return;
     lastSpoken.current = key;
     if (sim.finished) {
@@ -69,14 +71,43 @@ export default function NavigateScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     if (speakOn) {
       Speech.stop();
-      Speech.speak(`Paso ${sim.stepIndex + 1} de ${total}. ${step.text}`, { language: 'es-CL' });
+      Speech.speak(m.text, { language: 'es-CL' });
     }
-  }, [route, step, sim.stepIndex, sim.finished, speakOn, total, place?.name]);
+  }, [route, m, sim.maneuverIndex, sim.finished, speakOn, place?.name]);
+
+  useEffect(() => {
+    if (!m || sim.finished || !speakOn || m.type === 'straight' || m.type === 'arrive') return;
+    const key = `w${sim.maneuverIndex}`;
+    if (warned.current === key || sim.distanceToManeuverM > 15 || sim.distanceToManeuverM < 8) return;
+    warned.current = key;
+    Speech.stop();
+    Speech.speak(`En 15 metros, ${m.verb}`, { language: 'es-CL' });
+  }, [m, sim.maneuverIndex, sim.distanceToManeuverM, sim.finished, speakOn]);
 
   useEffect(() => () => { Speech.stop(); }, []);
 
-  // Transición entre modo exterior (plano) e interior (corte)
-  const mode = sim.inside && sim.building ? 'inside' : 'outside';
+  // Modo del mapa superior: planta (floor) dentro de un edificio con plano, macro afuera
+  const routePts = useMemo<[number, number][]>(() => (route?.polyline ?? []).map((p) => [p.x, p.y]), [route]);
+  const donePts = useMemo<[number, number][]>(() => {
+    if (!route) return [];
+    return [...route.polyline.slice(0, sim.segIndex + 1).map((p): [number, number] => [p.x, p.y]), [sim.point.x, sim.point.y]];
+  }, [route, sim.segIndex, sim.point]);
+  const originB = route ? getNode(route.nodeIds[0])?.building : undefined;
+  const sameBuilding = !!originB && originB === place?.building;
+  const floorB = sim.inside && sim.building ? sim.building : sameBuilding ? originB : undefined;
+  const floorLevel = sim.level ?? place?.floor ?? 1;
+  const hasPlan = !!floorB && !!getFloorPlan(floorB, floorLevel);
+  const mode = hasPlan ? 'inside' : 'outside';
+  const destRoomId = useMemo(() => {
+    if (!place?.building || place.building !== floorB) return undefined;
+    const rooms = getFloorPlan(floorB, place.floor)?.rooms ?? [];
+    const pid = place.id.toLowerCase();
+    return rooms.find((r) => {
+      const rid = r.id.toLowerCase();
+      const short = rid.replace(/^[a-z]-/, '');
+      return rid === pid || rid === `${floorB.toLowerCase()}-${pid}` || pid === short || pid.startsWith(`${short}-`);
+    })?.id;
+  }, [place, floorB]);
   const [fade] = useState(() => new Animated.Value(1));
   const [shown, setShown] = useState<'inside' | 'outside'>(mode);
   useEffect(() => {
@@ -112,9 +143,6 @@ export default function NavigateScreen() {
   }
 
   const topH = Math.round(height * 0.3);
-  const destInSame = place.building && place.building === sim.building;
-  const elevDown = elevators.find((e) => e.building === sim.building)?.status === 'down';
-  const via = route.steps.some((s) => s.type === 'elevator') ? 'elevator' : null;
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -129,153 +157,73 @@ export default function NavigateScreen() {
       </View>
 
       <Animated.View style={[styles.top, { height: topH, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
-        {shown === 'inside' && sim.building ? (
-          <BuildingSection
-            buildingId={sim.building}
-            currentLevel={sim.level ?? 1}
-            destLevel={destInSame ? place.floor : undefined}
-            destLabel={destInSame ? place.name : undefined}
-            via={via}
-            elevatorDown={elevDown}
-            stairsAvoided={route.stepsAvoided > 0}
-            position={sim.stepProgress}
-            height={topH}
-          />
-        ) : (
-          <View>
-            <RouteMap
-              route={route}
-              width={width}
+        {shown === 'inside' && floorB ? (
+          <>
+            <CampusMap
+              mode="floor"
+              routePoints={routePts}
+              donePoints={donePts}
+              position={sim.point}
+              heading={sim.heading}
+              activeBuildingId={floorB}
+              level={floorLevel}
+              destRoomId={destRoomId}
               height={topH}
-              barriers={[]}
-              accessibleMode={accessibleMode}
-              label={`Mapa general de la ruta hacia ${place.name}`}
+              title={`Edificio ${floorB} | Piso ${floorLevel}`}
             />
-            <PositionMarker route={route} point={sim.point} width={width} height={topH} t={t} />
-          </View>
+            <View style={styles.rail} pointerEvents="none">
+              <FloorRail
+                levels={FLOORPLANS[floorB]?.levels ?? []}
+                current={floorLevel}
+                dest={place.building === floorB ? place.floor : undefined}
+              />
+            </View>
+          </>
+        ) : (
+          <CampusMap
+            mode="macro"
+            routePoints={routePts}
+            donePoints={donePts}
+            position={sim.point}
+            heading={sim.heading}
+            origin={route.polyline[0]}
+            destination={route.polyline[route.polyline.length - 1]}
+            activeBuildingId={place.building}
+            height={topH}
+            title="Mapa | Exterior"
+          />
         )}
       </Animated.View>
 
       <View style={[styles.divider, { backgroundColor: t.colors.primary }]} />
 
       <View style={styles.flex} onLayout={(e) => setMapH(Math.round(e.nativeEvent.layout.height))}>
-        {mapH > 0 ? <NearbyMap
-          route={route}
-          point={sim.point}
+        {mapH > 0 ? <CampusMap
+          mode="closeup"
+          routePoints={routePts}
+          donePoints={donePts}
+          position={sim.point}
           heading={sim.heading}
-          segIndex={sim.segIndex}
-          width={width}
+          level={sim.level}
+          activeBuildingId={place.building}
+          destRoomId={destRoomId}
+          destination={route.polyline[route.polyline.length - 1]}
+          anchorY={Math.max(40, (mapH - (cardH + t.spacing.md * 2 + insets.bottom)) * 0.6) / mapH}
           height={mapH}
-          bottomInset={cardH + t.spacing.md * 2 + insets.bottom}
-          accessibleMode={accessibleMode}
-          label="Vista cercana orientada en tu dirección de avance"
         /> : null}
       </View>
 
-      <View style={[styles.card, { bottom: t.spacing.md + insets.bottom }]} accessibilityLiveRegion="polite" onLayout={(e) => setCardH(Math.round(e.nativeEvent.layout.height))}>
-        {sim.finished ? (
-          <View style={styles.arrived}>
-            <View style={[styles.check, { backgroundColor: t.colors.successSoft }]}>
-              <Ionicons name="checkmark-circle" size={40} color={t.colors.success} />
-            </View>
-            <View style={styles.flex}>
-              <AppText variant="title">Llegaste a {place.name}</AppText>
-              <AppText color="textMuted">{place.building ? `Edif. ${place.building} · ` : ''}Piso {place.floor}</AppText>
-            </View>
-            <Button label="Volver al inicio" fullWidth onPress={() => { Speech.stop(); router.replace('/home'); }} />
-          </View>
-        ) : (
-          <>
-            <View style={styles.stepRow}>
-              <View style={[styles.stepIcon, { backgroundColor: t.colors.primarySoft }]}>
-                <MaterialCommunityIcons name={step.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={32} color={t.colors.primary} />
-              </View>
-              <View style={styles.flex}>
-                <AppText variant="heading" numberOfLines={3}>{step.text}</AppText>
-                <AppText variant="label" color="textMuted">
-                  Paso {sim.stepIndex + 1} de {total} · faltan {sim.remainingM} m
-                </AppText>
-              </View>
-            </View>
-            <View style={styles.controls}>
-              <Ctl label="Paso anterior" icon="chevron-back" onPress={sim.prev} disabled={sim.stepIndex === 0 && sim.progress < 0.01} t={t} />
-              <Pressable
-                onPress={sim.playing ? sim.pause : sim.play}
-                accessibilityRole="button"
-                accessibilityLabel={sim.playing ? 'Pausar recorrido' : 'Simular recorrido'}
-                style={[styles.play, { backgroundColor: t.colors.primary }]}>
-                <Ionicons name={sim.playing ? 'pause' : 'play'} size={22} color={t.colors.primaryText} />
-                <AppText variant="label" style={{ color: t.colors.primaryText }}>{sim.playing ? 'Pausa' : 'Simular'}</AppText>
-              </Pressable>
-              <Ctl label="Paso siguiente" icon="chevron-forward" onPress={sim.next} t={t} />
-              <Ctl
-                label={speakOn ? 'Desactivar voz' : 'Activar voz'}
-                icon={speakOn ? 'volume-high' : 'volume-mute'}
-                onPress={() => { Speech.stop(); setVoice((v) => !v); }}
-                active={speakOn}
-                t={t}
-              />
-            </View>
-          </>
-        )}
-      </View>
+      <InstructionCard
+        sim={sim}
+        route={route}
+        place={place}
+        accessibleMode={accessibleMode}
+        speakOn={speakOn}
+        onToggleVoice={() => { Speech.stop(); setVoice((v) => !v); }}
+        onHome={() => { Speech.stop(); router.replace('/home'); }}
+        onLayout={(e) => setCardH(Math.round(e.nativeEvent.layout.height))}
+      />
     </SafeAreaView>
-  );
-}
-
-const IMG_W = 1313;
-const IMG_H = 980;
-
-/** Replica el recorte de RouteMap para dibujar la posición actual con halo. */
-function PositionMarker({ route, point, width, height, t }: {
-  route: RouteResult; point: { x: number; y: number }; width: number; height: number; t: ReturnType<typeof useAppTheme>;
-}) {
-  const pts = route.polyline.map((p) => ({ x: (p.x / 100) * IMG_W, y: (p.y / 100) * IMG_H }));
-  const ar = width / height;
-  const xs = pts.map((p) => p.x);
-  const ys = pts.map((p) => p.y);
-  const pad = 90;
-  let w = Math.max(Math.max(...xs) - Math.min(...xs) + pad * 2, (Math.max(...ys) - Math.min(...ys) + pad * 2) * ar, 360);
-  let h = w / ar;
-  if (w > IMG_W) { w = IMG_W; h = w / ar; }
-  if (h > IMG_H) { h = IMG_H; w = h * ar; }
-  const l = Math.min(Math.max((Math.max(...xs) + Math.min(...xs)) / 2 - w / 2, 0), IMG_W - w);
-  const tp = Math.min(Math.max((Math.max(...ys) + Math.min(...ys)) / 2 - h / 2, 0), IMG_H - h);
-  const x = (((point.x / 100) * IMG_W - l) / w) * width;
-  const y = (((point.y / 100) * IMG_H - tp) / h) * height;
-  const R = 22;
-  return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: x - R, top: y - R, width: R * 2, height: R * 2, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ position: 'absolute', width: R * 2, height: R * 2, borderRadius: R, backgroundColor: t.colors.primary, opacity: 0.3 }} />
-      <View style={{ width: R, height: R, borderRadius: R / 2, backgroundColor: t.colors.primary, borderWidth: 4, borderColor: t.colors.surface }} />
-    </View>
-  );
-}
-
-function Ctl({ label, icon, onPress, disabled, active, t }: {
-  label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void; disabled?: boolean; active?: boolean;
-  t: ReturnType<typeof useAppTheme>;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled, selected: active }}
-      style={{
-        width: t.minTouch,
-        height: t.minTouch,
-        borderRadius: t.radius.md,
-        borderWidth: 2,
-        borderColor: t.colors.primary,
-        backgroundColor: active ? t.colors.primarySoft : t.colors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: disabled ? 0.4 : 1,
-      }}>
-      <Ionicons name={icon} size={24} color={t.colors.primary} />
-    </Pressable>
   );
 }
 
@@ -288,31 +236,5 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     iconBtn: { width: t.minTouch, height: t.minTouch, alignItems: 'center', justifyContent: 'center' },
     top: { overflow: 'hidden', backgroundColor: t.colors.surface },
     divider: { height: 4 },
-    card: {
-      position: 'absolute',
-      left: t.spacing.md,
-      right: t.spacing.md,
-      bottom: t.spacing.md,
-      padding: t.spacing.lg,
-      gap: t.spacing.md,
-      borderRadius: t.radius.lg,
-      borderWidth: 2,
-      borderColor: t.colors.border,
-      backgroundColor: t.colors.surface,
-      ...t.shadow,
-    },
-    stepRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md },
-    stepIcon: { width: 56, height: 56, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' },
-    controls: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
-    play: {
-      flex: 1,
-      minHeight: t.minTouch,
-      borderRadius: t.radius.md,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: t.spacing.xs,
-    },
-    arrived: { gap: t.spacing.md },
-    check: { width: 64, height: 64, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' },
+    rail: { position: 'absolute', right: t.spacing.sm, top: t.spacing.sm },
   });

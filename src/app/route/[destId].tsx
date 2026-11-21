@@ -10,13 +10,15 @@ import { AppText } from '@/components/AppText';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { RouteMap, type MapBarrier } from '@/components/RouteMap';
+import { CampusMap } from '@/components/CampusMap';
 import { Screen } from '@/components/Screen';
 import { ScreenState } from '@/components/ScreenState';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
 import type { RouteResult } from '@/types';
+
+type MapBarrier = { id: string; x: number; y: number; kind?: 'incident' | 'stairs' };
 
 type Status = 'loading' | 'ready' | 'error';
 
@@ -95,6 +97,8 @@ export default function RouteScreen() {
 
   useEffect(() => () => { Speech.stop(); }, []);
 
+  const routePts = useMemo<[number, number][]>(() => (route?.polyline ?? []).map((p) => [p.x, p.y]), [route]);
+
   const barriers = useMemo<MapBarrier[]>(() => {
     const out: MapBarrier[] = [];
     const at = (id: string, edgeId?: string, nodeId?: string, elevId?: string) => {
@@ -121,6 +125,7 @@ export default function RouteScreen() {
     });
     return out;
   }, [incidents, elevators, route]);
+  const mapBarriers = useMemo(() => barriers.map((b) => ({ x: b.x, y: b.y, kind: b.kind === 'stairs' ? ('stairs' as const) : ('incident' as const) })), [barriers]);
 
   const stairItems = useMemo(() => (route?.avoided ?? []).filter((a) => a.kind === 'stairs' || a.kind === 'slope'), [route]);
   const incidentItems = useMemo(() => (route?.avoided ?? []).filter((a) => a.kind === 'incident'), [route]);
@@ -159,7 +164,6 @@ export default function RouteScreen() {
   }
 
   const mapW = width - t.spacing.lg * 2;
-  const currentNode = step ? getNode(step.fromNodeId) : undefined;
   const avoidedHeadline = avoidedSteps > 0
     ? `Evitamos ${avoidedSteps} escalones en ${avoidedStairs} ${avoidedStairs === 1 ? 'escalera' : 'escaleras'}`
     : `Evitamos ${stairItems.length} ${stairItems.length === 1 ? 'tramo exigente' : 'tramos exigentes'}`;
@@ -214,14 +218,14 @@ export default function RouteScreen() {
       </Card>
 
       <Pressable onPress={() => setFullMap(true)} accessibilityRole="button" accessibilityLabel={mapLabel}>
-        <RouteMap
-          route={route}
-          width={mapW}
+        <CampusMap
+          mode="macro"
+          routePoints={routePts}
+          origin={route.polyline[0]}
+          destination={route.polyline[route.polyline.length - 1]}
+          barriers={mapBarriers}
+          activeBuildingId={place.building}
           height={Math.round(mapW * 0.75)}
-          barriers={barriers}
-          current={currentNode}
-          accessibleMode={accessibleMode}
-          label={mapLabel}
         />
         <View style={styles.expand}>
           <Ionicons name="expand" size={18} color={t.colors.primary} />
@@ -338,15 +342,18 @@ export default function RouteScreen() {
 
       <Modal visible={fullMap} animationType="fade" transparent onRequestClose={() => setFullMap(false)}>
         <View style={[styles.modal, { backgroundColor: t.colors.overlay }]}>
-          <RouteMap
-            route={route}
-            width={width - t.spacing.lg * 2}
-            height={Math.round(height * 0.7)}
-            barriers={barriers}
-            current={currentNode}
-            accessibleMode={accessibleMode}
-            label={`Mapa ampliado de la ruta hacia ${place.name}`}
-          />
+          <View style={{ width: width - t.spacing.lg * 2, borderRadius: t.radius.md, overflow: 'hidden' }}>
+            <CampusMap
+              mode="macro"
+              routePoints={routePts}
+              origin={route.polyline[0]}
+              destination={route.polyline[route.polyline.length - 1]}
+              barriers={mapBarriers}
+              activeBuildingId={place.building}
+              height={Math.round(height * 0.7)}
+              title="Mapa | Exterior"
+            />
+          </View>
           <View style={styles.modalBtn}>
             <Button label="Cerrar mapa" icon="close" fullWidth onPress={() => setFullMap(false)} />
           </View>

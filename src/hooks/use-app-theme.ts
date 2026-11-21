@@ -1,6 +1,8 @@
 import {
   colors,
   highContrast,
+  mapColors,
+  mapHighContrast,
   largeTextScale,
   radius,
   shadow,
@@ -25,6 +27,7 @@ const scaledTypography = Object.fromEntries(
 export function useAppTheme(accessibleMode: boolean = false): AppTheme {
   return {
     colors: accessibleMode ? highContrast : colors,
+    map: accessibleMode ? mapHighContrast : mapColors,
     typography: accessibleMode ? scaledTypography : typography,
     spacing,
     radius,

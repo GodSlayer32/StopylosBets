@@ -6,13 +6,15 @@
       "id": "acc_espana",
       "label": "Acceso Av. España",
       "x": 60.9,
-      "y": 86.2
+      "y": 86.2,
+      "zone": "Av. España"
     },
     {
       "id": "esp_mid",
       "label": "Descanso escalera Av. España",
       "x": 61.5,
-      "y": 82.8
+      "y": 82.8,
+      "zone": "Escalera Av. España"
     },
     {
       "id": "a_front",
@@ -20,7 +22,8 @@
       "x": 62,
       "y": 80,
       "building": "A",
-      "floor": 1
+      "floor": 1,
+      "zone": "Explanada Edif. A"
     },
     {
       "id": "a_in",
@@ -28,7 +31,8 @@
       "x": 62,
       "y": 76.5,
       "building": "A",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio A · Piso 1"
     },
     {
       "id": "a_elev_p1",
@@ -36,7 +40,8 @@
       "x": 63.5,
       "y": 73.5,
       "building": "A",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio A · Piso 1"
     },
     {
       "id": "a_elev_p2",
@@ -44,7 +49,8 @@
       "x": 63.5,
       "y": 73.5,
       "building": "A",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio A · Piso 2"
     },
     {
       "id": "a_201",
@@ -52,7 +58,8 @@
       "x": 62.5,
       "y": 71.5,
       "building": "A",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio A · Piso 2"
     },
     {
       "id": "aula_magna",
@@ -60,7 +67,8 @@
       "x": 59.5,
       "y": 73.5,
       "building": "A",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio A · Piso 1"
     },
     {
       "id": "u_in",
@@ -68,13 +76,15 @@
       "x": 56.2,
       "y": 69,
       "building": "U",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio U · Piso 1"
     },
     {
       "id": "patio",
       "label": "Patio Central",
       "x": 66.3,
-      "y": 66.3
+      "y": 66.3,
+      "zone": "Patio Central"
     },
     {
       "id": "casino",
@@ -82,7 +92,8 @@
       "x": 64,
       "y": 61.5,
       "building": "B",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio B · Piso 1"
     },
     {
       "id": "b_in",
@@ -90,7 +101,8 @@
       "x": 68.5,
       "y": 57.8,
       "building": "B",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio B · Piso 1"
     },
     {
       "id": "biblioteca",
@@ -98,7 +110,8 @@
       "x": 71.5,
       "y": 54.5,
       "building": "B",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio B · Piso 1"
     },
     {
       "id": "bano_b",
@@ -106,7 +119,8 @@
       "x": 66.5,
       "y": 53.5,
       "building": "B",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio B · Piso 1"
     },
     {
       "id": "b_elev_p1",
@@ -114,7 +128,8 @@
       "x": 68.5,
       "y": 52.5,
       "building": "B",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio B · Piso 1"
     },
     {
       "id": "b_elev_p2",
@@ -122,7 +137,8 @@
       "x": 68.5,
       "y": 52.5,
       "building": "B",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio B · Piso 2"
     },
     {
       "id": "b_p2",
@@ -130,13 +146,15 @@
       "x": 60.5,
       "y": 48.5,
       "building": "B",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio B · Piso 2"
     },
     {
       "id": "c_plaza",
       "label": "Explanada Edif. C",
       "x": 54.5,
-      "y": 47
+      "y": 47,
+      "zone": "Explanada Edif. C"
     },
     {
       "id": "c_in",
@@ -144,7 +162,8 @@
       "x": 57.5,
       "y": 42.5,
       "building": "C",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
     },
     {
       "id": "c_elev_p1",
@@ -152,7 +171,8 @@
       "x": 59.5,
       "y": 40.5,
       "building": "C",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
     },
     {
       "id": "c_elev_p2",
@@ -160,7 +180,8 @@
       "x": 59.5,
       "y": 40.5,
       "building": "C",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio C · Piso 2"
     },
     {
       "id": "c_105",
@@ -168,7 +189,8 @@
       "x": 62,
       "y": 41,
       "building": "C",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio C · Piso 1"
     },
     {
       "id": "c_p2_hub",
@@ -176,7 +198,8 @@
       "x": 59,
       "y": 43.8,
       "building": "C",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio C · Piso 2"
     },
     {
       "id": "c_210",
@@ -184,7 +207,8 @@
       "x": 63,
       "y": 37.5,
       "building": "C",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio C · Piso 2"
     },
     {
       "id": "bano_c",
@@ -192,7 +216,8 @@
       "x": 61,
       "y": 38.5,
       "building": "C",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio C · Piso 2"
     },
     {
       "id": "c_north",
@@ -200,19 +225,22 @@
       "x": 58.6,
       "y": 32,
       "building": "C",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio C · Entrada norte"
     },
     {
       "id": "acc_placeres",
       "label": "Acceso Placeres",
       "x": 58.6,
-      "y": 29.6
+      "y": 29.6,
+      "zone": "Av. Placeres"
     },
     {
       "id": "pl_east",
       "label": "Av. Placeres esquina Subida San Luis",
       "x": 71.5,
-      "y": 31.5
+      "y": 31.5,
+      "zone": "Av. Placeres / Subida San Luis"
     },
     {
       "id": "k_in",
@@ -220,7 +248,8 @@
       "x": 74,
       "y": 44.6,
       "building": "K",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio K · Piso 1"
     },
     {
       "id": "o_in",
@@ -228,13 +257,15 @@
       "x": 75.9,
       "y": 56.3,
       "building": "O",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio O · Piso 1"
     },
     {
       "id": "acc_san_luis",
       "label": "Acceso Subida San Luis",
       "x": 77.5,
-      "y": 58.5
+      "y": 58.5,
+      "zone": "Subida San Luis"
     },
     {
       "id": "d_in",
@@ -242,7 +273,8 @@
       "x": 73.1,
       "y": 70.5,
       "building": "D",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio D · Piso 1"
     },
     {
       "id": "d_elev_p1",
@@ -250,7 +282,8 @@
       "x": 73.8,
       "y": 66.5,
       "building": "D",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio D · Piso 1"
     },
     {
       "id": "d_elev_p2",
@@ -258,7 +291,8 @@
       "x": 73.8,
       "y": 66.5,
       "building": "D",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio D · Piso 2"
     },
     {
       "id": "lab_fisica",
@@ -266,7 +300,8 @@
       "x": 74.5,
       "y": 63,
       "building": "D",
-      "floor": 2
+      "floor": 2,
+      "zone": "Edificio D · Piso 2"
     },
     {
       "id": "f_in",
@@ -274,43 +309,50 @@
       "x": 79.6,
       "y": 82.5,
       "building": "F",
-      "floor": 1
+      "floor": 1,
+      "zone": "Edificio F · Piso 1"
     },
     {
       "id": "rd_s",
       "label": "Calle Agustín Edwards (oeste)",
       "x": 70,
-      "y": 89.5
+      "y": 89.5,
+      "zone": "Calle Agustín Edwards"
     },
     {
       "id": "rd_f",
       "label": "Calle Agustín Edwards (frente a F)",
       "x": 80,
-      "y": 88.5
+      "y": 88.5,
+      "zone": "Calle Agustín Edwards"
     },
     {
       "id": "rd_e",
       "label": "Calle Agustín Edwards (este)",
       "x": 83.8,
-      "y": 80
+      "y": 80,
+      "zone": "Calle Agustín Edwards"
     },
     {
       "id": "rd_ne",
       "label": "Acceso peatonal Edif. D/E",
       "x": 80.5,
-      "y": 72.5
+      "y": 72.5,
+      "zone": "Acceso Edif. D/E"
     },
     {
       "id": "cancha_acc",
       "label": "Acceso a la cancha",
       "x": 47,
-      "y": 50
+      "y": 50,
+      "zone": "Cancha 8007"
     },
     {
       "id": "cancha",
       "label": "Cancha Deportiva",
       "x": 47,
-      "y": 60
+      "y": 60,
+      "zone": "Cancha 8007"
     }
   ]
 }

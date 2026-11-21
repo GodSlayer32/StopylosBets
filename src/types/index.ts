@@ -12,6 +12,8 @@ export interface Node {
   y: number;
   building?: string;
   floor?: number;
+  /** Zona corta para mostrar ("Av. España", "Edificio C · Piso 1") */
+  zone?: string;
 }
 
 export interface Edge {
@@ -135,4 +137,50 @@ export interface Building {
   elevator: { id: string; x: number };
   stairs: { x: number };
   entrances: BuildingEntrance[];
+}
+
+/** Punto [x, y] en % del plano (0-100) */
+export type MapPoint = [number, number];
+
+export interface MapBuilding {
+  id: string;
+  name: string;
+  polygon: MapPoint[];
+  holes?: MapPoint[][];
+  labelAt: MapPoint;
+}
+
+export type MapAreaKind = 'patio' | 'green' | 'court' | 'street' | 'plaza';
+
+export interface MapArea {
+  id: string;
+  name: string;
+  kind: MapAreaKind;
+  polygon: MapPoint[];
+  labelAt?: MapPoint;
+}
+
+export interface CampusMap {
+  bounds: { minX: number; minY: number; maxX: number; maxY: number };
+  buildings: MapBuilding[];
+  areas: MapArea[];
+}
+
+export type RoomKind = 'room' | 'lab' | 'wc' | 'elevator' | 'stairs' | 'service';
+
+export interface Room {
+  id: string;
+  name: string;
+  polygon: MapPoint[];
+  kind: RoomKind;
+}
+
+export interface FloorPlan {
+  rooms: Room[];
+  corridors: MapPoint[][];
+}
+
+export interface BuildingFloorPlans {
+  levels: number[];
+  floors: Record<string, FloorPlan>;
 }
