@@ -352,34 +352,6 @@
       "widthCm": 85
     },
     {
-      "id": "rd_f>f_in:stairs",
-      "from": "rd_f",
-      "to": "f_in",
-      "distanceM": 16,
-      "type": "stairs",
-      "steps": 20,
-      "name": "Escalera acceso Edif. F",
-      "covered": false
-    },
-    {
-      "id": "rd_f>f_in:slope",
-      "from": "rd_f",
-      "to": "f_in",
-      "distanceM": 22,
-      "type": "slope",
-      "slopePct": 12,
-      "name": "Pendiente acceso Edif. F",
-      "covered": false
-    },
-    {
-      "id": "f_in>d_in:flat",
-      "from": "f_in",
-      "to": "d_in",
-      "distanceM": 40,
-      "type": "flat",
-      "covered": true
-    },
-    {
       "id": "patio>casino:flat",
       "from": "patio",
       "to": "casino",
@@ -874,6 +846,73 @@
       "distanceM": 31,
       "type": "flat",
       "name": "Camino oeste Edif. C"
+    },
+    {
+      "id": "rd_f>f_acc:stairs",
+      "from": "rd_f",
+      "to": "f_acc",
+      "distanceM": 16,
+      "type": "stairs",
+      "steps": 20,
+      "name": "Escalera acceso Edif. F"
+    },
+    {
+      "id": "rd_f>f_acc:slope",
+      "from": "rd_f",
+      "to": "f_acc",
+      "distanceM": 22,
+      "type": "slope",
+      "slopePct": 12,
+      "name": "Pendiente acceso Edif. F"
+    },
+    {
+      "id": "f_acc>f_hub:flat",
+      "from": "f_acc",
+      "to": "f_hub",
+      "distanceM": 9,
+      "type": "flat",
+      "covered": true,
+      "name": "Hall de acceso Edif. F"
+    },
+    {
+      "id": "f_hub>f_inf:flat",
+      "from": "f_hub",
+      "to": "f_inf",
+      "distanceM": 9,
+      "type": "flat",
+      "covered": true,
+      "cues": [
+        {
+          "at": "end",
+          "side": "right",
+          "text": "la puerta del laboratorio de Informática"
+        }
+      ]
+    },
+    {
+      "id": "f_hub>f_in:flat",
+      "from": "f_hub",
+      "to": "f_in",
+      "distanceM": 9,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "f_hub>f_norte:flat",
+      "from": "f_hub",
+      "to": "f_norte",
+      "distanceM": 4,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "f_norte>d_in:flat",
+      "from": "f_norte",
+      "to": "d_in",
+      "distanceM": 36,
+      "type": "flat",
+      "covered": true,
+      "name": "Patio interior Edif. F"
     }
   ]
 }

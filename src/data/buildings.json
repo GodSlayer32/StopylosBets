@@ -201,6 +201,37 @@
           "label": "Desde Patio Central"
         }
       ]
+    },
+    {
+      "id": "F",
+      "name": "Edificio F",
+      "floors": [
+        {
+          "level": 1,
+          "label": "Piso 1",
+          "rooms": [
+            "Sala de Informática",
+            "Salas de clases Informática",
+            "Sala de Estudio",
+            "Depto. de Informática"
+          ]
+        }
+      ],
+      "stairs": {
+        "x": 0.55
+      },
+      "entrances": [
+        {
+          "level": 1,
+          "side": "left",
+          "label": "Desde calle Edwards (escalera o pendiente)"
+        },
+        {
+          "level": 1,
+          "side": "right",
+          "label": "Desde el patio interior (hacia D/E)"
+        }
+      ]
     }
   ]
 }

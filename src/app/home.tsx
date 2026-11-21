@@ -30,7 +30,7 @@ const PROFILE_LABEL: Record<Profile, string> = {
   none: 'Sin necesidades especiales',
 };
 
-const ORIGINS = ['acc_espana', 'acc_placeres', 'acc_san_luis'];
+const ORIGINS = ['acc_espana', 'acc_placeres', 'acc_san_luis', 'f_inf'];
 
 type Quick = { id: string; label: string; icon: keyof typeof Ionicons.glyphMap; match: (p: Place) => boolean };
 const QUICK: Quick[] = [

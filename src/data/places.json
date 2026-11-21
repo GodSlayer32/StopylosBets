@@ -144,6 +144,15 @@
       "floor": 2,
       "category": "comida",
       "icon": "coffee"
+    },
+    {
+      "id": "f-informatica",
+      "name": "Sala de Informática (Edif. F)",
+      "nodeId": "f_inf",
+      "building": "F",
+      "floor": 1,
+      "category": "laboratorio",
+      "icon": "laptop"
     }
   ]
 }
