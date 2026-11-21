@@ -1,0 +1,140 @@
+{
+  "_simulated": true,
+  "_note": "Datos simulados para la demo de Ruta Libre; no corresponden a mediciones oficiales de la USM.",
+  "places": [
+    {
+      "id": "c-210",
+      "name": "C-210",
+      "nodeId": "c_210",
+      "building": "C",
+      "floor": 2,
+      "category": "sala",
+      "icon": "school"
+    },
+    {
+      "id": "c-105",
+      "name": "C-105",
+      "nodeId": "c_105",
+      "building": "C",
+      "floor": 1,
+      "category": "sala",
+      "icon": "school"
+    },
+    {
+      "id": "a-101",
+      "name": "A-101",
+      "nodeId": "a_in",
+      "building": "A",
+      "floor": 1,
+      "category": "sala",
+      "icon": "school"
+    },
+    {
+      "id": "a-201",
+      "name": "A-201",
+      "nodeId": "a_201",
+      "building": "A",
+      "floor": 2,
+      "category": "sala",
+      "icon": "school"
+    },
+    {
+      "id": "biblioteca",
+      "name": "Biblioteca Central",
+      "nodeId": "biblioteca",
+      "building": "B",
+      "floor": 1,
+      "category": "biblioteca",
+      "icon": "book-open-page-variant"
+    },
+    {
+      "id": "aula-magna",
+      "name": "Aula Magna",
+      "nodeId": "aula_magna",
+      "building": "A",
+      "floor": 1,
+      "category": "auditorio",
+      "icon": "account-group"
+    },
+    {
+      "id": "casino",
+      "name": "Casino Central",
+      "nodeId": "casino",
+      "building": "B",
+      "floor": 1,
+      "category": "comida",
+      "icon": "silverware-fork-knife"
+    },
+    {
+      "id": "lab-fisica",
+      "name": "Laboratorio de Física (Edif. D)",
+      "nodeId": "lab_fisica",
+      "building": "D",
+      "floor": 2,
+      "category": "laboratorio",
+      "icon": "flask"
+    },
+    {
+      "id": "bano-b",
+      "name": "Baño accesible Edif. B",
+      "nodeId": "bano_b",
+      "building": "B",
+      "floor": 1,
+      "category": "servicio",
+      "icon": "human-wheelchair"
+    },
+    {
+      "id": "bano-c",
+      "name": "Baño accesible Edif. C",
+      "nodeId": "bano_c",
+      "building": "C",
+      "floor": 2,
+      "category": "servicio",
+      "icon": "human-wheelchair"
+    },
+    {
+      "id": "secretaria",
+      "name": "Secretaría de Estudios",
+      "nodeId": "u_in",
+      "building": "U",
+      "floor": 1,
+      "category": "servicio",
+      "icon": "file-document-outline"
+    },
+    {
+      "id": "cancha",
+      "name": "Cancha Deportiva",
+      "nodeId": "cancha",
+      "floor": 1,
+      "category": "deporte",
+      "icon": "soccer"
+    },
+    {
+      "id": "centro-alumnos",
+      "name": "Centro de Alumnos",
+      "nodeId": "k_in",
+      "building": "K",
+      "floor": 1,
+      "category": "servicio",
+      "icon": "account-multiple"
+    },
+    {
+      "id": "enfermeria",
+      "name": "Enfermería",
+      "nodeId": "o_in",
+      "building": "O",
+      "floor": 1,
+      "category": "salud",
+      "icon": "medical-bag"
+    },
+    {
+      "id": "sala-estudio-f",
+      "name": "Sala de Estudio Edif. F",
+      "nodeId": "f_in",
+      "building": "F",
+      "floor": 1,
+      "category": "estudio",
+      "icon": "book-education-outline"
+    }
+  ]
+}

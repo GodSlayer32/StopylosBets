@@ -1,0 +1,422 @@
+{
+  "_simulated": true,
+  "_note": "Datos simulados para la demo de Ruta Libre; no corresponden a mediciones oficiales de la USM.",
+  "edges": [
+    {
+      "id": "acc_espana>esp_mid:stairs",
+      "from": "acc_espana",
+      "to": "esp_mid",
+      "distanceM": 11,
+      "type": "stairs",
+      "steps": 30,
+      "name": "Escalera Av. España (tramo bajo)"
+    },
+    {
+      "id": "esp_mid>a_front:stairs",
+      "from": "esp_mid",
+      "to": "a_front",
+      "distanceM": 8,
+      "type": "stairs",
+      "steps": 18,
+      "name": "Escalera Av. España (tramo alto)"
+    },
+    {
+      "id": "a_front>a_in:flat",
+      "from": "a_front",
+      "to": "a_in",
+      "distanceM": 10,
+      "type": "flat"
+    },
+    {
+      "id": "a_in>patio:flat",
+      "from": "a_in",
+      "to": "patio",
+      "distanceM": 45,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "patio>c_plaza:stairs",
+      "from": "patio",
+      "to": "c_plaza",
+      "distanceM": 55,
+      "type": "stairs",
+      "steps": 16,
+      "name": "Escalera Patio Central – Edif. C"
+    },
+    {
+      "id": "patio>c_plaza:ramp",
+      "from": "patio",
+      "to": "c_plaza",
+      "distanceM": 70,
+      "type": "ramp",
+      "slopePct": 6,
+      "name": "Rampa Patio Central – Edif. C"
+    },
+    {
+      "id": "c_plaza>c_in:flat",
+      "from": "c_plaza",
+      "to": "c_in",
+      "distanceM": 14,
+      "type": "flat"
+    },
+    {
+      "id": "c_in>c_p2_hub:stairs",
+      "from": "c_in",
+      "to": "c_p2_hub",
+      "distanceM": 12,
+      "type": "stairs",
+      "steps": 16,
+      "covered": true,
+      "name": "Escalera interior Edif. C"
+    },
+    {
+      "id": "c_in>c_elev_p1:flat",
+      "from": "c_in",
+      "to": "c_elev_p1",
+      "distanceM": 8,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_elev_p1>c_elev_p2:elevator",
+      "from": "c_elev_p1",
+      "to": "c_elev_p2",
+      "distanceM": 10,
+      "type": "elevator",
+      "elevatorId": "elev-c"
+    },
+    {
+      "id": "c_elev_p2>c_p2_hub:flat",
+      "from": "c_elev_p2",
+      "to": "c_p2_hub",
+      "distanceM": 6,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_elev_p2>c_210:flat",
+      "from": "c_elev_p2",
+      "to": "c_210",
+      "distanceM": 10,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_elev_p2>bano_c:flat",
+      "from": "c_elev_p2",
+      "to": "bano_c",
+      "distanceM": 8,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_p2_hub>c_210:flat",
+      "from": "c_p2_hub",
+      "to": "c_210",
+      "distanceM": 14,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_elev_p1>c_105:flat",
+      "from": "c_elev_p1",
+      "to": "c_105",
+      "distanceM": 6,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "acc_espana>rd_s:slope",
+      "from": "acc_espana",
+      "to": "rd_s",
+      "distanceM": 32,
+      "type": "slope",
+      "slopePct": 5,
+      "name": "Calle Agustín Edwards"
+    },
+    {
+      "id": "rd_s>rd_f:slope",
+      "from": "rd_s",
+      "to": "rd_f",
+      "distanceM": 35,
+      "type": "slope",
+      "slopePct": 6,
+      "name": "Calle Agustín Edwards"
+    },
+    {
+      "id": "rd_f>rd_e:slope",
+      "from": "rd_f",
+      "to": "rd_e",
+      "distanceM": 45,
+      "type": "slope",
+      "slopePct": 7,
+      "name": "Calle Agustín Edwards"
+    },
+    {
+      "id": "rd_e>rd_ne:slope",
+      "from": "rd_e",
+      "to": "rd_ne",
+      "distanceM": 27,
+      "type": "slope",
+      "slopePct": 6,
+      "name": "Calle Agustín Edwards"
+    },
+    {
+      "id": "rd_ne>d_in:ramp",
+      "from": "rd_ne",
+      "to": "d_in",
+      "distanceM": 24,
+      "type": "ramp",
+      "slopePct": 6,
+      "name": "Rampa de acceso Edif. D"
+    },
+    {
+      "id": "d_in>patio:flat",
+      "from": "d_in",
+      "to": "patio",
+      "distanceM": 30,
+      "type": "flat"
+    },
+    {
+      "id": "d_in>d_elev_p1:flat",
+      "from": "d_in",
+      "to": "d_elev_p1",
+      "distanceM": 12,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "d_elev_p1>d_elev_p2:elevator",
+      "from": "d_elev_p1",
+      "to": "d_elev_p2",
+      "distanceM": 10,
+      "type": "elevator",
+      "elevatorId": "elev-d"
+    },
+    {
+      "id": "d_elev_p2>lab_fisica:flat",
+      "from": "d_elev_p2",
+      "to": "lab_fisica",
+      "distanceM": 15,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "rd_f>f_in:stairs",
+      "from": "rd_f",
+      "to": "f_in",
+      "distanceM": 16,
+      "type": "stairs",
+      "steps": 20,
+      "name": "Escalera acceso Edif. F"
+    },
+    {
+      "id": "rd_f>f_in:slope",
+      "from": "rd_f",
+      "to": "f_in",
+      "distanceM": 22,
+      "type": "slope",
+      "slopePct": 12,
+      "name": "Pendiente acceso Edif. F"
+    },
+    {
+      "id": "f_in>d_in:flat",
+      "from": "f_in",
+      "to": "d_in",
+      "distanceM": 40,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "patio>casino:flat",
+      "from": "patio",
+      "to": "casino",
+      "distanceM": 20,
+      "type": "flat"
+    },
+    {
+      "id": "patio>b_in:flat",
+      "from": "patio",
+      "to": "b_in",
+      "distanceM": 22,
+      "type": "flat"
+    },
+    {
+      "id": "b_in>biblioteca:flat",
+      "from": "b_in",
+      "to": "biblioteca",
+      "distanceM": 22,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "b_in>b_elev_p1:flat",
+      "from": "b_in",
+      "to": "b_elev_p1",
+      "distanceM": 40,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "b_elev_p1>bano_b:flat",
+      "from": "b_elev_p1",
+      "to": "bano_b",
+      "distanceM": 12,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "b_elev_p1>b_elev_p2:elevator",
+      "from": "b_elev_p1",
+      "to": "b_elev_p2",
+      "distanceM": 10,
+      "type": "elevator",
+      "elevatorId": "elev-b"
+    },
+    {
+      "id": "b_elev_p2>b_p2:flat",
+      "from": "b_elev_p2",
+      "to": "b_p2",
+      "distanceM": 25,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "b_p2>c_p2_hub:flat",
+      "from": "b_p2",
+      "to": "c_p2_hub",
+      "distanceM": 55,
+      "type": "flat",
+      "covered": true,
+      "name": "Pasarela Edif. B – Edif. C"
+    },
+    {
+      "id": "b_in>acc_san_luis:flat",
+      "from": "b_in",
+      "to": "acc_san_luis",
+      "distanceM": 35,
+      "type": "flat"
+    },
+    {
+      "id": "acc_san_luis>o_in:flat",
+      "from": "acc_san_luis",
+      "to": "o_in",
+      "distanceM": 10,
+      "type": "flat"
+    },
+    {
+      "id": "patio>acc_san_luis:flat",
+      "from": "patio",
+      "to": "acc_san_luis",
+      "distanceM": 45,
+      "type": "flat"
+    },
+    {
+      "id": "o_in>k_in:slope",
+      "from": "o_in",
+      "to": "k_in",
+      "distanceM": 45,
+      "type": "slope",
+      "slopePct": 4,
+      "name": "Subida San Luis"
+    },
+    {
+      "id": "k_in>pl_east:slope",
+      "from": "k_in",
+      "to": "pl_east",
+      "distanceM": 50,
+      "type": "slope",
+      "slopePct": 4,
+      "name": "Subida San Luis"
+    },
+    {
+      "id": "pl_east>acc_placeres:flat",
+      "from": "pl_east",
+      "to": "acc_placeres",
+      "distanceM": 55,
+      "type": "flat"
+    },
+    {
+      "id": "acc_placeres>c_north:flat",
+      "from": "acc_placeres",
+      "to": "c_north",
+      "distanceM": 8,
+      "type": "flat"
+    },
+    {
+      "id": "c_north>c_elev_p1:flat",
+      "from": "c_north",
+      "to": "c_elev_p1",
+      "distanceM": 15,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "a_in>a_elev_p1:flat",
+      "from": "a_in",
+      "to": "a_elev_p1",
+      "distanceM": 14,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "a_elev_p1>a_elev_p2:elevator",
+      "from": "a_elev_p1",
+      "to": "a_elev_p2",
+      "distanceM": 10,
+      "type": "elevator",
+      "elevatorId": "elev-a"
+    },
+    {
+      "id": "a_elev_p2>a_201:flat",
+      "from": "a_elev_p2",
+      "to": "a_201",
+      "distanceM": 10,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "a_in>a_201:stairs",
+      "from": "a_in",
+      "to": "a_201",
+      "distanceM": 14,
+      "type": "stairs",
+      "steps": 18,
+      "covered": true,
+      "name": "Escalera interior Edif. A"
+    },
+    {
+      "id": "a_in>aula_magna:flat",
+      "from": "a_in",
+      "to": "aula_magna",
+      "distanceM": 15,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "a_in>u_in:flat",
+      "from": "a_in",
+      "to": "u_in",
+      "distanceM": 18,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "c_plaza>cancha_acc:flat",
+      "from": "c_plaza",
+      "to": "cancha_acc",
+      "distanceM": 25,
+      "type": "flat"
+    },
+    {
+      "id": "cancha_acc>cancha:slope",
+      "from": "cancha_acc",
+      "to": "cancha",
+      "distanceM": 30,
+      "type": "slope",
+      "slopePct": 3,
+      "name": "Camino a la cancha"
+    }
+  ]
+}

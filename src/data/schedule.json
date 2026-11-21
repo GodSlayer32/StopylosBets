@@ -1,0 +1,37 @@
+{
+  "_simulated": true,
+  "_note": "Datos simulados para la demo de Ruta Libre; no corresponden a mediciones oficiales de la USM.",
+  "student": {
+    "name": "Camila Rojas",
+    "career": "Ingeniería Civil Informática",
+    "semester": 5
+  },
+  "date": "2026-11-21",
+  "nextClassId": "cls-2",
+  "classes": [
+    {
+      "id": "cls-1",
+      "course": "Cálculo III",
+      "professor": "Prof. Hernán Muñoz",
+      "start": "08:15",
+      "end": "09:45",
+      "placeId": "a-101"
+    },
+    {
+      "id": "cls-2",
+      "course": "Ingeniería de Software",
+      "professor": "Prof. Carolina Vidal",
+      "start": "11:30",
+      "end": "13:00",
+      "placeId": "c-210"
+    },
+    {
+      "id": "cls-3",
+      "course": "Física General Laboratorio",
+      "professor": "Prof. Rodrigo Sepúlveda",
+      "start": "15:00",
+      "end": "16:30",
+      "placeId": "lab-fisica"
+    }
+  ]
+}

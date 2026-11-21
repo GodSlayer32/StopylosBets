@@ -1,0 +1,51 @@
+{
+  "_simulated": true,
+  "_note": "Datos simulados para la demo de Ruta Libre; no corresponden a mediciones oficiales de la USM.",
+  "elevators": [
+    {
+      "id": "elev-a",
+      "building": "A",
+      "floors": [
+        1,
+        2,
+        3
+      ],
+      "status": "down",
+      "lastUpdate": "2026-11-21T12:00:00.000Z"
+    },
+    {
+      "id": "elev-b",
+      "building": "B",
+      "floors": [
+        1,
+        2,
+        3
+      ],
+      "status": "ok",
+      "lastUpdate": "2026-11-21T14:35:00.000Z"
+    },
+    {
+      "id": "elev-c",
+      "building": "C",
+      "floors": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "status": "ok",
+      "lastUpdate": "2026-11-21T14:48:00.000Z"
+    },
+    {
+      "id": "elev-d",
+      "building": "D",
+      "floors": [
+        1,
+        2,
+        3
+      ],
+      "status": "ok",
+      "lastUpdate": "2026-11-21T14:20:00.000Z"
+    }
+  ]
+}

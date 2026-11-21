@@ -1,0 +1,316 @@
+{
+  "_simulated": true,
+  "_note": "Datos simulados para la demo de Ruta Libre; no corresponden a mediciones oficiales de la USM.",
+  "nodes": [
+    {
+      "id": "acc_espana",
+      "label": "Acceso Av. España",
+      "x": 60.9,
+      "y": 86.2
+    },
+    {
+      "id": "esp_mid",
+      "label": "Descanso escalera Av. España",
+      "x": 61.5,
+      "y": 82.8
+    },
+    {
+      "id": "a_front",
+      "label": "Explanada frente a Edif. A",
+      "x": 62,
+      "y": 80,
+      "building": "A",
+      "floor": 1
+    },
+    {
+      "id": "a_in",
+      "label": "Hall Edif. A",
+      "x": 62,
+      "y": 76.5,
+      "building": "A",
+      "floor": 1
+    },
+    {
+      "id": "a_elev_p1",
+      "label": "Ascensor Edif. A (piso 1)",
+      "x": 63.5,
+      "y": 73.5,
+      "building": "A",
+      "floor": 1
+    },
+    {
+      "id": "a_elev_p2",
+      "label": "Ascensor Edif. A (piso 2)",
+      "x": 63.5,
+      "y": 73.5,
+      "building": "A",
+      "floor": 2
+    },
+    {
+      "id": "a_201",
+      "label": "A-201",
+      "x": 62.5,
+      "y": 71.5,
+      "building": "A",
+      "floor": 2
+    },
+    {
+      "id": "aula_magna",
+      "label": "Aula Magna",
+      "x": 59.5,
+      "y": 73.5,
+      "building": "A",
+      "floor": 1
+    },
+    {
+      "id": "u_in",
+      "label": "Secretaría de Estudios",
+      "x": 56.2,
+      "y": 69,
+      "building": "U",
+      "floor": 1
+    },
+    {
+      "id": "patio",
+      "label": "Patio Central",
+      "x": 66.3,
+      "y": 66.3
+    },
+    {
+      "id": "casino",
+      "label": "Casino Central",
+      "x": 64,
+      "y": 61.5,
+      "building": "B",
+      "floor": 1
+    },
+    {
+      "id": "b_in",
+      "label": "Entrada Edif. B",
+      "x": 68.5,
+      "y": 57.8,
+      "building": "B",
+      "floor": 1
+    },
+    {
+      "id": "biblioteca",
+      "label": "Biblioteca Central",
+      "x": 71.5,
+      "y": 54.5,
+      "building": "B",
+      "floor": 1
+    },
+    {
+      "id": "bano_b",
+      "label": "Baño accesible Edif. B",
+      "x": 66.5,
+      "y": 53.5,
+      "building": "B",
+      "floor": 1
+    },
+    {
+      "id": "b_elev_p1",
+      "label": "Ascensor Edif. B (piso 1)",
+      "x": 68.5,
+      "y": 52.5,
+      "building": "B",
+      "floor": 1
+    },
+    {
+      "id": "b_elev_p2",
+      "label": "Ascensor Edif. B (piso 2)",
+      "x": 68.5,
+      "y": 52.5,
+      "building": "B",
+      "floor": 2
+    },
+    {
+      "id": "b_p2",
+      "label": "Pasarela B piso 2",
+      "x": 60.5,
+      "y": 48.5,
+      "building": "B",
+      "floor": 2
+    },
+    {
+      "id": "c_plaza",
+      "label": "Explanada Edif. C",
+      "x": 54.5,
+      "y": 47
+    },
+    {
+      "id": "c_in",
+      "label": "Entrada Edif. C",
+      "x": 57.5,
+      "y": 42.5,
+      "building": "C",
+      "floor": 1
+    },
+    {
+      "id": "c_elev_p1",
+      "label": "Ascensor Edif. C (piso 1)",
+      "x": 59.5,
+      "y": 40.5,
+      "building": "C",
+      "floor": 1
+    },
+    {
+      "id": "c_elev_p2",
+      "label": "Ascensor Edif. C (piso 2)",
+      "x": 59.5,
+      "y": 40.5,
+      "building": "C",
+      "floor": 2
+    },
+    {
+      "id": "c_105",
+      "label": "C-105",
+      "x": 62,
+      "y": 41,
+      "building": "C",
+      "floor": 1
+    },
+    {
+      "id": "c_p2_hub",
+      "label": "Pasillo Edif. C piso 2",
+      "x": 59,
+      "y": 43.8,
+      "building": "C",
+      "floor": 2
+    },
+    {
+      "id": "c_210",
+      "label": "C-210",
+      "x": 63,
+      "y": 37.5,
+      "building": "C",
+      "floor": 2
+    },
+    {
+      "id": "bano_c",
+      "label": "Baño accesible Edif. C",
+      "x": 61,
+      "y": 38.5,
+      "building": "C",
+      "floor": 2
+    },
+    {
+      "id": "c_north",
+      "label": "Entrada norte Edif. C",
+      "x": 58.6,
+      "y": 32,
+      "building": "C",
+      "floor": 1
+    },
+    {
+      "id": "acc_placeres",
+      "label": "Acceso Placeres",
+      "x": 58.6,
+      "y": 29.6
+    },
+    {
+      "id": "pl_east",
+      "label": "Av. Placeres esquina Subida San Luis",
+      "x": 71.5,
+      "y": 31.5
+    },
+    {
+      "id": "k_in",
+      "label": "Centro de Alumnos (Edif. K)",
+      "x": 74,
+      "y": 44.6,
+      "building": "K",
+      "floor": 1
+    },
+    {
+      "id": "o_in",
+      "label": "Enfermería (Edif. O)",
+      "x": 75.9,
+      "y": 56.3,
+      "building": "O",
+      "floor": 1
+    },
+    {
+      "id": "acc_san_luis",
+      "label": "Acceso Subida San Luis",
+      "x": 77.5,
+      "y": 58.5
+    },
+    {
+      "id": "d_in",
+      "label": "Entrada Edif. D",
+      "x": 73.1,
+      "y": 70.5,
+      "building": "D",
+      "floor": 1
+    },
+    {
+      "id": "d_elev_p1",
+      "label": "Ascensor Edif. D (piso 1)",
+      "x": 73.8,
+      "y": 66.5,
+      "building": "D",
+      "floor": 1
+    },
+    {
+      "id": "d_elev_p2",
+      "label": "Ascensor Edif. D (piso 2)",
+      "x": 73.8,
+      "y": 66.5,
+      "building": "D",
+      "floor": 2
+    },
+    {
+      "id": "lab_fisica",
+      "label": "Laboratorio de Física (Edif. D)",
+      "x": 74.5,
+      "y": 63,
+      "building": "D",
+      "floor": 2
+    },
+    {
+      "id": "f_in",
+      "label": "Sala de Estudio (Edif. F)",
+      "x": 79.6,
+      "y": 82.5,
+      "building": "F",
+      "floor": 1
+    },
+    {
+      "id": "rd_s",
+      "label": "Calle Agustín Edwards (oeste)",
+      "x": 70,
+      "y": 89.5
+    },
+    {
+      "id": "rd_f",
+      "label": "Calle Agustín Edwards (frente a F)",
+      "x": 80,
+      "y": 88.5
+    },
+    {
+      "id": "rd_e",
+      "label": "Calle Agustín Edwards (este)",
+      "x": 83.8,
+      "y": 80
+    },
+    {
+      "id": "rd_ne",
+      "label": "Acceso peatonal Edif. D/E",
+      "x": 80.5,
+      "y": 72.5
+    },
+    {
+      "id": "cancha_acc",
+      "label": "Acceso a la cancha",
+      "x": 47,
+      "y": 50
+    },
+    {
+      "id": "cancha",
+      "label": "Cancha Deportiva",
+      "x": 47,
+      "y": 60
+    }
+  ]
+}
