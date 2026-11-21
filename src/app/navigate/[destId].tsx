@@ -40,7 +40,7 @@ export default function NavigateScreen() {
 
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [status, setStatus] = useState<Status>('loading');
-  const [voice, setVoice] = useState(false);
+  const [voice, setVoice] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const [mapH, setMapH] = useState(0);
   const [cardH, setCardH] = useState(180);

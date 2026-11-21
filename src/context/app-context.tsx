@@ -4,7 +4,7 @@ import { BASE_ELEVATORS, compareWithShortest, explainNoRoute, findRoute } from '
 import { NOW_ISO, STALE_HOURS, formatAgo, minutesSince } from '../lib/time';
 import type { Elevator, Incident, NoRouteDiagnosis, Profile, RouteComparison, RouteResult } from '../types';
 
-export const DEFAULT_ORIGIN = 'acc_espana';
+export const DEFAULT_ORIGIN = 'acc_placeres';
 const LATENCY_MS = 400;
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 

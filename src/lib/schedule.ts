@@ -1,7 +1,7 @@
 import scheduleJson from '@/data/schedule.json';
 import { lacksElevatorAccess } from '@/lib/buildings';
 import { findRoute, getNode, getPlace } from '@/lib/routing';
-import { NOW_MINUTES, parseClock } from '@/lib/time';
+import { formatClock, NOW_MINUTES, parseClock } from '@/lib/time';
 import type { Elevator, Incident, Place, Profile } from '@/types';
 
 /** Margen de seguridad al llegar a clase. */
@@ -47,7 +47,12 @@ export interface ClassPlan {
   status: ClassStatus | null;
 }
 
-export const SCHEDULE_CLASSES = scheduleJson.classes as ScheduleClass[];
+/** Horario anclado a la hora actual: los offsets del JSON son minutos relativos a ahora. */
+export const SCHEDULE_CLASSES: ScheduleClass[] = scheduleJson.classes.map(({ startOffset, endOffset, ...c }) => ({
+  ...c,
+  start: formatClock(NOW_MINUTES + startOffset),
+  end: formatClock(NOW_MINUTES + endOffset),
+}));
 export const STUDENT = scheduleJson.student;
 
 /** Rutas entre salas consecutivas (getRoute del contexto solo parte del origen, aquí partimos de la sala anterior). */

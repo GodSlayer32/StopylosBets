@@ -14,7 +14,7 @@ import { useApp } from '@/context/app-context';
 import { floorLabel, lacksElevatorAccess } from '@/lib/buildings';
 import { useTheme } from '@/hooks/use-theme';
 import { accessibleRoomRequest, computeSchedule, isNoElevatorLeg, placeDetail, STUDENT, type ClassPlan } from '@/lib/schedule';
-import { formatClock, NOW_ISO, NOW_MINUTES } from '@/lib/time';
+import { formatClock, NOW_MINUTES } from '@/lib/time';
 import type { Profile } from '@/types';
 
 const REASON: Record<Profile, string> = {
@@ -199,8 +199,8 @@ export default function MyDay() {
 
 const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-const NOW_DATE = new Date(NOW_ISO);
-const TODAY = `${DAYS[NOW_DATE.getUTCDay()].replace(/^./, (c) => c.toUpperCase())} ${NOW_DATE.getUTCDate()} de ${MONTHS[NOW_DATE.getUTCMonth()]}`;
+const NOW_DATE = new Date();
+const TODAY = `${DAYS[NOW_DATE.getDay()].replace(/^./, (c) => c.toUpperCase())} ${NOW_DATE.getDate()} de ${MONTHS[NOW_DATE.getMonth()]}`;
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

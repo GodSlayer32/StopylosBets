@@ -20,7 +20,7 @@ import { useApp } from '@/context/app-context';
 import { useTheme } from '@/hooks/use-theme';
 import { getNode, getPlace, PLACES } from '@/lib/routing';
 import scheduleJson from '@/data/schedule.json';
-import { computeSchedule, isNoElevatorLeg, placeDetail, type ClassPlan } from '@/lib/schedule';
+import { computeSchedule, isNoElevatorLeg, SCHEDULE_CLASSES, placeDetail, type ClassPlan } from '@/lib/schedule';
 import { formatClock } from '@/lib/time';
 import type { Elevator, Place, Profile } from '@/types';
 
@@ -94,7 +94,7 @@ export default function Home() {
     setTimeout(closeSheet, 2200);
   };
 
-  const nextClass = scheduleJson.classes.find((c) => c.id === scheduleJson.nextClassId);
+  const nextClass = SCHEDULE_CLASSES.find((c) => c.id === scheduleJson.nextClassId);
   const classPlace = nextClass ? getPlace(nextClass.placeId) : undefined;
   const plans = useMemo<ClassPlan[]>(() => {
     try {
@@ -106,11 +106,6 @@ export default function Home() {
   const nextPlan = plans.find((p) => p.cls.id === scheduleJson.nextClassId) ?? null;
   const warnPlan = plans.find((p) => p.startMin > (nextPlan?.startMin ?? 0) && (p.status === 'tarde' || p.status === 'justo' || p.status === 'sin-ruta'));
   const noElevPlan = plans.find((p) => p.startMin > (nextPlan?.startMin ?? 0) && isNoElevatorLeg(p, profile));
-  const dayNotices = (noElevPlan ? 1 : 0) + (warnPlan && warnPlan.leaveAt != null ? 1 : 0);
-  const dayNoticesText = dayNotices === 1 ? '1 aviso en tu día' : `${dayNotices} avisos en tu día`;
-  const noticeDanger = !!noElevPlan || warnPlan?.status === 'tarde' || warnPlan?.status === 'sin-ruta';
-  const noticeFg = noticeDanger ? colors.danger : colors.warning;
-  const noticeBg = noticeDanger ? colors.dangerSoft : colors.warningSoft;
   const leaveTone = nextPlan?.status === 'tarde' || nextPlan?.status === 'sin-ruta' ? 'danger' : nextPlan?.status === 'justo' ? 'warning' : 'success';
   const leaveText =
     !nextPlan || !nextPlan.status ? null
@@ -147,10 +142,17 @@ export default function Home() {
     })),
   ];
 
-  const worstDanger = alerts.some((a) => a.tone === 'danger');
-  const worstFg = worstDanger ? colors.danger : colors.warning;
-  const worstBg = worstDanger ? colors.dangerSoft : colors.warningSoft;
-  const alertsTitle = alerts.length === 1 ? '1 aviso en el campus' : `${alerts.length} avisos en el campus`;
+  const nextBlocked = nextPlan?.status === 'tarde' || nextPlan?.status === 'sin-ruta';
+  const notices: { key: string; text: string; onPress: () => void }[] = [
+    ...(noElevPlan ? [{ key: 'day-noelev', text: `${noElevPlan.cls.course}: sala sin ascensor, solicita una sala accesible`, onPress: () => router.push('/my-day') }] : []),
+    ...(warnPlan && warnPlan.leaveAt != null ? [{ key: 'day-warn', text: `${warnPlan.cls.course}: ${warnPlan.status === 'tarde' ? `no alcanzas por ${warnPlan.lateBy} min` : 'vas justo de tiempo'}`, onPress: () => router.push('/my-day') }] : []),
+    ...alerts.map((a) => ({ key: a.key, text: a.text, onPress: () => Alert.alert('Detalle del aviso', a.detail) })),
+  ];
+  const worstFg = nextBlocked ? colors.danger : colors.warning;
+  const worstBg = nextBlocked ? colors.dangerSoft : colors.warningSoft;
+  const noticesTitle = nextBlocked
+    ? `${notices.length === 1 ? '1 aviso' : `${notices.length} avisos`}: afecta tu próxima clase`
+    : notices.length === 1 ? '1 aviso hoy' : `${notices.length} avisos hoy`;
 
   const q = norm(query.trim());
   const active = q.length > 0 || quick !== null;
@@ -251,35 +253,24 @@ export default function Home() {
             <Ionicons name="calendar-outline" size={20} color={colors.primary} />
             <AppText variant="label" color="primary">Ver mi día</AppText>
           </Pressable>
-          {dayNotices > 0 ? (
-            <Pressable
-              onPress={() => router.push('/my-day')}
-              accessibilityRole="button"
-              accessibilityLabel={`${dayNoticesText}. Ver mi día`}
-              style={[styles.noticeRow, { backgroundColor: noticeBg, minHeight: minTouch }]}>
-              <Ionicons name="warning" size={20} color={noticeFg} />
-              <AppText variant="label" style={styles.flex}>{dayNoticesText}</AppText>
-              <Ionicons name="chevron-forward" size={20} color={noticeFg} />
-            </Pressable>
-          ) : null}
         </Card>
       ) : null}
 
-      {alerts.length > 0 ? (
+      {notices.length > 0 ? (
         <View style={styles.gap}>
           <Pressable
             onPress={() => setShowAlerts((v) => !v)}
             accessibilityRole="button"
-            accessibilityLabel={`${alertsTitle}. ${showAlerts ? 'Ocultar' : 'Ver'} avisos`}
+            accessibilityLabel={`${noticesTitle}. ${showAlerts ? 'Ocultar' : 'Ver'} detalle`}
             accessibilityState={{ expanded: showAlerts }}
             style={[styles.alertRow, { backgroundColor: worstBg, borderColor: worstFg, minHeight: minTouch }]}>
             <Ionicons name="warning" size={22} color={worstFg} />
-            <AppText variant="label" style={styles.flex}>{alertsTitle}</AppText>
+            <AppText variant="label" style={styles.flex}>{noticesTitle}</AppText>
             <Ionicons name={showAlerts ? 'chevron-down' : 'chevron-forward'} size={20} color={worstFg} />
           </Pressable>
           {showAlerts
-            ? alerts.map((a) => (
-                <Banner key={a.key} tone={a.tone} text={a.text} onPress={() => Alert.alert('Detalle del aviso', a.detail)} />
+            ? notices.map((a) => (
+                <Banner key={a.key} tone={nextBlocked ? 'danger' : 'warning'} text={a.text} onPress={a.onPress} />
               ))
             : null}
         </View>
@@ -475,7 +466,6 @@ const styles = StyleSheet.create({
   mapThumb: { height: 160, borderRadius: radius.md, borderWidth: 1, overflow: 'hidden' },
   openBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, borderRadius: radius.md },
   header: { gap: spacing.sm },
-  noticeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, borderRadius: radius.md },
   leave: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 1 },
   backdrop: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
