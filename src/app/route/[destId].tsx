@@ -13,6 +13,7 @@ import { Card } from '@/components/Card';
 import { CampusMap } from '@/components/CampusMap';
 import { Screen } from '@/components/Screen';
 import { ScreenState } from '@/components/ScreenState';
+import { SupportTicketCard } from '@/components/SupportTicketCard';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { AMENITY_ICON, amenitiesAlongRoute, amenityWord } from '@/lib/amenities';
@@ -33,6 +34,7 @@ export default function RouteScreen() {
   const {
     getRoute, accessibleMode, profile, incidents, elevators, raining, setRaining,
     origin, setOrigin, assisted, setAssisted, getNoRouteReason,
+    getNearestReachable, openTicket, tickets,
   } = useApp();
   const t = useAppTheme(accessibleMode);
   const place = destId ? getPlace(destId) : undefined;
@@ -232,6 +234,22 @@ export default function RouteScreen() {
       params: { edgeIds: route?.edgeIds.join(',') ?? '', dest: destId ?? '' },
     });
 
+  // Sin ruta: en vez de dejar a la persona en un callejon sin salida, se calcula
+  // sola la mejor aproximacion y se levanta el ticket de apoyo. Nadie deberia
+  // tener que pedir ayuda a mano justo cuando acaba de leer "no se puede llegar".
+  const partial = useMemo(
+    () => (status === 'error' && destId ? getNearestReachable(destId) : null),
+    [status, destId, getNearestReachable],
+  );
+  const ticket = useMemo(
+    () => (partial && place ? tickets.find((x) => x.placeId === place.id) ?? null : null),
+    [partial, place, tickets],
+  );
+  useEffect(() => {
+    if (status !== 'error' || !partial || !destId) return;
+    openTicket(destId, partial);
+  }, [status, partial, destId, openTicket]);
+
   if (status === 'loading') {
     return (
       <Screen>
@@ -277,6 +295,55 @@ export default function RouteScreen() {
   }
 
   const diagnosis = status === 'error' && profile === 'wheelchair' && destId ? getNoRouteReason(destId) : null;
+  const autoPlan = partial && place ? (
+    <View style={styles.noRouteActions}>
+      <Card style={styles.planCard}>
+        <View style={styles.planHead}>
+          <MaterialCommunityIcons name="map-marker-distance" size={t.iconSize.md} color={t.colors.primary} />
+          <AppText variant="heading" style={styles.flex}>
+            {partial.route.steps.length ? 'Te llevamos lo mas cerca posible' : 'Desde aqui no puedes avanzar'}
+          </AppText>
+        </View>
+        {partial.route.steps.length ? (
+          <>
+            <AppText color="textMuted">
+              Lo mas cerca que puedes llegar por tu cuenta es {partial.reachedLabel}.
+            </AppText>
+            <View style={styles.planStats}>
+              <View style={styles.stat}>
+                <AppText variant="title" tabular>{partial.route.distanceM}</AppText>
+                <AppText variant="caption" color="textMuted">metros</AppText>
+              </View>
+              <View style={styles.stat}>
+                <AppText variant="title" tabular>{partial.route.minutes}</AppText>
+                <AppText variant="caption" color="textMuted">min aprox.</AppText>
+              </View>
+              <View style={styles.stat}>
+                <AppText variant="title" color="danger" tabular>{partial.remainingM}</AppText>
+                <AppText variant="caption" color="textMuted">m sin cubrir</AppText>
+              </View>
+            </View>
+            <Button
+              label="Ir hasta ese punto"
+              icon="navigate"
+              fullWidth
+              accessibilityLabel={`Iniciar la ruta hasta ${partial.reachedLabel}`}
+              onPress={() => router.push({ pathname: '/navigate/[destId]', params: { destId: destId ?? '', partial: '1' } } as Href)}
+            />
+          </>
+        ) : (
+          <AppText color="textMuted">
+            Con este perfil todas las salidas de {getNode(origin)?.label ?? 'tu origen'} estan bloqueadas,
+            asi que el apoyo tiene que venir hasta aqui.
+          </AppText>
+        )}
+      </Card>
+      {ticket ? (
+        <SupportTicketCard ticket={ticket} partial={partial} place={place} accessibleMode={accessibleMode} />
+      ) : null}
+    </View>
+  ) : null;
+
   if (diagnosis && diagnosis.kind !== 'other' && place) {
     const originName = getNode(origin)?.zone ?? getNode(origin)?.label ?? 'tu origen';
     const isSlope = diagnosis.kind === 'slope';
@@ -296,8 +363,12 @@ export default function RouteScreen() {
           <AppText variant="title" accessibilityRole="header" style={styles.center}>{title}</AppText>
           <AppText color="textMuted" style={styles.center}>{message}</AppText>
         </View>
+        {autoPlan}
         {isSlope ? (
           <View style={styles.noRouteActions}>
+            <AppText variant="caption" color="textMuted" style={styles.center}>
+              O evita el problema de raiz:
+            </AppText>
             <View style={styles.whyBox} accessible accessibilityLabel="En el cerro, el acceso por Placeres es casi plano">
               <MaterialCommunityIcons name="terrain" size={22} color={t.colors.primary} />
               <AppText variant="caption" style={styles.flex}>En el cerro, el acceso por Placeres es casi plano.</AppText>
@@ -337,14 +408,33 @@ export default function RouteScreen() {
 
   if (status === 'error' || !route || !place) {
     return (
-      <Screen>
-        <ScreenState
-          variant="error"
-          title="No encontramos una ruta accesible"
-          message="Puede que un ascensor esté fuera de servicio o un tramo esté bloqueado. Prueba con otro punto de partida."
-          actionLabel="Cambiar origen"
-          onAction={() => router.replace('/home')}
-        />
+      <Screen scroll contentStyle={autoPlan ? undefined : styles.noRouteScreen}>
+        {place ? <Stack.Screen options={{ title: place.name }} /> : null}
+        {autoPlan ? (
+          <>
+            <View style={styles.noRoute}>
+              <View style={styles.noRouteIcon}>
+                <MaterialCommunityIcons name="map-marker-alert" size={t.iconSize.lg + 8} color={t.colors.danger} />
+              </View>
+              <AppText variant="title" accessibilityRole="header" style={styles.center}>
+                No hay ruta hasta {place?.name ?? 'el destino'}
+              </AppText>
+              <AppText color="textMuted" style={styles.center}>
+                Con tu perfil no existe ningun camino completo: puede haber un ascensor fuera de
+                servicio o un tramo bloqueado.
+              </AppText>
+            </View>
+            {autoPlan}
+          </>
+        ) : (
+          <ScreenState
+            variant="error"
+            title="No encontramos una ruta accesible"
+            message="Puede que un ascensor esté fuera de servicio o un tramo esté bloqueado. Prueba con otro punto de partida."
+            actionLabel="Cambiar origen"
+            onAction={() => router.replace('/home')}
+          />
+        )}
         <Button label="Volver" variant="ghost" fullWidth onPress={() => router.back()} />
       </Screen>
     );
@@ -777,6 +867,9 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
       alignItems: 'center', justifyContent: 'center',
     },
     noRouteActions: { gap: t.spacing.md },
+    planCard: { gap: t.spacing.md },
+    planHead: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md },
+    planStats: { flexDirection: 'row', gap: t.spacing.sm },
     whyBox: {
       flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, padding: t.spacing.md,
       borderRadius: t.radius.md, backgroundColor: t.colors.primarySoft,

@@ -29,14 +29,23 @@ const NO_ROUTE: [number, number][] = [];
 type Status = 'loading' | 'ready' | 'error';
 
 export default function NavigateScreen() {
-  const { destId } = useLocalSearchParams<{ destId: string }>();
+  // partial='1': la ruta no llega al destino, sino al punto alcanzable mas
+  // cercano. El apoyo del ticket cubre lo que falta desde ahi.
+  const { destId, partial } = useLocalSearchParams<{ destId: string; partial?: string }>();
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const { getRoute, accessibleMode, profile, incidents, elevators, confirmIncident, denyIncident } = useApp();
+  const { getRoute, getNearestReachable, accessibleMode, profile, incidents, elevators, confirmIncident, denyIncident } = useApp();
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(t), [t]);
   const place = destId ? getPlace(destId) : undefined;
+  const esParcial = partial === '1';
+  const nearest = useMemo(
+    () => (esParcial && destId ? getNearestReachable(destId) : null),
+    [esParcial, destId, getNearestReachable],
+  );
+  /** Hasta donde guia esta navegacion de verdad. */
+  const destLabel = nearest ? nearest.reachedLabel : place?.name ?? 'tu destino';
 
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [status, setStatus] = useState<Status>('loading');
@@ -49,9 +58,17 @@ export default function NavigateScreen() {
   // Ruta congelada: solo se calcula al montar y en "Reintentar"
   const getRouteRef = useRef(getRoute);
   useEffect(() => { getRouteRef.current = getRoute; }, [getRoute]);
+  const nearestRef = useRef(nearest);
+  useEffect(() => { nearestRef.current = nearest; }, [nearest]);
 
   useEffect(() => {
     let cancelled = false;
+    if (esParcial) {
+      const r = nearestRef.current?.route ?? null;
+      setRoute(r);
+      setStatus(r && r.steps.length ? 'ready' : 'error');
+      return () => { cancelled = true; };
+    }
     getRouteRef.current(destId ?? '')
       .then((r) => {
         if (cancelled) return;
@@ -60,7 +77,7 @@ export default function NavigateScreen() {
       })
       .catch(() => !cancelled && setStatus('error'));
     return () => { cancelled = true; };
-  }, [destId, attempt]);
+  }, [destId, attempt, esParcial]);
 
   const speakOn = profile === 'lowVision' || voice;
   const step = route?.steps[sim.stepIndex];
@@ -95,12 +112,12 @@ export default function NavigateScreen() {
     lastSpoken.current = key;
     if (sim.finished) {
       playManeuverHaptic('arrive');
-      say(`Llegaste a ${place?.name ?? 'tu destino'}`);
+      say(esParcial ? `Llegaste a ${destLabel}. Aqui te espera el apoyo` : `Llegaste a ${destLabel}`);
       return;
     }
     playManeuverHaptic(m.type);
     say(m.spoken ?? m.text);
-  }, [route, m, sim.maneuverIndex, sim.finished, place?.name, say]);
+  }, [route, m, sim.maneuverIndex, sim.finished, destLabel, esParcial, say]);
 
   useEffect(() => {
     if (!m || sim.finished || m.type === 'straight' || m.type === 'arrive') return;
@@ -114,8 +131,8 @@ export default function NavigateScreen() {
   const repeat = useCallback(() => {
     if (!m) return;
     playManeuverHaptic(sim.finished ? 'arrive' : m.type);
-    say(sim.finished ? `Llegaste a ${place?.name ?? 'tu destino'}` : (m.spoken ?? m.text), true);
-  }, [m, sim.finished, place?.name, say]);
+    say(sim.finished ? `Llegaste a ${destLabel}` : (m.spoken ?? m.text), true);
+  }, [m, sim.finished, destLabel, say]);
 
   const toggleVoice = useCallback(() => {
     Speech.stop();
@@ -301,8 +318,15 @@ export default function NavigateScreen() {
           <Ionicons name="close" size={26} color={t.colors.text} />
         </Pressable>
         <View style={styles.flex}>
-          <AppText variant="caption" color="textMuted">Navegando hacia</AppText>
-          <AppText variant="heading" numberOfLines={1} accessibilityRole="header" style={accessibleMode ? undefined : { fontSize: 17, lineHeight: 22 }}>{place.name}</AppText>
+          <AppText variant="caption" color="textMuted">
+            {nearest ? 'Lo mas cerca que puedes llegar' : 'Navegando hacia'}
+          </AppText>
+          <AppText variant="heading" numberOfLines={1} accessibilityRole="header" style={accessibleMode ? undefined : { fontSize: 17, lineHeight: 22 }}>{destLabel}</AppText>
+          {nearest ? (
+            <AppText variant="caption" color="textMuted" numberOfLines={1}>
+              Faltan {nearest.remainingM} m hasta {place.name} · te acompanan desde ahi
+            </AppText>
+          ) : null}
         </View>
         <Pressable
           onPress={() => setHelpOpen(true)}
