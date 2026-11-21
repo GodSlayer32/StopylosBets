@@ -11,7 +11,7 @@
   "classes": [
     {
       "id": "cls-1",
-      "course": "Cálculo III",
+      "course": "Cálculo II",
       "professor": "Prof. Hernán Muñoz",
       "start": "08:15",
       "end": "09:45",
@@ -29,8 +29,8 @@
       "id": "cls-3",
       "course": "Física General Laboratorio",
       "professor": "Prof. Rodrigo Sepúlveda",
-      "start": "15:00",
-      "end": "16:30",
+      "start": "13:05",
+      "end": "14:35",
       "placeId": "lab-fisica"
     }
   ]

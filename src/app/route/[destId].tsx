@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect, type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
@@ -15,9 +15,10 @@ import { Screen } from '@/components/Screen';
 import { ScreenState } from '@/components/ScreenState';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
+import { AMENITY_ICON, amenitiesAlongRoute, amenityWord } from '@/lib/amenities';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
 import { formatAgo, formatConfirmations } from '@/lib/time';
-import type { RouteResult } from '@/types';
+import type { AmenityType, RouteResult } from '@/types';
 
 type MapBarrier = { id: string; x: number; y: number; kind?: 'incident' | 'stairs' };
 
@@ -27,7 +28,7 @@ export default function RouteScreen() {
   const { destId } = useLocalSearchParams<{ destId: string }>();
   const router = useRouter();
   const { width, height } = useWindowDimensions();
-  const { getRoute, accessibleMode, profile, incidents, elevators } = useApp();
+  const { getRoute, accessibleMode, profile, incidents, elevators, raining, setRaining } = useApp();
   const t = useAppTheme(accessibleMode);
   const place = destId ? getPlace(destId) : undefined;
 
@@ -40,6 +41,7 @@ export default function RouteScreen() {
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const prevRoute = useRef<RouteResult | null>(null);
   const spokeInitial = useRef(false);
+  const prevRaining = useRef(raining);
   const [noticeAnim] = useState(() => new Animated.Value(0));
   const isLowVision = profile === 'lowVision';
 
@@ -54,7 +56,26 @@ export default function RouteScreen() {
         return;
       }
       const prev = prevRoute.current;
-      if (prev && prev.edgeIds.join('|') !== r.edgeIds.join('|')) {
+      const rainChanged = prevRaining.current !== raining;
+      prevRaining.current = raining;
+      if (prev && rainChanged) {
+        const delta = r.distanceM - prev.distanceM;
+        const extra = delta === 0 ? '' : ` (${delta > 0 ? '+' : ''}${delta} m)`;
+        const viaB = r.nodeIds.includes('b_in') && !prev.nodeIds.includes('b_in');
+        const changed = prev.edgeIds.join('|') !== r.edgeIds.join('|');
+        setNotice(
+          !raining
+            ? 'Volvimos a la ruta normal, sin lluvia'
+            : viaB
+              ? `Con lluvia te llevamos por dentro del Edificio B: ${r.coveredPct}% techada${extra}`
+              : changed
+                ? `Con lluvia priorizamos tramos techados: ${r.coveredPct}% techada${extra}`
+                : `Con lluvia: esta ruta es ${r.coveredPct}% techada, no hay alternativa más cubierta`,
+        );
+        setStepIdx(0);
+        noticeAnim.setValue(0);
+        Animated.timing(noticeAnim, { toValue: 1, duration: 450, useNativeDriver: true }).start();
+      } else if (prev && prev.edgeIds.join('|') !== r.edgeIds.join('|')) {
         const usedElev = prev.edgeIds
           .map((id) => EDGES.find((e) => e.id === id)?.elevatorId)
           .find((id) => id && elevators.find((el) => el.id === id)?.status !== 'ok');
@@ -77,7 +98,7 @@ export default function RouteScreen() {
     return () => {
       cancelled = true;
     };
-  }, [getRoute, destId, elevators, noticeAnim]);
+  }, [getRoute, destId, elevators, noticeAnim, raining]);
 
   useFocusEffect(load);
 
@@ -143,6 +164,34 @@ export default function RouteScreen() {
   };
   const avoidedSteps = stairItems.reduce((s, a) => s + (a.steps ?? 0), 0);
   const avoidedStairs = stairItems.filter((a) => a.kind === 'stairs').length;
+
+  const along = useMemo(() => (route ? amenitiesAlongRoute(route) : []), [route]);
+  const amenitySummary = useMemo(() => {
+    const types: AmenityType[] = ['bench', 'rest-area', 'wc', 'water', 'shade'];
+    const items: { key: string; icon: string; text: string }[] = [];
+    for (const type of types) {
+      const list = along.filter((a) => a.amenity.type === type);
+      if (!list.length) continue;
+      let text = `${list.length} ${amenityWord(type, list.length)}`;
+      if (type === 'wc') {
+        const w = list[0].amenity;
+        text += ` (Edif. ${w.building}, piso ${w.floor})`;
+      }
+      if (type === 'rest-area' || type === 'water' || type === 'shade') text = list.length === 1 ? (type === 'water' ? 'Bebedero' : amenityWord(type)).replace(/^./, (c) => c.toUpperCase()) : text;
+      items.push({ key: type, icon: AMENITY_ICON[type], text });
+    }
+    return items;
+  }, [along]);
+  const restTip = useMemo(() => {
+    if (!route || route.distanceM <= 200 || (profile !== 'crutches' && profile !== 'wheelchair')) return null;
+    const mid = route.distanceM / 2;
+    const seats = along.filter((a) => a.amenity.type === 'bench' || a.amenity.type === 'rest-area');
+    if (!seats.length) return null;
+    const best = seats.reduce((b, a) => (Math.abs(a.atM - mid) < Math.abs(b.atM - mid) ? a : b));
+    const nearMid = Math.abs(best.atM - mid) <= route.distanceM * 0.2;
+    const name = best.amenity.name.replace(/^./, (c) => c.toLowerCase());
+    return `Descansa en ${name} (${nearMid ? 'a mitad de camino, ' : ''}a los ${best.atM} m)`;
+  }, [route, along, profile]);
 
   const styles = useMemo(() => makeStyles(t), [t]);
 
@@ -231,6 +280,26 @@ export default function RouteScreen() {
         </View>
       </Card>
 
+      <Card style={styles.rainCard}>
+        <View style={styles.rainRow}>
+          <MaterialCommunityIcons name="weather-pouring" size={28} color={raining ? t.colors.primary : t.colors.textMuted} />
+          <View style={styles.flex}>
+            <AppText variant="label">Está lloviendo</AppText>
+            <AppText variant="caption" color="textMuted">Prioriza tramos techados</AppText>
+          </View>
+          <Switch
+            value={raining}
+            onValueChange={setRaining}
+            accessibilityRole="switch"
+            accessibilityLabel="Está lloviendo"
+            accessibilityHint="Recalcula la ruta para priorizar tramos techados"
+            accessibilityState={{ checked: raining }}
+            trackColor={{ false: t.colors.border, true: t.colors.primary }}
+            thumbColor={t.colors.surface}
+          />
+        </View>
+      </Card>
+
       <Pressable onPress={() => setFullMap(true)} accessibilityRole="button" accessibilityLabel={mapLabel} accessibilityHint="Toca para ampliar el mapa">
         <CampusMap
           mode="macro"
@@ -246,12 +315,50 @@ export default function RouteScreen() {
         </View>
       </Pressable>
 
+      <View style={styles.coverRow}>
+        <View accessible accessibilityLabel={`Ruta ${route.coveredPct} por ciento techada, ${route.uncoveredM} metros a la intemperie`} style={styles.coverChip}>
+          <MaterialCommunityIcons name="umbrella-outline" size={18} color={t.colors.primary} />
+          <AppText variant="label">Ruta {route.coveredPct}% techada</AppText>
+        </View>
+        {raining ? (
+          <View accessible accessibilityLabel="Priorizamos tramos techados" style={styles.coverChip}>
+            <Ionicons name="information-circle" size={18} color={t.colors.primary} />
+            <AppText variant="label">Priorizamos tramos techados</AppText>
+          </View>
+        ) : null}
+      </View>
+
       <View style={styles.legend} accessible accessibilityLabel="Leyenda del mapa: origen, destino, escalera evitada y barrera reportada">
         <LegendItem t={t} label="Origen"><View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: t.map.routeCasing, borderWidth: 3, borderColor: t.map.route }} /></LegendItem>
         <LegendItem t={t} label="Destino"><Ionicons name="location" size={20} color={t.map.pin} /></LegendItem>
         <LegendItem t={t} label="Escalera evitada"><LegendDot color={t.map.stairsMark}><MaterialCommunityIcons name="stairs" size={12} color={t.colors.bg} /></LegendDot></LegendItem>
         <LegendItem t={t} label="Barrera reportada"><LegendDot color={t.map.barrier}><AppText variant="caption" style={{ color: t.colors.bg, fontWeight: '800', lineHeight: 16 }}>!</AppText></LegendDot></LegendItem>
       </View>
+
+      {amenitySummary.length > 0 ? (
+        <View style={styles.section}>
+          <AppText variant="heading" accessibilityRole="header">En tu ruta</AppText>
+          <View
+            accessible
+            accessibilityLabel={`En tu ruta: ${amenitySummary.map((i) => i.text).join(', ')}`}
+            style={styles.amenityBox}>
+            <View style={styles.amenityWrap}>
+              {amenitySummary.map((i) => (
+                <View key={i.key} style={styles.amenityChip}>
+                  <MaterialCommunityIcons name={i.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={20} color={t.colors.primary} />
+                  <AppText variant="label">{i.text}</AppText>
+                </View>
+              ))}
+            </View>
+            {restTip ? (
+              <View style={styles.restTip}>
+                <MaterialCommunityIcons name="seat" size={22} color={t.colors.success} />
+                <AppText variant="caption" style={styles.flex}>{restTip}</AppText>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
 
       {stairItems.length > 0 ? (
         <View style={styles.avoidBox}>
@@ -441,6 +548,39 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     },
     legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: t.spacing.lg, rowGap: t.spacing.sm, justifyContent: 'center' },
     section: { gap: t.spacing.md },
+    rainCard: { padding: t.spacing.md },
+    rainRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md, minHeight: t.minTouch },
+    coverRow: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm },
+    coverChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.spacing.xs,
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.xs,
+      borderRadius: t.radius.pill,
+      backgroundColor: t.colors.primarySoft,
+    },
+    amenityBox: { gap: t.spacing.sm },
+    amenityWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm },
+    amenityChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.spacing.xs,
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.xs,
+      borderRadius: t.radius.pill,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      backgroundColor: t.colors.surface,
+    },
+    restTip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.spacing.sm,
+      padding: t.spacing.md,
+      borderRadius: t.radius.md,
+      backgroundColor: t.colors.successSoft,
+    },
     avoidBox: {
       padding: t.spacing.md,
       gap: t.spacing.sm,

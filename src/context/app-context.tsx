@@ -23,6 +23,9 @@ interface AppContextValue {
   /** id de nodo de origen */
   origin: string;
   setOrigin: (nodeId: string) => void;
+  /** Modo lluvia: la ruta prioriza tramos techados */
+  raining: boolean;
+  setRaining: (v: boolean) => void;
   incidents: Incident[];
   addIncident: (i: NewIncident) => Incident;
   /** Con status ok | down | unconfirmed, fuente y frescura */
@@ -41,6 +44,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile>('crutches');
   const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
+  const [raining, setRaining] = useState(false);
   const [allIncidents, setAllIncidents] = useState<Incident[]>(incidentsJson.incidents as Incident[]);
   // Solo los activos (incluye los "sin confirmar"); con minutesAgo derivado del reloj simulado.
   const incidents = useMemo<Incident[]>(
@@ -124,25 +128,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const getRoute = useCallback(
     async (destPlaceId: string) => {
       await wait(LATENCY_MS);
-      return findRoute(origin, destPlaceId, profile, incidents, routingElevators);
+      return findRoute(origin, destPlaceId, profile, incidents, routingElevators, raining);
     },
-    [origin, profile, incidents, routingElevators],
+    [origin, profile, incidents, routingElevators, raining],
   );
 
   const getComparison = useCallback(
     async (destPlaceId: string) => {
       await wait(LATENCY_MS);
-      return compareWithShortest(origin, destPlaceId, profile, incidents, routingElevators);
+      return compareWithShortest(origin, destPlaceId, profile, incidents, routingElevators, raining);
     },
-    [origin, profile, incidents, routingElevators],
+    [origin, profile, incidents, routingElevators, raining],
   );
 
   const value = useMemo<AppContextValue>(
     () => ({
-      profile, setProfile, accessibleMode: profile === 'lowVision', origin, setOrigin,
+      profile, setProfile, accessibleMode: profile === 'lowVision', origin, setOrigin, raining, setRaining,
       incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison,
     }),
-    [profile, origin, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison],
+    [profile, origin, raining, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

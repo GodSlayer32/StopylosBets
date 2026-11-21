@@ -25,7 +25,8 @@
           "side": "left",
           "text": "el muro de contención"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "esp_mid>a_front:stairs",
@@ -45,7 +46,8 @@
           "at": "end",
           "text": "el último peldaño tiene borde amarillo"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "a_front>a_in:flat",
@@ -68,7 +70,8 @@
           "side": "ahead",
           "text": "las puertas de vidrio del hall"
         }
-      ]
+      ],
+      "covered": true
     },
     {
       "id": "a_in>patio:flat",
@@ -116,7 +119,8 @@
           "at": "end",
           "text": "el último peldaño tiene borde amarillo"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "patio>c_plaza:ramp",
@@ -146,7 +150,8 @@
           "side": "ahead",
           "text": "el piso vuelve a ser liso"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "c_plaza>c_in:flat",
@@ -170,7 +175,8 @@
           "side": "ahead",
           "text": "la puerta de vidrio del Edificio C"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "c_in>c_p2_hub:stairs",
@@ -234,7 +240,8 @@
           "at": "mid",
           "text": "La botonera está a la derecha de la puerta, con números en braille y un aviso de voz del piso"
         }
-      ]
+      ],
+      "covered": true
     },
     {
       "id": "c_elev_p2>c_p2_hub:flat",
@@ -340,7 +347,8 @@
           "at": "mid",
           "text": "el piso es de hormigón con ranuras antideslizantes"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "rd_s>rd_f:slope",
@@ -361,7 +369,8 @@
           "side": "right",
           "text": "un poste de luz"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "rd_f>rd_e:slope",
@@ -386,7 +395,8 @@
           "at": "end",
           "text": "el cruce peatonal con baldosa podotáctil"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "rd_e>rd_ne:slope",
@@ -412,7 +422,8 @@
           "side": "ahead",
           "text": "la entrada peatonal con portón metálico"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "rd_ne>d_in:ramp",
@@ -438,7 +449,8 @@
           "side": "ahead",
           "text": "las puertas de vidrio del Edificio D"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "d_in>patio:flat",
@@ -461,7 +473,8 @@
           "side": "ahead",
           "text": "el sonido de la fuente del patio"
         }
-      ]
+      ],
+      "covered": false
     },
     {
       "id": "d_in>d_elev_p1:flat",
@@ -495,7 +508,8 @@
           "at": "mid",
           "text": "La botonera está a la derecha de la puerta, con números en braille"
         }
-      ]
+      ],
+      "covered": true
     },
     {
       "id": "d_elev_p2>lab_fisica:flat",
@@ -512,7 +526,8 @@
       "distanceM": 16,
       "type": "stairs",
       "steps": 20,
-      "name": "Escalera acceso Edif. F"
+      "name": "Escalera acceso Edif. F",
+      "covered": false
     },
     {
       "id": "rd_f>f_in:slope",
@@ -521,7 +536,8 @@
       "distanceM": 22,
       "type": "slope",
       "slopePct": 12,
-      "name": "Pendiente acceso Edif. F"
+      "name": "Pendiente acceso Edif. F",
+      "covered": false
     },
     {
       "id": "f_in>d_in:flat",
@@ -536,7 +552,8 @@
       "from": "patio",
       "to": "casino",
       "distanceM": 20,
-      "type": "flat"
+      "type": "flat",
+      "covered": true
     },
     {
       "id": "patio>b_in:flat",
@@ -559,7 +576,8 @@
           "side": "ahead",
           "text": "la puerta de vidrio del Edificio B"
         }
-      ]
+      ],
+      "covered": true
     },
     {
       "id": "b_in>biblioteca:flat",
@@ -614,7 +632,8 @@
           "at": "mid",
           "text": "La botonera está a la derecha de la puerta, con números en braille y aviso de voz"
         }
-      ]
+      ],
+      "covered": true
     },
     {
       "id": "b_elev_p2>b_p2:flat",
@@ -670,21 +689,24 @@
       "from": "b_in",
       "to": "acc_san_luis",
       "distanceM": 35,
-      "type": "flat"
+      "type": "flat",
+      "covered": false
     },
     {
       "id": "acc_san_luis>o_in:flat",
       "from": "acc_san_luis",
       "to": "o_in",
       "distanceM": 10,
-      "type": "flat"
+      "type": "flat",
+      "covered": false
     },
     {
       "id": "patio>acc_san_luis:flat",
       "from": "patio",
       "to": "acc_san_luis",
       "distanceM": 45,
-      "type": "flat"
+      "type": "flat",
+      "covered": false
     },
     {
       "id": "o_in>k_in:slope",
@@ -693,7 +715,8 @@
       "distanceM": 45,
       "type": "slope",
       "slopePct": 4,
-      "name": "Subida San Luis"
+      "name": "Subida San Luis",
+      "covered": false
     },
     {
       "id": "k_in>pl_east:slope",
@@ -702,21 +725,24 @@
       "distanceM": 50,
       "type": "slope",
       "slopePct": 4,
-      "name": "Subida San Luis"
+      "name": "Subida San Luis",
+      "covered": false
     },
     {
       "id": "pl_east>acc_placeres:flat",
       "from": "pl_east",
       "to": "acc_placeres",
       "distanceM": 55,
-      "type": "flat"
+      "type": "flat",
+      "covered": false
     },
     {
       "id": "acc_placeres>c_north:flat",
       "from": "acc_placeres",
       "to": "c_north",
       "distanceM": 8,
-      "type": "flat"
+      "type": "flat",
+      "covered": false
     },
     {
       "id": "c_north>c_elev_p1:flat",
@@ -752,7 +778,8 @@
       "to": "a_elev_p2",
       "distanceM": 10,
       "type": "elevator",
-      "elevatorId": "elev-a"
+      "elevatorId": "elev-a",
+      "covered": true
     },
     {
       "id": "a_elev_p2>a_201:flat",
@@ -808,7 +835,8 @@
       "from": "c_plaza",
       "to": "cancha_acc",
       "distanceM": 25,
-      "type": "flat"
+      "type": "flat",
+      "covered": false
     },
     {
       "id": "cancha_acc>cancha:slope",
@@ -817,7 +845,8 @@
       "distanceM": 30,
       "type": "slope",
       "slopePct": 3,
-      "name": "Camino a la cancha"
+      "name": "Camino a la cancha",
+      "covered": false
     },
     {
       "id": "c_stairs_mid>c_plaza",
@@ -841,7 +870,8 @@
           "side": "left",
           "text": "una banca de madera"
         }
-      ]
+      ],
+      "covered": false
     }
   ]
 }

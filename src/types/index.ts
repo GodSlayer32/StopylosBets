@@ -137,6 +137,10 @@ export interface RouteResult {
   nodeIds: string[];
   edgeIds: string[];
   usesElevator: boolean;
+  /** % de los metros de la ruta que van bajo techo (0-100) */
+  coveredPct: number;
+  /** Metros a la intemperie */
+  uncoveredM: number;
 }
 
 export interface RouteComparison {
@@ -213,4 +217,27 @@ export interface FloorPlan {
 export interface BuildingFloorPlans {
   levels: number[];
   floors: Record<string, FloorPlan>;
+}
+
+export type AmenityType = 'bench' | 'wc' | 'water' | 'shade' | 'rest-area';
+
+export interface Amenity {
+  id: string;
+  type: AmenityType;
+  name: string;
+  /** Si está en un nodo del grafo; si no, usa x/y */
+  nodeId?: string;
+  /** Posición en % del plano (mismo sistema que nodes.json) */
+  x?: number;
+  y?: number;
+  building?: string;
+  floor?: number;
+  accessible?: boolean;
+  note: string;
+}
+
+export interface RouteAmenity {
+  amenity: Amenity;
+  /** Metros desde el inicio de la ruta */
+  atM: number;
 }

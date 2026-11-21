@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { buildManeuvers, cumulativeMeters, zoneOfNode, type Maneuver } from '@/lib/maneuvers';
+import { amenitiesAlongRoute, nextAmenitiesWithin } from '@/lib/amenities';
 import { getNode } from '@/lib/routing';
-import type { RouteResult } from '@/types';
+import type { RouteAmenity, RouteResult } from '@/types';
 
 const IMG_W = 1313;
 const IMG_H = 980;
@@ -11,6 +12,8 @@ const TOTAL_SECONDS = 27;
 /** Segundos que dura un tramo de ascensor */
 const ELEVATOR_SECONDS = 4.5;
 const TICK_MS = 33;
+/** Distancia máxima a la que se avisa del próximo servicio */
+const AMENITY_ALERT_M = 60;
 
 type Pt = { x: number; y: number };
 const toPx = (p: Pt): Pt => ({ x: (p.x / 100) * IMG_W, y: (p.y / 100) * IMG_H });
@@ -42,6 +45,8 @@ export type SimState = {
   nextManeuver: Maneuver | null;
   /** Metros que faltan hasta ejecutar la maniobra próxima (en vivo) */
   distanceToManeuverM: number;
+  /** Servicios (uno por tipo) a ≤60 m por delante, más cercano primero */
+  nextAmenities: (RouteAmenity & { distM: number })[];
   /** Zona legible del nodo más cercano */
   zone: string;
   playing: boolean;
@@ -91,6 +96,8 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
     const ptM = cumulativeMeters(route);
     return { pts, weights, headings, cum, total: cum[cum.length - 1], stepStartSeg, stepOfSeg, edgeM, maneuvers, ptM };
   }, [route]);
+
+  const amenities = useMemo(() => (route ? amenitiesAlongRoute(route) : []), [route]);
 
   const [prog, setProg] = useState(0); // en unidades de peso
   const [playing, setPlaying] = useState(false);
@@ -162,7 +169,7 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
       return {
         stepIndex: 0, point: { x: 50, y: 50 }, heading: 0, segIndex: 0, nodeId: '', inside: false, stepProgress: 0, progress: 0,
         remainingM: 0, maneuvers: [], maneuverIndex: 0, currentManeuver: null, nextManeuver: null, distanceToManeuverM: 0,
-        zone: '', playing: false, finished: false, next, prev, play, pause,
+        nextAmenities: [], zone: '', playing: false, finished: false, next, prev, play, pause,
       };
     }
     const k = segAt(prog);
@@ -201,6 +208,7 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
       currentManeuver: cur,
       nextManeuver: ms[mi + 1] ?? null,
       distanceToManeuverM: cur && !finished ? Math.max(0, Math.round(geo.ptM[cur.atIndex] - done)) : 0,
+      nextAmenities: finished ? [] : nextAmenitiesWithin(amenities, done, AMENITY_ALERT_M),
       zone: zoneOfNode(nodeId),
       stepIndex,
       point,
@@ -217,5 +225,5 @@ export function useRouteSimulation(route: RouteResult | null): SimState {
       finished,
       next, prev, play, pause,
     };
-  }, [geo, route, prog, playing, finished, segAt, next, prev, play, pause]);
+  }, [geo, route, amenities, prog, playing, finished, segAt, next, prev, play, pause]);
 }

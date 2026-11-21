@@ -17,6 +17,8 @@ import { useApp } from '@/context/app-context';
 import { useTheme } from '@/hooks/use-theme';
 import { getNode, getPlace, PLACES } from '@/lib/routing';
 import scheduleJson from '@/data/schedule.json';
+import { computeSchedule, placeDetail, type ClassPlan } from '@/lib/schedule';
+import { formatClock } from '@/lib/time';
 import type { Elevator, Place, Profile } from '@/types';
 
 const PROFILE_LABEL: Record<Profile, string> = {
@@ -42,7 +44,7 @@ const placeSub = (p: Place) => `${p.building ? `Edif. ${p.building} · ` : ''}Pi
 
 export default function Home() {
   const router = useRouter();
-  const { profile, origin, setOrigin, incidents, elevators, confirmIncident, denyIncident } = useApp();
+  const { profile, origin, setOrigin, raining, incidents, elevators, confirmIncident, denyIncident } = useApp();
   const { colors, minTouch, typography } = useTheme();
   const [query, setQuery] = useState('');
   const [quick, setQuick] = useState<string | null>(null);
@@ -80,6 +82,29 @@ export default function Home() {
 
   const nextClass = scheduleJson.classes.find((c) => c.id === scheduleJson.nextClassId);
   const classPlace = nextClass ? getPlace(nextClass.placeId) : undefined;
+  const plans = useMemo<ClassPlan[]>(() => {
+    try {
+      return computeSchedule(profile, origin, incidents, elevators, raining);
+    } catch {
+      return [];
+    }
+  }, [profile, origin, incidents, elevators, raining]);
+  const nextPlan = plans.find((p) => p.cls.id === scheduleJson.nextClassId) ?? null;
+  const warnPlan = plans.find((p) => p.startMin > (nextPlan?.startMin ?? 0) && (p.status === 'tarde' || p.status === 'justo' || p.status === 'sin-ruta'));
+  const leaveTone = nextPlan?.status === 'tarde' || nextPlan?.status === 'sin-ruta' ? 'danger' : nextPlan?.status === 'justo' ? 'warning' : 'success';
+  const leaveText =
+    !nextPlan || !nextPlan.status ? null
+    : nextPlan.status === 'tarde' ? `No alcanzas por ${nextPlan.lateBy} min`
+    : nextPlan.status === 'justo' ? 'Vas justo: sal ahora'
+    : nextPlan.status === 'sin-ruta' ? 'Sin ruta accesible ahora'
+    : null;
+  const leaveDetail =
+    nextPlan && nextPlan.leaveAt != null && nextPlan.status !== 'sin-ruta'
+      ? nextPlan.fromOrigin
+        ? `Sal a las ${formatClock(nextPlan.leaveAt)} · llegas ${formatClock(nextPlan.arriveAt ?? 0)}`
+        : `Sales de ${nextPlan.fromLabel} a las ${formatClock(nextPlan.leaveAt)} · llegas ${formatClock(nextPlan.arriveAt ?? 0)}`
+      : null;
+  const leaveLine = [leaveText, leaveDetail].filter(Boolean).join('. ');
   const firstName = scheduleJson.student.name.split(' ')[0];
 
   const downElevators = elevators.filter(
@@ -146,15 +171,53 @@ export default function Home() {
           </AppText>
           <AppText variant="title" accessibilityRole="header">{nextClass.course}</AppText>
           <AppText color="textMuted">
-            Sala {classPlace.name} · Edif. {classPlace.building} · {nextClass.start} a {nextClass.end}
+            {placeDetail(classPlace)} · {nextClass.start} a {nextClass.end}
           </AppText>
+          {leaveLine ? (
+            <View
+              accessible
+              accessibilityLabel={leaveLine}
+              style={[styles.leave, { backgroundColor: colors[`${leaveTone}Soft` as 'successSoft'], borderColor: colors[leaveTone] }]}>
+              <Ionicons name={leaveTone === 'success' ? 'time' : 'warning'} size={22} color={colors[leaveTone]} />
+              <View style={styles.flex}>
+                {leaveText ? <AppText variant="label">{leaveText}</AppText> : null}
+                {leaveDetail ? <AppText variant={leaveText ? 'caption' : 'label'}>{leaveDetail}</AppText> : null}
+              </View>
+            </View>
+          ) : null}
+          {nextPlan && nextPlan.extraMinutes > 0 ? (
+            <AppText variant="caption" color="textMuted">+{nextPlan.extraMinutes} min por ruta accesible</AppText>
+          ) : null}
           <Button
             label="Llévame"
             icon="navigate"
             fullWidth
-            accessibilityLabel={`Llévame a la sala ${classPlace.name}`}
-            onPress={() => router.push(`/route/${classPlace.id}`)}
+            accessibilityLabel={`Llévame a ${classPlace.name}`}
+            onPress={() => {
+              router.push(`/route/${classPlace.id}`);
+            }}
           />
+          <Pressable
+            onPress={() => router.push('/my-day')}
+            accessibilityRole="link"
+            accessibilityLabel="Ver mi día"
+            style={[styles.row, styles.link, { minHeight: minTouch }]}>
+            <AppText variant="label" color="primary">Ver mi día</AppText>
+            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+          </Pressable>
+          {warnPlan && warnPlan.leaveAt != null ? (
+            <Pressable
+              onPress={() => router.push('/my-day')}
+              accessibilityRole="link"
+              accessibilityLabel={`Ojo: a las ${formatClock(warnPlan.leaveAt)} ${warnPlan.status === 'tarde' ? 'no alcanzas' : 'vas justo'} a ${warnPlan.cls.course}. Ver mi día`}
+              style={[styles.row, { minHeight: minTouch }]}>
+              <Ionicons name="warning" size={18} color={colors.warning} />
+              <AppText variant="caption" style={[styles.flex, { color: colors.warning, fontWeight: '700' }]}>
+                Ojo: a las {formatClock(warnPlan.leaveAt)} {warnPlan.status === 'tarde' ? 'no alcanzas' : 'vas justo'} a {warnPlan.cls.course}
+              </AppText>
+              <Ionicons name="chevron-forward" size={18} color={colors.warning} />
+            </Pressable>
+          ) : null}
         </Card>
       ) : null}
 
@@ -360,6 +423,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   input: { flex: 1 },
+  link: { justifyContent: 'center' },
+  leave: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 2 },
   backdrop: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     gap: spacing.md,

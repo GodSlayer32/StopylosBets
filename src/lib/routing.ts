@@ -30,6 +30,8 @@ export const SPEED: Record<Profile, number> = {
   crutches: 0.7, wheelchair: 1.0, lowVision: 0.9, none: 1.3,
 };
 const ELEVATOR_WAIT_S = 25;
+/** Multiplicador de costo de un tramo a la intemperie cuando llueve */
+const RAIN_PENALTY = 2;
 const SECONDS_PER_STEP: Record<Profile, number> = {
   crutches: 3, wheelchair: 3, lowVision: 1.8, none: 0.8,
 };
@@ -38,10 +40,12 @@ interface Blocks {
   edges: Set<string>;
   elevators: Set<string>;
   slowEdges: Set<string>;
+  /** Con lluvia se penalizan los tramos sin techo */
+  raining: boolean;
 }
 
-function buildBlocks(incidents: Incident[], elevators: Elevator[]): Blocks {
-  const b: Blocks = { edges: new Set(), elevators: new Set(), slowEdges: new Set() };
+function buildBlocks(incidents: Incident[], elevators: Elevator[], raining = false): Blocks {
+  const b: Blocks = { edges: new Set(), elevators: new Set(), slowEdges: new Set(), raining };
   for (const el of elevators) if (el.status === 'down') b.elevators.add(el.id);
   for (const inc of incidents) {
     if (inc.type === 'elevator' && inc.elevatorId) b.elevators.add(inc.elevatorId);
@@ -89,6 +93,7 @@ function edgeCost(e: Edge, profile: Profile, b: Blocks): number | null {
       break;
   }
   if (b.slowEdges.has(e.id)) cost *= 1.5;
+  if (b.raining && !e.covered) cost *= RAIN_PENALTY;
   return cost;
 }
 
@@ -204,7 +209,8 @@ function avoidedReason(e: Edge, profile: Profile, b: Blocks): string {
   return 'Hay una alternativa más segura';
 }
 
-const NO_BLOCKS: Blocks = { edges: new Set(), elevators: new Set(), slowEdges: new Set() };
+const noBlocks = (raining = false): Blocks => ({ edges: new Set(), elevators: new Set(), slowEdges: new Set(), raining });
+const NO_BLOCKS: Blocks = noBlocks();
 
 function toResult(
   profile: Profile, placeId: string, path: { nodeIds: string[]; edges: Edge[] },
@@ -212,6 +218,8 @@ function toResult(
 ): RouteResult {
   const { nodeIds, edges } = path;
   const seconds = edges.reduce((s, e) => s + edgeSeconds(e, profile), 0);
+  const totalM = edges.reduce((s, e) => s + e.distanceM, 0);
+  const uncoveredM = edges.reduce((s, e) => s + (e.covered ? 0 : e.distanceM), 0);
   return {
     profile, placeId,
     steps: buildSteps(edges, nodeIds, elevators),
@@ -222,16 +230,18 @@ function toResult(
     polyline: nodeIds.map((id) => ({ x: nodeById.get(id)!.x, y: nodeById.get(id)!.y })),
     nodeIds, edgeIds: edges.map((e) => e.id),
     usesElevator: edges.some((e) => e.type === 'elevator'),
+    coveredPct: totalM > 0 ? Math.round((100 * (totalM - uncoveredM)) / totalM) : 100,
+    uncoveredM: Math.round(uncoveredM),
   };
 }
 
 export function findRoute(
   origin: string, destPlaceId: string, profile: Profile,
-  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS,
+  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS, raining = false,
 ): RouteResult | null {
   const place = getPlace(destPlaceId);
   if (!place) return null;
-  const b = buildBlocks(incidents, elevators);
+  const b = buildBlocks(incidents, elevators, raining);
   const path = dijkstra(origin, place.nodeId, profile, b);
   if (!path) return null;
   const used = new Set(path.edges.map((e) => e.id));
@@ -261,7 +271,7 @@ export function findRoute(
     }
   }
   // Lo que evitamos por incidentes / ascensores caídos (vs. ruta sin incidentes)
-  const ideal = dijkstra(origin, place.nodeId, profile, NO_BLOCKS);
+  const ideal = dijkstra(origin, place.nodeId, profile, noBlocks(raining));
   if (ideal) {
     for (const e of ideal.edges) {
       if (!used.has(e.id) && isBlocked(e, b)) add(e, avoidedReason(e, profile, b));
@@ -273,9 +283,9 @@ export function findRoute(
 
 export function compareWithShortest(
   origin: string, destPlaceId: string, profile: Profile,
-  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS,
+  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS, raining = false,
 ): RouteComparison | null {
-  const route = findRoute(origin, destPlaceId, profile, incidents, elevators);
+  const route = findRoute(origin, destPlaceId, profile, incidents, elevators, raining);
   const shortest = findRoute(origin, destPlaceId, 'none', incidents, elevators);
   if (!route || !shortest) return null;
   // La ruta más corta se recorre al ritmo del perfil del usuario

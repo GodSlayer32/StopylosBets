@@ -29,8 +29,8 @@ Implementadas y verificables hoy:
 - **Reportes de barreras** con recálculo de ruta en vivo.
 - **Estado de ascensores** con frescura ("hace 12 min") y confirmaciones de la comunidad.
 - **Baja visión**: alto contraste, texto grande, voz, referencias físicas, dirección horaria ("hacia las 3"), vibraciones distintas por maniobra, botón **Repetir** y compatibilidad con TalkBack.
-- **Horario inteligente "Mi día"** (en desarrollo).
-- **Servicios en ruta y modo lluvia** (en desarrollo).
+- **Horario inteligente "Mi día"**.
+- **Servicios en ruta y modo lluvia**.
 
 Detalle de inclusión y código de vibraciones: [docs/INCLUSION.md](docs/INCLUSION.md).
 

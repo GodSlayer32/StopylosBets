@@ -7,6 +7,7 @@ import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import type { SimState } from '@/hooks/use-route-simulation';
+import { AMENITY_ICON, amenityShort } from '@/lib/amenities';
 import type { Maneuver } from '@/lib/maneuvers';
 import type { Place, RouteResult } from '@/types';
 
@@ -66,7 +67,10 @@ export function InstructionCard({ sim, route, place, accessibleMode, speakOn, on
   const { strong, rest } = split(m, sim.distanceToManeuverM);
   const minutes = Math.max(1, Math.ceil((sim.remainingM / Math.max(1, route.distanceM)) * route.minutes));
   const then = sim.nextManeuver;
-  const label = `${sim.zone}. ${strong} ${rest}.${then ? ` Luego: ${lueg(then)}.` : ''}${m.cue ? ` ${m.cue}.` : ''} Faltan ${sim.remainingM} metros, ${minutes} minutos.`;
+  const near = sim.nextAmenities.slice(0, 2);
+  const amenityText = near.map((a) => `${amenityShort(a.amenity.type)} a ${a.distM} m`).join(' · ');
+  const amenityLabel = near.length ? `Cerca: ${near.map((a) => `${a.amenity.name} a ${a.distM} metros`).join(', ')}` : '';
+  const label = `${sim.zone}. ${strong} ${rest}.${then ? ` Luego: ${lueg(then)}.` : ''}${m.cue ? ` ${m.cue}.` : ''} Faltan ${sim.remainingM} metros, ${minutes} minutos.${amenityLabel ? ` ${amenityLabel}.` : ''}`;
 
   return (
     <View style={wrapStyle} onLayout={onLayout}>
@@ -94,6 +98,12 @@ export function InstructionCard({ sim, route, place, accessibleMode, speakOn, on
             style={compact ? styles.small13 : undefined}>
             {m.cue.charAt(0).toUpperCase() + m.cue.slice(1)}
           </AppText>
+        ) : null}
+        {near.length ? (
+          <View style={styles.amenityRow}>
+            <MaterialCommunityIcons name={AMENITY_ICON[near[0].amenity.type] as Glyph} size={compact ? 16 : 28} color={t.colors.primary} />
+            <AppText variant={compact ? 'caption' : 'heading'} numberOfLines={compact ? 1 : 2} style={[styles.flex, compact && styles.small13]}>{amenityText}</AppText>
+          </View>
         ) : null}
         <View style={styles.metaRow}>
           {then ? (
@@ -190,6 +200,16 @@ const makeStyles = (t: Theme, compact: boolean) =>
     metaRow: compact
       ? { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.spacing.sm }
       : { gap: t.spacing.xs },
+    amenityRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.spacing.sm,
+      alignSelf: 'stretch',
+      paddingHorizontal: compact ? t.spacing.sm : t.spacing.md,
+      paddingVertical: compact ? t.spacing.xs : t.spacing.sm,
+      borderRadius: t.radius.md,
+      backgroundColor: t.colors.primarySoft,
+    },
     controls: { flexDirection: 'row', alignItems: 'center', justifyContent: compact ? 'space-between' : undefined, gap: t.spacing.sm },
     play: {
       flex: compact ? undefined : 1,
