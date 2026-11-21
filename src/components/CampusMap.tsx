@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { Circle, G, Path, Polyline, Text as SvgText } from 'react-native-svg';
 
 import { AppText } from '@/components/AppText';
@@ -35,7 +36,16 @@ export type CampusMapProps = {
   title?: string;
   /** floor: px del borde derecho tapados (p. ej. FloorRail) */
   insetRight?: number;
+  /** Cámara manual (sobrescribe el encuadre automático en macro/floor). zoom 1 = todo el campus */
+  camera?: MapCamera | null;
+  /** Si se pasa, el mapa acepta pan/pinch y reporta la cámara al terminar el gesto */
+  onCameraChange?: (c: MapCamera) => void;
+  /** Tap sobre un edificio (macro/floor) */
+  onBuildingPress?: (id: string) => void;
+  accessibilityLabel?: string;
 };
+
+export type MapCamera = { cx: number; cy: number; zoom: number };
 
 // Plano en unidades de imagen original para conservar la proporción de los %
 const PLAN_W = 1313;
@@ -89,6 +99,7 @@ export function CampusMap(props: CampusMapProps) {
   const {
     mode, routePoints, donePoints, position, heading = 0, origin, destination, barriers,
     activeBuildingId, level, destRoomId, height, anchorY = 0.6, title, insetRight = 0,
+    camera, onCameraChange, onBuildingPress, accessibilityLabel,
   } = props;
   const t = useTheme();
   const m = t.map;
@@ -115,9 +126,13 @@ export function CampusMap(props: CampusMapProps) {
     if (width <= 0) return undefined;
     const macroBox = boundsBox(BOUNDS);
     const macroFit = fitScale(macroBox, width, height, 12);
+    const widthFit = (width - 24) / (macroBox.maxX - macroBox.minX || 1);
     const centerOf = (b: Box) => ({ cx: (b.minX + b.maxX) / 2, cy: (b.minY + b.maxY) / 2 });
     if (mode === 'closeup' && posXY) {
-      return { cx: posXY[0], cy: posXY[1], s: macroFit * CLOSEUP_ZOOM, rot: -heading };
+      return { cx: posXY[0], cy: posXY[1], s: widthFit * CLOSEUP_ZOOM, rot: -heading };
+    }
+    if (camera && mode !== 'closeup') {
+      return { cx: camera.cx, cy: camera.cy, s: macroFit * camera.zoom, rot: 0 };
     }
     if (mode === 'floor' && activeB) {
       const box = bboxPts(activeB.polygon.map(toPlan));
@@ -136,7 +151,7 @@ export function CampusMap(props: CampusMapProps) {
     }
     return { ...centerOf(macroBox), s: macroFit * 0.85, rot: 0 };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, width, height, insetRight, activeB, posXY?.[0], posXY?.[1], heading, routePoints.length]);
+  }, [mode, width, height, insetRight, camera?.cx, camera?.cy, camera?.zoom, activeB, posXY?.[0], posXY?.[1], heading, routePoints.length]);
 
   // ---- Transición suave del encuadre
   const [view, setView] = useState<View3 | undefined>(undefined);
@@ -314,6 +329,59 @@ export function CampusMap(props: CampusMapProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sK, rotQ, mode, activeBuildingId, indoorB, plan, destRoomId, m, level, origin, destination]);
 
+  // ---- Gestos (pan / pinch / tap) con cámara manual
+  const macroFitG = useMemo(() => fitScale(boundsBox(BOUNDS), width || 1, height, 12), [width, height]);
+  const gs = useRef({ cx: 0, cy: 0, s: 1, fx: 0, fy: 0, tx: 0, ty: 0, sc: 1, lx: 0, ly: 0, bx: 0, by: 0, n: 0 }).current;
+  const gestureEnabled = !!onCameraChange && mode !== 'closeup';
+  /* eslint-disable react-hooks/refs -- los callbacks de gesto leen refs al ejecutarse, no al renderizar */
+  const gesture = useMemo(() => {
+    const rebase = () => {
+      const v = viewRef.current;
+      if (!v) return;
+      anim.stopAnimation();
+      gs.cx = v.cx; gs.cy = v.cy; gs.s = v.s; gs.bx = gs.lx; gs.by = gs.ly;
+      gs.tx = 0; gs.ty = 0; gs.sc = 1; gs.fx = 0; gs.fy = 0;
+    };
+    const apply = () => {
+      const s = Math.min(macroFitG * 9, Math.max(macroFitG * 0.9, gs.s * gs.sc));
+      const v: View3 = {
+        cx: gs.cx + gs.fx / gs.s - (gs.fx + gs.tx) / s,
+        cy: gs.cy + gs.fy / gs.s - (gs.fy + gs.ty) / s,
+        s,
+        rot: 0,
+      };
+      viewRef.current = v;
+      setView(v);
+    };
+    const start = () => { if (gs.n === 0) { gs.lx = 0; gs.ly = 0; } rebase(); gs.n++; };
+    const end = () => {
+      gs.n = Math.max(0, gs.n - 1);
+      if (gs.n > 0) { rebase(); return; }
+      const v = viewRef.current;
+      if (v) onCameraChange?.({ cx: v.cx, cy: v.cy, zoom: v.s / macroFitG });
+    };
+    const pan = Gesture.Pan().runOnJS(true).minDistance(6)
+      .onStart(() => { gs.lx = 0; gs.ly = 0; start(); })
+      .onUpdate((e) => { gs.lx = e.translationX; gs.ly = e.translationY; gs.tx = gs.lx - gs.bx; gs.ty = gs.ly - gs.by; apply(); })
+      .onFinalize((_e, ok) => { if (ok) end(); });
+    const pinch = Gesture.Pinch().runOnJS(true)
+      .onStart((e) => { start(); gs.fx = e.focalX - width / 2; gs.fy = e.focalY - anchorPx; })
+      .onUpdate((e) => { gs.sc = e.scale; gs.tx = gs.lx - gs.bx; gs.ty = gs.ly - gs.by; apply(); })
+      .onFinalize((_e, ok) => { if (ok) end(); });
+    const tap = Gesture.Tap().runOnJS(true).maxDistance(10)
+      .onEnd((e, ok) => {
+        const v = viewRef.current;
+        if (!ok || !v || !onBuildingPress) return;
+        const wx = v.cx + (e.x - width / 2) / v.s;
+        const wy = v.cy + (e.y - anchorPx) / v.s;
+        const hit = BUILDINGS.find((b) => inPoly([(wx / PLAN_W) * 100, (wy / PLAN_H) * 100], b.polygon));
+        if (hit) onBuildingPress(hit.id);
+      });
+    return Gesture.Race(tap, Gesture.Simultaneous(pan, pinch));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [macroFitG, width, anchorPx, onCameraChange, onBuildingPress]);
+  /* eslint-enable react-hooks/refs */
+
   const container = [styles.container, { height, backgroundColor: m.bg }];
   if (!view) return <View style={container} onLayout={onLayout} />;
 
@@ -363,7 +431,9 @@ export function CampusMap(props: CampusMapProps) {
     : null;
 
   return (
-    <View style={container} onLayout={onLayout}>
+    <View style={container} onLayout={onLayout} accessible={!!accessibilityLabel} accessibilityLabel={accessibilityLabel} accessibilityRole="image">
+      <GestureDetector gesture={gesture}>
+      <View collapsable={false} style={{ width, height }} pointerEvents={gestureEnabled ? 'auto' : 'none'}>
       <Svg width={width} height={height}>
         <G transform={groupT}>
           {layers}
@@ -389,6 +459,8 @@ export function CampusMap(props: CampusMapProps) {
         </G>
         {position && mode === 'closeup' && posMarker(`translate(${width / 2},${anchorPx})`, 0, 'pos-fixed')}
       </Svg>
+      </View>
+      </GestureDetector>
       {title ? (
         <View style={[styles.title, { backgroundColor: t.colors.surface, borderColor: t.colors.border, borderRadius: t.radius.sm, left: t.spacing.sm, top: t.spacing.sm, paddingHorizontal: t.spacing.md, paddingVertical: t.spacing.xs }]}>
           <AppText variant="caption" style={{ fontSize: 13, lineHeight: 17, fontWeight: '700' }}>{title}</AppText>

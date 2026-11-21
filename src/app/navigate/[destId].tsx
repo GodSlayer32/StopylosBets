@@ -1,13 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
-import { CampusMap } from '@/components/CampusMap';
+import { CampusMap, type MapCamera } from '@/components/CampusMap';
 import { FloorRail } from '@/components/FloorRail';
 import { Button } from '@/components/Button';
 import { InstructionCard } from '@/components/InstructionCard';
@@ -15,7 +15,8 @@ import { ScreenState } from '@/components/ScreenState';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { useRouteSimulation } from '@/hooks/use-route-simulation';
-import { FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
+import { getBuilding } from '@/lib/buildings';
+import { CAMPUS_MAP, FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
 import { getNode, getPlace } from '@/lib/routing';
 import type { RouteResult } from '@/types';
 
@@ -97,17 +98,56 @@ export default function NavigateScreen() {
   const floorB = sim.inside && sim.building ? sim.building : sameBuilding ? originB : undefined;
   const floorLevel = sim.level ?? place?.floor ?? 1;
   const hasPlan = !!floorB && !!getFloorPlan(floorB, floorLevel);
-  const mode = hasPlan ? 'inside' : 'outside';
-  const destRoomId = useMemo(() => {
-    if (!place?.building || place.building !== floorB) return undefined;
-    const rooms = getFloorPlan(floorB, place.floor)?.rooms ?? [];
+  const autoB = hasPlan ? floorB : undefined;
+
+  // Exploración manual del mapa superior
+  const [explore, setExplore] = useState<{ building?: string; level?: number; camera?: MapCamera | null }>({});
+  const [tip, setTip] = useState<string | null>(null);
+  const lastInteract = useRef(0);
+  const touch = () => { lastInteract.current = Date.now(); };
+  const accessLevel = (id: string) => getBuilding(id)?.entrances[0]?.level ?? FLOORPLANS[id]?.levels[0] ?? 1;
+  const expLevel = explore.building ? explore.level ?? accessLevel(explore.building) : undefined;
+  const expHasPlan = !!explore.building && expLevel !== undefined && !!getFloorPlan(explore.building, expLevel);
+  const dispB = explore.building ? (expHasPlan ? explore.building : undefined) : autoB;
+  const dispLevel = explore.building && expLevel !== undefined ? expLevel : floorLevel;
+  const exploring = !!explore.camera || explore.building !== undefined;
+  const mode = dispB ? 'inside' : 'outside';
+  const resolveRoom = useCallback((b: string | undefined, lv: number) => {
+    if (!place?.building || place.building !== b || lv !== place.floor) return undefined;
+    const rooms = getFloorPlan(b, place.floor)?.rooms ?? [];
     const pid = place.id.toLowerCase();
     return rooms.find((r) => {
       const rid = r.id.toLowerCase();
       const short = rid.replace(/^[a-z]-/, '');
-      return rid === pid || rid === `${floorB.toLowerCase()}-${pid}` || pid === short || pid.startsWith(`${short}-`);
+      return rid === pid || rid === `${b.toLowerCase()}-${pid}` || pid === short || pid.startsWith(`${short}-`);
     })?.id;
-  }, [place, floorB]);
+  }, [place]);
+  const destRoomId = resolveRoom(floorB, place?.floor ?? -1);
+  const topRoomId = resolveRoom(dispB, dispLevel);
+  const atUser = !exploring || (dispB === autoB && dispLevel === floorLevel);
+
+  const resetExplore = useCallback(() => { setExplore({}); setTip(null); }, []);
+  const onCamera = useCallback((c: MapCamera) => { touch(); setExplore((e) => ({ ...e, camera: c })); }, []);
+  const onBuildingPress = useCallback((id: string) => {
+    touch();
+    const hasAny = (FLOORPLANS[id]?.levels ?? []).length > 0;
+    if (hasAny) {
+      setTip(null);
+      setExplore({ building: id, level: id === floorB ? floorLevel : undefined, camera: null });
+    } else {
+      setTip(CAMPUS_MAP.buildings.find((b) => b.id === id)?.name ?? `Edificio ${id}`);
+    }
+  }, [floorB, floorLevel]);
+  useEffect(() => {
+    if (!tip) return;
+    const id = setTimeout(() => setTip(null), 2500);
+    return () => clearTimeout(id);
+  }, [tip]);
+  // Retoma el seguimiento al cambiar de maniobra tras >8 s sin interacción
+  useEffect(() => {
+    if (exploring && Date.now() - lastInteract.current > 8000) resetExplore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sim.maneuverIndex]);
   const [fade] = useState(() => new Animated.Value(1));
   const [shown, setShown] = useState<'inside' | 'outside'>(mode);
   useEffect(() => {
@@ -157,26 +197,31 @@ export default function NavigateScreen() {
       </View>
 
       <Animated.View style={[styles.top, { height: topH, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
-        {shown === 'inside' && floorB ? (
+        {shown === 'inside' && dispB ? (
           <>
             <CampusMap
               mode="floor"
               routePoints={routePts}
-              donePoints={donePts}
-              position={sim.point}
+              donePoints={atUser ? donePts : undefined}
+              position={atUser ? sim.point : undefined}
               heading={sim.heading}
-              activeBuildingId={floorB}
-              level={floorLevel}
-              destRoomId={destRoomId}
+              activeBuildingId={dispB}
+              level={dispLevel}
+              destRoomId={topRoomId}
               height={topH}
               insetRight={56}
-              title={`Edificio ${floorB} | Piso ${floorLevel}`}
+              camera={explore.camera}
+              onCameraChange={onCamera}
+              onBuildingPress={onBuildingPress}
+              accessibilityLabel={`Mapa de la planta del edificio ${dispB}, piso ${dispLevel}. Arrastra y pellizca para explorar.`}
+              title={`Edificio ${dispB} | Piso ${dispLevel}${exploring ? ' · explorando' : ''}`}
             />
-            <View style={styles.rail} pointerEvents="none">
+            <View style={styles.rail}>
               <FloorRail
-                levels={FLOORPLANS[floorB]?.levels ?? []}
-                current={floorLevel}
-                dest={place.building === floorB ? place.floor : undefined}
+                levels={FLOORPLANS[dispB]?.levels ?? []}
+                current={dispLevel}
+                dest={place.building === dispB ? place.floor : undefined}
+                onSelect={(lv) => { touch(); setExplore((e) => ({ building: dispB, level: lv, camera: e.building === dispB ? e.camera : null })); }}
               />
             </View>
           </>
@@ -191,9 +236,28 @@ export default function NavigateScreen() {
             destination={route.polyline[route.polyline.length - 1]}
             activeBuildingId={place.building}
             height={topH}
-            title="Mapa | Exterior"
+            camera={explore.camera}
+            onCameraChange={onCamera}
+            onBuildingPress={onBuildingPress}
+            accessibilityLabel={`Mapa general del campus con la ruta hacia ${place.name}. Arrastra y pellizca para explorar.`}
+            title={`Mapa | Exterior${exploring ? ' · explorando' : ''}`}
           />
         )}
+        {tip ? (
+          <View style={styles.tip} pointerEvents="none">
+            <AppText variant="caption" style={{ color: t.colors.primaryText, fontWeight: '700' }}>{tip}</AppText>
+          </View>
+        ) : null}
+        {exploring ? (
+          <Pressable
+            onPress={resetExplore}
+            accessibilityRole="button"
+            accessibilityLabel="Volver a mi posición"
+            style={styles.recenter}>
+            <MaterialCommunityIcons name="crosshairs-gps" size={20} color={t.colors.primaryText} />
+            <AppText variant="caption" style={{ color: t.colors.primaryText, fontWeight: '700' }}>Mi posición</AppText>
+          </Pressable>
+        ) : null}
       </Animated.View>
 
       <View style={[styles.divider, { backgroundColor: t.colors.primary }]} />
@@ -237,5 +301,10 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     iconBtn: { width: t.minTouch, height: t.minTouch, alignItems: 'center', justifyContent: 'center' },
     top: { overflow: 'hidden', backgroundColor: t.colors.surface },
     divider: { height: 4 },
+    tip: { position: 'absolute', bottom: t.spacing.sm, alignSelf: 'center', paddingHorizontal: t.spacing.md, paddingVertical: t.spacing.xs, borderRadius: t.radius.pill, backgroundColor: t.colors.primary },
+    recenter: {
+      position: 'absolute', left: t.spacing.sm, top: t.spacing.sm + 34, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs,
+      paddingHorizontal: t.spacing.md, borderRadius: t.radius.pill, backgroundColor: t.colors.primary, ...t.shadow,
+    },
     rail: { position: 'absolute', right: t.spacing.sm, top: t.spacing.sm },
   });
