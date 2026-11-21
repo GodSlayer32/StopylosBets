@@ -16,6 +16,7 @@ import { ScreenState } from '@/components/ScreenState';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
+import { formatAgo, formatConfirmations } from '@/lib/time';
 import type { RouteResult } from '@/types';
 
 type MapBarrier = { id: string; x: number; y: number; kind?: 'incident' | 'stairs' };
@@ -56,7 +57,7 @@ export default function RouteScreen() {
       if (prev && prev.edgeIds.join('|') !== r.edgeIds.join('|')) {
         const usedElev = prev.edgeIds
           .map((id) => EDGES.find((e) => e.id === id)?.elevatorId)
-          .find((id) => id && elevators.find((el) => el.id === id)?.status === 'down');
+          .find((id) => id && elevators.find((el) => el.id === id)?.status !== 'ok');
         const building = elevators.find((el) => el.id === usedElev)?.building;
         setNotice(
           building
@@ -115,7 +116,7 @@ export default function RouteScreen() {
       }
     };
     incidents.forEach((i) => at(i.id, i.edgeId, i.nodeId, i.type === 'elevator' ? i.elevatorId : undefined));
-    elevators.filter((e) => e.status === 'down').forEach((e) => at(`el-${e.id}`, undefined, undefined, e.id));
+    elevators.filter((e) => e.status !== 'ok').forEach((e) => at(`el-${e.id}`, undefined, undefined, e.id));
     (route?.avoided ?? []).forEach((a) => {
       if (a.kind !== 'stairs' || !a.edgeId) return;
       const e = EDGES.find((x) => x.id === a.edgeId);
@@ -129,6 +130,17 @@ export default function RouteScreen() {
 
   const stairItems = useMemo(() => (route?.avoided ?? []).filter((a) => a.kind === 'stairs' || a.kind === 'slope'), [route]);
   const incidentItems = useMemo(() => (route?.avoided ?? []).filter((a) => a.kind === 'incident'), [route]);
+  /** Frescura y confirmaciones del reporte que causó el desvío */
+  const freshnessOf = (a: { edgeId?: string }): string => {
+    const edge = EDGES.find((e) => e.id === a.edgeId);
+    const el = edge?.elevatorId ? elevators.find((x) => x.id === edge.elevatorId) : undefined;
+    if (el && el.status !== 'ok') {
+      const tail = `${formatAgo(el.reportedAt ?? '')} · ${formatConfirmations(el.confirmations ?? 0)}`;
+      return el.status === 'unconfirmed' ? ` · sin confirmar, ${tail}` : ` · ${tail}`;
+    }
+    const inc = incidents.find((i) => i.edgeId === a.edgeId);
+    return inc ? ` · ${formatAgo(inc.reportedAt)} · ${formatConfirmations(inc.confirmations)}` : '';
+  };
   const avoidedSteps = stairItems.reduce((s, a) => s + (a.steps ?? 0), 0);
   const avoidedStairs = stairItems.filter((a) => a.kind === 'stairs').length;
 
@@ -269,7 +281,7 @@ export default function RouteScreen() {
         <Banner
           key={a.text}
           tone={a.reason.startsWith('El ascensor') ? 'danger' : 'warning'}
-          text={`${a.text}. ${a.reason}`}
+          text={`${a.text}. ${a.reason}${freshnessOf(a)}`}
         />
       ))}
 

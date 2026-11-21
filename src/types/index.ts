@@ -50,12 +50,27 @@ export interface Place {
   icon: string;
 }
 
+export type ElevatorState = 'ok' | 'down' | 'unconfirmed';
+
 export interface Elevator {
   id: string;
   building: string;
   floors: number[];
-  status: 'ok' | 'down';
+  status: ElevatorState;
   lastUpdate: string;
+  /** Personas que lo usan por día (simulado) */
+  dailyUsers?: number;
+  /** Fuente oficial simulada, si la hay */
+  officialSource?: string;
+  /** 'comunidad' o la fuente oficial (se deriva en el contexto) */
+  source?: string;
+  /** Texto de frescura ("Reportado hace 12 min"), derivado */
+  freshness?: string;
+  incidentId?: string;
+  reportedAt?: string;
+  lastConfirmedAt?: string;
+  confirmations?: number;
+  denials?: number;
 }
 
 export type IncidentType = 'blocked' | 'obstacle' | 'elevator' | 'slippery' | 'crowd';
@@ -71,6 +86,11 @@ export interface Incident {
   minutesAgo: number;
   reportedAt: string;
   blocksRoute: boolean;
+  confirmations: number;
+  denials: number;
+  lastConfirmedAt?: string;
+  status: 'active' | 'resolved';
+  resolvedAt?: string;
 }
 
 export interface ClassItem {

@@ -1,6 +1,6 @@
 {
   "_simulated": true,
-  "_note": "Datos simulados para la demo de Ruta Libre; no corresponden a mediciones oficiales de la USM.",
+  "_note": "Datos simulados para la demo de Ruta Libre; no corresponden a mediciones oficiales de la USM. Reloj simulado: 2026-11-21 11:30.",
   "incidents": [
     {
       "id": "inc-1",
@@ -9,8 +9,12 @@
       "description": "Charco grande en el camino a la cancha tras la lluvia",
       "reportedBy": "Matías",
       "minutesAgo": 35,
-      "reportedAt": "2026-11-21T14:25:00.000Z",
-      "blocksRoute": false
+      "reportedAt": "2026-11-21T10:55:00.000Z",
+      "blocksRoute": false,
+      "confirmations": 2,
+      "denials": 0,
+      "lastConfirmedAt": "2026-11-21T11:05:00.000Z",
+      "status": "active"
     },
     {
       "id": "inc-2",
@@ -18,9 +22,27 @@
       "edgeId": "k_in>pl_east:slope",
       "description": "Obra en la vereda de Subida San Luis, paso cerrado",
       "reportedBy": "Francisca",
-      "minutesAgo": 95,
-      "reportedAt": "2026-11-21T13:25:00.000Z",
-      "blocksRoute": true
+      "minutesAgo": 1440,
+      "reportedAt": "2026-11-20T11:30:00.000Z",
+      "blocksRoute": true,
+      "confirmations": 8,
+      "denials": 0,
+      "lastConfirmedAt": "2026-11-21T08:40:00.000Z",
+      "status": "active"
+    },
+    {
+      "id": "inc-3",
+      "type": "elevator",
+      "elevatorId": "elev-a",
+      "description": "Ascensor del Edificio A fuera de servicio",
+      "reportedBy": "Valentina",
+      "minutesAgo": 120,
+      "reportedAt": "2026-11-21T09:30:00.000Z",
+      "blocksRoute": true,
+      "confirmations": 5,
+      "denials": 0,
+      "lastConfirmedAt": "2026-11-21T11:18:00.000Z",
+      "status": "active"
     }
   ]
 }

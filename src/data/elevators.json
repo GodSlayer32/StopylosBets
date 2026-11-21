@@ -10,8 +10,10 @@
         2,
         3
       ],
-      "status": "down",
-      "lastUpdate": "2026-11-21T12:00:00.000Z"
+      "status": "ok",
+      "lastUpdate": "2026-11-21T09:30:00.000Z",
+      "dailyUsers": 3,
+      "officialSource": "Dirección de Infraestructura"
     },
     {
       "id": "elev-b",
@@ -22,7 +24,8 @@
         3
       ],
       "status": "ok",
-      "lastUpdate": "2026-11-21T14:35:00.000Z"
+      "lastUpdate": "2026-11-21T10:40:00.000Z",
+      "dailyUsers": 6
     },
     {
       "id": "elev-c",
@@ -34,7 +37,8 @@
         4
       ],
       "status": "ok",
-      "lastUpdate": "2026-11-21T14:48:00.000Z"
+      "lastUpdate": "2026-11-21T11:05:00.000Z",
+      "dailyUsers": 4
     },
     {
       "id": "elev-d",
@@ -45,7 +49,8 @@
         3
       ],
       "status": "ok",
-      "lastUpdate": "2026-11-21T14:20:00.000Z"
+      "lastUpdate": "2026-11-21T09:50:00.000Z",
+      "dailyUsers": 2
     }
   ]
 }

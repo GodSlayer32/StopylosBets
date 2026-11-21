@@ -29,7 +29,7 @@ export default function NavigateScreen() {
   const { destId } = useLocalSearchParams<{ destId: string }>();
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const { getRoute, accessibleMode, profile, incidents } = useApp();
+  const { getRoute, accessibleMode, profile, incidents, elevators, confirmIncident, denyIncident } = useApp();
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -132,6 +132,39 @@ export default function NavigateScreen() {
     });
     return out;
   }, [incidents]);
+
+  // Prompt de confirmación: ascensor con incidente (o evitado) a ≤20 m, una vez por ascensor
+  const [answered, setAnswered] = useState<string[]>([]);
+  const announced = useRef<string>('');
+  const promptElevator = useMemo(() => {
+    if (!route || sim.finished) return undefined;
+    const lenPct = route.polyline.reduce((acc, p, i, a) => (i ? acc + Math.hypot(p.x - a[i - 1].x, p.y - a[i - 1].y) : acc), 0);
+    const mPerPct = lenPct > 0 ? route.distanceM / lenPct : 1;
+    const avoidedIds = new Set(
+      route.avoided.filter((a) => a.kind === 'incident').map((a) => EDGES.find((e) => e.id === a.edgeId)?.elevatorId).filter(Boolean),
+    );
+    return elevators.find((el) => {
+      if (el.status === 'ok' || !el.incidentId || answered.includes(el.id) || !avoidedIds.has(el.id)) return false;
+      if (sim.inside && sim.building === el.building) return true;
+      return EDGES.filter((e) => e.elevatorId === el.id).some((e) => {
+        const n = getNode(e.from);
+        return !!n && Math.hypot(n.x - sim.point.x, n.y - sim.point.y) * mPerPct <= 20;
+      });
+    });
+  }, [route, elevators, answered, sim.point, sim.inside, sim.building, sim.finished]);
+  const respond = useCallback((stillDown: boolean) => {
+    if (!promptElevator?.incidentId) return;
+    if (stillDown) confirmIncident(promptElevator.incidentId);
+    else denyIncident(promptElevator.incidentId);
+    setAnswered((a) => [...a, promptElevator.id]);
+    say('Gracias por avisar');
+  }, [promptElevator, confirmIncident, denyIncident, say]);
+  useEffect(() => {
+    if (!promptElevator || announced.current === promptElevator.id) return;
+    announced.current = promptElevator.id;
+    say(`¿El ascensor del edificio ${promptElevator.building} sigue fuera de servicio? Responde sí o ya funciona.`);
+  }, [promptElevator, say]);
+
   const turnPoint = route && sim.currentManeuver && !sim.finished ? route.polyline[sim.currentManeuver.atIndex] : undefined;
   const avoidStairs = profile === 'wheelchair' || profile === 'crutches';
   const originB = route ? getNode(route.nodeIds[0])?.building : undefined;
@@ -332,6 +365,34 @@ export default function NavigateScreen() {
         /> : null}
       </View>
 
+      {promptElevator ? (
+        <View
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+          style={[styles.prompt, { bottom: cardH + t.spacing.md + insets.bottom }]}>
+          <View style={styles.promptHead}>
+            <AppText variant="label" style={styles.flex}>
+              ¿El ascensor del Edif. {promptElevator.building} sigue fuera de servicio?
+            </AppText>
+            <Pressable
+              onPress={() => setAnswered((a) => [...a, promptElevator.id])}
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar pregunta"
+              style={styles.iconBtn}>
+              <Ionicons name="close" size={22} color={t.colors.text} />
+            </Pressable>
+          </View>
+          <View style={accessibleMode ? styles.promptCol : styles.promptRow}>
+            <View style={accessibleMode ? undefined : styles.flex}>
+              <Button label="Sí, sigue caído" variant="danger" fullWidth onPress={() => respond(true)} />
+            </View>
+            <View style={accessibleMode ? undefined : styles.flex}>
+              <Button label="Ya funciona" variant="secondary" fullWidth onPress={() => respond(false)} />
+            </View>
+          </View>
+        </View>
+      ) : null}
+
       <InstructionCard
         sim={sim}
         route={route}
@@ -381,5 +442,12 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     sheet: { gap: t.spacing.md, padding: t.spacing.lg, borderRadius: t.radius.lg, borderWidth: 2, borderColor: t.colors.border, backgroundColor: t.colors.surface },
     codeRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md, minHeight: 44 },
     codePattern: { flexShrink: 1, maxWidth: '60%', textAlign: 'right' },
+    prompt: {
+      position: 'absolute', left: t.spacing.md, right: t.spacing.md, gap: t.spacing.sm, padding: t.spacing.md,
+      borderRadius: t.radius.lg, borderWidth: 2, borderColor: t.colors.warning, backgroundColor: t.colors.surface, ...t.shadow,
+    },
+    promptHead: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
+    promptRow: { flexDirection: 'row', gap: t.spacing.sm },
+    promptCol: { gap: t.spacing.sm },
     rail: { position: 'absolute', right: t.spacing.sm, top: t.spacing.sm },
   });

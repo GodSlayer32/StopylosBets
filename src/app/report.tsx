@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { EDGES, PLACES, getNode } from '@/lib/routing';
+import { formatAgo, formatConfirmations } from '@/lib/time';
 import type { IncidentType } from '@/types';
 
 type Kind = { key: string; label: string; icon: keyof typeof Ionicons.glyphMap; type: IncidentType };
@@ -27,7 +28,7 @@ const SEND_MS = 600;
 export default function Report() {
   const router = useRouter();
   const params = useLocalSearchParams<{ edgeIds?: string }>();
-  const { elevators, addIncident, accessibleMode } = useApp();
+  const { elevators, addIncident, confirmIncident, accessibleMode } = useApp();
   const t = useAppTheme(accessibleMode);
   const styles = useMemo(() => makeStyles(t), [t]);
 
@@ -49,17 +50,23 @@ export default function Report() {
   const [nodeId, setNodeId] = useState<string | undefined>();
   const [description, setDescription] = useState('');
   const [phase, setPhase] = useState<'form' | 'sending' | 'done'>('form');
+  const [wasConfirm, setWasConfirm] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   const selected = KINDS.find((k) => k.key === kind);
   const isElevator = selected?.type === 'elevator';
+  const pickedElevator = isElevator ? elevators.find((e) => e.id === elevatorId) : undefined;
+  const alreadyReported = !!pickedElevator && pickedElevator.status !== 'ok' && !!pickedElevator.incidentId;
 
   const submit = () => {
     if (!selected) return;
     setPhase('sending');
+    setWasConfirm(alreadyReported);
     timer.current = setTimeout(() => {
-      addIncident({
+      if (alreadyReported && pickedElevator?.incidentId) {
+        confirmIncident(pickedElevator.incidentId);
+      } else addIncident({
         type: selected.type,
         description: description.trim() || selected.label,
         reportedBy: REPORTER,
@@ -78,7 +85,7 @@ export default function Report() {
           <Ionicons name="checkmark" size={56} color={t.colors.success} />
         </View>
         <AppText variant="title" style={styles.centerText} accessibilityRole="alert">
-          ¡Gracias! Ya avisamos a quienes pasan por aquí
+          {wasConfirm ? '¡Gracias! Tu confirmación hace más confiable el estado del ascensor' : '¡Gracias! Ya avisamos a quienes pasan por aquí'}
         </AppText>
       </Screen>
     );
@@ -102,14 +109,7 @@ export default function Report() {
           <View style={styles.wrap}>
             {isElevator
               ? elevators.map((e) => (
-                  e.status === 'down' ? (
-                    <View key={e.id} style={styles.done} accessible accessibilityState={{ disabled: true }} accessibilityLabel={`Edif. ${e.building}, ya reportado`}>
-                      <Ionicons name="checkmark-circle" size={20} color={t.colors.textMuted} />
-                      <AppText variant="label" color="textMuted">Edif. {e.building} · Ya reportado</AppText>
-                    </View>
-                  ) : (
-                    <Chip key={e.id} label={`Edif. ${e.building}`} icon="business" selected={elevatorId === e.id} onPress={() => setElevatorId(e.id)} accessibilityLabel={`Ascensor del edificio ${e.building}`} accessibilityHint="Selecciona este ascensor" />
-                  )
+                    <Chip key={e.id} label={e.status !== 'ok' ? `Edif. ${e.building} · reportado` : `Edif. ${e.building}`} icon={e.status !== 'ok' ? 'checkmark-circle' : 'business'} selected={elevatorId === e.id} onPress={() => setElevatorId(e.id)} accessibilityLabel={e.status !== 'ok' ? `Ascensor del edificio ${e.building}, ya reportado ${formatAgo(e.reportedAt ?? '')}, ${formatConfirmations(e.confirmations ?? 0)}` : `Ascensor del edificio ${e.building}`} accessibilityHint="Selecciona este ascensor" />
                 ))
               : routeEdges.length
                 ? routeEdges.map((e) => (
@@ -149,10 +149,10 @@ export default function Report() {
       </View>
 
       <Button
-        label="Enviar reporte"
-        icon="send"
+        label={alreadyReported ? 'Confirmar que sigue caído' : 'Enviar reporte'}
+        icon={alreadyReported ? 'checkmark-done' : 'send'}
         fullWidth
-        disabled={!selected}
+        disabled={!selected || (isElevator && !elevatorId)}
         loading={phase === 'sending'}
         onPress={submit}
       />

@@ -1,13 +1,15 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { AccessibilityInfo, Alert, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
+import { ElevatorStatus } from '@/components/ElevatorStatus';
 import { Screen } from '@/components/Screen';
 import { ScreenState } from '@/components/ScreenState';
 import { radius, spacing } from '@/constants/theme';
@@ -15,7 +17,7 @@ import { useApp } from '@/context/app-context';
 import { useTheme } from '@/hooks/use-theme';
 import { getNode, getPlace, PLACES } from '@/lib/routing';
 import scheduleJson from '@/data/schedule.json';
-import type { Place, Profile } from '@/types';
+import type { Elevator, Place, Profile } from '@/types';
 
 const PROFILE_LABEL: Record<Profile, string> = {
   crutches: 'Muletas o lesión temporal',
@@ -40,19 +42,46 @@ const placeSub = (p: Place) => `${p.building ? `Edif. ${p.building} · ` : ''}Pi
 
 export default function Home() {
   const router = useRouter();
-  const { profile, origin, setOrigin, incidents, elevators } = useApp();
+  const { profile, origin, setOrigin, incidents, elevators, confirmIncident, denyIncident } = useApp();
   const { colors, minTouch, typography } = useTheme();
   const [query, setQuery] = useState('');
   const [quick, setQuick] = useState<string | null>(null);
   const [pickingOrigin, setPickingOrigin] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
+  const [showElevators, setShowElevators] = useState(true);
+  const [sheetId, setSheetId] = useState<string | null>(null);
+  const [thanks, setThanks] = useState<string | null>(null);
+  const sheetElevator: Elevator | undefined = elevators.find((e) => e.id === sheetId);
+
+  const closeSheet = () => {
+    setSheetId(null);
+    setThanks(null);
+  };
+  const vote = (stillDown: boolean) => {
+    if (!sheetElevator?.incidentId) return;
+    const people = sheetElevator.dailyUsers ?? 3;
+    let msg: string;
+    if (stillDown) {
+      confirmIncident(sheetElevator.incidentId);
+      msg = `Gracias, ayudas a ${people} personas que pasan por aquí hoy`;
+    } else {
+      const resolved = denyIncident(sheetElevator.incidentId);
+      msg = resolved
+        ? `Gracias. El ascensor del Edif. ${sheetElevator.building} vuelve a estar disponible y recalculamos las rutas`
+        : `Gracias, ayudas a ${people} personas que pasan por aquí hoy. Falta otra confirmación para darlo por funcionando`;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    AccessibilityInfo.announceForAccessibility(msg);
+    setThanks(msg);
+    setTimeout(closeSheet, 2200);
+  };
 
   const nextClass = scheduleJson.classes.find((c) => c.id === scheduleJson.nextClassId);
   const classPlace = nextClass ? getPlace(nextClass.placeId) : undefined;
   const firstName = scheduleJson.student.name.split(' ')[0];
 
   const downElevators = elevators.filter(
-    (e) => e.status === 'down' && !incidents.some((i) => i.elevatorId === e.id),
+    (e) => e.status !== 'ok' && !incidents.some((i) => i.elevatorId === e.id),
   );
   const alerts = [
     ...incidents.map((i) => ({
@@ -146,6 +175,24 @@ export default function Home() {
             : null}
         </View>
       ) : null}
+
+      <View style={styles.gap}>
+        <Pressable
+          onPress={() => setShowElevators((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={`Ascensores del campus. ${showElevators ? 'Ocultar' : 'Ver'} estado`}
+          accessibilityState={{ expanded: showElevators }}
+          style={[styles.row, { minHeight: minTouch }]}>
+          <MaterialCommunityIcons name="elevator-passenger" size={22} color={colors.primary} />
+          <AppText variant="heading" style={styles.flex}>Ascensores del campus</AppText>
+          <Ionicons name={showElevators ? 'chevron-down' : 'chevron-forward'} size={20} color={colors.textMuted} />
+        </Pressable>
+        {showElevators
+          ? elevators.length === 0
+            ? <ScreenState variant="empty" title="Sin datos de ascensores" message="Intenta de nuevo en unos minutos" />
+            : elevators.map((e) => <ElevatorStatus key={e.id} elevator={e} onPress={() => setSheetId(e.id)} />)
+          : null}
+      </View>
 
       <Pressable
         onPress={() => setPickingOrigin((v) => !v)}
@@ -257,6 +304,30 @@ export default function Home() {
         fullWidth
         onPress={() => router.push('/report')}
       />
+
+      <Modal visible={!!sheetElevator} transparent animationType="slide" onRequestClose={closeSheet}>
+        <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
+          <Pressable style={styles.flex} onPress={closeSheet} accessibilityRole="button" accessibilityLabel="Cerrar detalle del ascensor" />
+          {sheetElevator ? (
+            <View style={[styles.sheet, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+              <ElevatorStatus elevator={sheetElevator} />
+              {thanks ? (
+                <View accessibilityRole="alert" style={[styles.thanks, { backgroundColor: colors.successSoft, borderColor: colors.success }]}>
+                  <Ionicons name="heart" size={24} color={colors.success} />
+                  <AppText variant="label" style={styles.flex}>{thanks}</AppText>
+                </View>
+              ) : (
+                <>
+                  <AppText variant="body">¿Pasaste por aquí? Tu respuesta ayuda a mantener las rutas al día.</AppText>
+                  <Button label="Sigue fuera de servicio" icon="close-circle" variant="danger" fullWidth onPress={() => vote(true)} />
+                  <Button label="Ya funciona" icon="checkmark-circle" variant="secondary" fullWidth onPress={() => vote(false)} />
+                  <Button label="Cerrar" variant="ghost" fullWidth onPress={closeSheet} />
+                </>
+              )}
+            </View>
+          ) : null}
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -284,6 +355,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   input: { flex: 1 },
+  backdrop: { flex: 1, justifyContent: 'flex-end' },
+  sheet: {
+    gap: spacing.md,
+    padding: spacing.xl,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    borderWidth: 1,
+  },
+  thanks: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.md, borderWidth: 1 },
   clear: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   iconWrap: { width: 48, height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
 });
