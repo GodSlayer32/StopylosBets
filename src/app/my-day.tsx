@@ -11,7 +11,7 @@ import { ScreenState } from '@/components/ScreenState';
 import { StatusPill } from '@/components/StatusPill';
 import { spacing } from '@/constants/theme';
 import { useApp } from '@/context/app-context';
-import { lacksElevatorAccess } from '@/lib/buildings';
+import { floorLabel, lacksElevatorAccess } from '@/lib/buildings';
 import { useTheme } from '@/hooks/use-theme';
 import { accessibleRoomRequest, computeSchedule, isNoElevatorLeg, placeDetail, STUDENT, type ClassPlan } from '@/lib/schedule';
 import { formatClock, NOW_ISO, NOW_MINUTES } from '@/lib/time';
@@ -26,7 +26,7 @@ const REASON: Record<Profile, string> = {
 
 export function legSentence(p: ClassPlan): string {
   const fromName = p.fromOrigin ? `tu ubicación (${p.fromLabel})` : p.fromLabel ?? '';
-  if (p.status === 'sin-ruta' && lacksElevatorAccess(p.place)) return `De ${fromName} a ${p.cls.course}: sin ruta accesible, la sala está en el piso ${p.place.floor} de un edificio sin ascensor.`;
+  if (p.status === 'sin-ruta' && lacksElevatorAccess(p.place)) return `De ${fromName} a ${p.cls.course}: sin ruta accesible, la sala está en el ${floorLabel(p.place.floor ?? 1).toLowerCase()} de un edificio sin ascensor.`;
   if (p.status === 'sin-ruta') return `De ${fromName} a ${p.cls.course}: no hay ruta accesible disponible ahora.`;
   const base = `De ${fromName} a ${p.cls.course}: ${p.minutes} minutos con ruta accesible, tienes ${p.available}.`;
   if (p.status === 'tarde') return `${base} No alcanzas por ${p.lateBy} ${p.lateBy === 1 ? 'minuto' : 'minutos'}.`;
@@ -152,7 +152,7 @@ export default function MyDay() {
                   ) : null}
                   <AppText variant="caption" color="textMuted">
                     {p.status === 'sin-ruta'
-                      ? noElev ? `Sin ruta accesible · piso sin ascensor (piso ${p.place.floor}, Edif. ${p.place.building})` : 'Sin ruta accesible ahora'
+                      ? noElev ? `Sin ruta accesible · piso sin ascensor (${floorLabel(p.place.floor ?? 1).toLowerCase()}, Edif. ${p.place.building})` : 'Sin ruta accesible ahora'
                       : `${p.fromOrigin ? `Desde ${p.fromLabel}: ` : ''}${p.minutes} min · tienes ${p.available}${p.extraMinutes > 0 ? ` · +${p.extraMinutes} min por ruta accesible` : ''}`}
                   </AppText>
                 </View>

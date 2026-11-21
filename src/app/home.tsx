@@ -6,6 +6,7 @@ import { AccessibilityInfo, Alert, findNodeHandle, Modal, Pressable, StyleSheet,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
+import { floorLabel } from '@/lib/buildings';
 import { Banner } from '@/components/Banner';
 import { Button } from '@/components/Button';
 import { CampusMap } from '@/components/CampusMap';
@@ -42,7 +43,7 @@ const QUICK: Quick[] = [
 ];
 
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s-]/g, '');
-const placeSub = (p: Place) => `${p.building ? `Edif. ${p.building} · ` : ''}Piso ${p.floor}`;
+const placeSub = (p: Place) => `${p.building ? `Edif. ${p.building} · ` : ''}${floorLabel(p.floor)}`;
 
 export default function Home() {
   const router = useRouter();

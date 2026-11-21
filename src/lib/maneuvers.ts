@@ -1,4 +1,5 @@
 import { EDGES, getNode } from '@/lib/routing';
+import { floorLabel } from '@/lib/buildings';
 import type { EdgeCue, RouteResult } from '@/types';
 
 const IMG_W = 1313;
@@ -299,5 +300,5 @@ export function zoneOfNode(nodeId: string): string {
   const n = getNode(nodeId) as ({ zone?: string } & NonNullable<ReturnType<typeof getNode>>) | undefined;
   if (!n) return '';
   if (n.zone) return n.zone;
-  return n.building ? `Edificio ${n.building} · Piso ${n.floor ?? 1}` : n.label;
+  return n.building ? `Edificio ${n.building} · ${floorLabel(n.floor ?? 1)}` : n.label;
 }

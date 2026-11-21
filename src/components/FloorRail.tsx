@@ -3,6 +3,7 @@ import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { AppText } from '@/components/AppText';
+import { floorLabel } from '@/lib/buildings';
 import { useReduceMotion } from '@/hooks/use-reduce-motion';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -64,7 +65,7 @@ function FloorRailBase({ levels, current, dest, onSelect }: Props) {
             hitSlop={HIT}
             onPress={() => onSelect?.(lv)}
             accessibilityRole="button"
-            accessibilityLabel={`Piso ${lv}${active ? ', actual' : ''}${isDest ? ', destino' : ''}`}
+            accessibilityLabel={`${floorLabel(lv)}${active ? ', actual' : ''}${isDest ? ', destino' : ''}`}
             accessibilityState={{ selected: active }}
             style={[styles.row, { backgroundColor: active ? m.chipActive : 'transparent', borderRadius: t.radius.sm }]}
           >

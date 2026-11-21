@@ -18,7 +18,7 @@ import { useAppTheme } from '@/hooks/use-app-theme';
 import { AMENITY_ICON, amenitiesAlongRoute, amenityWord } from '@/lib/amenities';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
 import { formatAgo, formatConfirmations } from '@/lib/time';
-import { lacksElevatorAccess } from '@/lib/buildings';
+import { floorLabel, lacksElevatorAccess } from '@/lib/buildings';
 import { accessibleRoomRequest, courseAt } from '@/lib/schedule';
 import type { AmenityType, RouteResult } from '@/types';
 
@@ -252,7 +252,7 @@ export default function RouteScreen() {
           </View>
           <AppText variant="title" accessibilityRole="header" style={styles.center}>{place.name} no tiene ruta accesible</AppText>
           <AppText color="textMuted" style={styles.center}>
-            Está en el piso {place.floor} del Edificio {place.building}, que no tiene ascensor.
+            Está en el {floorLabel(place.floor ?? 1).toLowerCase()} del Edificio {place.building}, que no tiene ascensor.
           </AppText>
         </View>
         <View style={styles.noRouteActions}>

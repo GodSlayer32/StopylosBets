@@ -19,7 +19,13 @@ export function buildingOfNode(nodeId: string): string | undefined {
 
 /** El destino está sobre el piso 1 de un edificio sin ascensor (no hay ruta posible sin escaleras). */
 export function lacksElevatorAccess(place: { building?: string; floor?: number }): boolean {
-  if (!place.building || (place.floor ?? 1) <= 1) return false;
+  if (!place.building || (place.floor ?? 1) === 1) return false;
   const b = getBuilding(place.building);
   return !!b && !b.elevator;
+}
+
+/** Nombre legible de un nivel: "Piso 2", "Subterráneo" (-1), "Subterráneo 2" (-2). */
+export function floorLabel(level: number): string {
+  if (level >= 0) return `Piso ${level}`;
+  return level === -1 ? 'Subterráneo' : `Subterráneo ${-level}`;
 }

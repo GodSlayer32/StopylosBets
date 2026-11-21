@@ -17,7 +17,7 @@ import { useAppTheme } from '@/hooks/use-app-theme';
 import { useReduceMotion } from '@/hooks/use-reduce-motion';
 import { useRouteSimulation } from '@/hooks/use-route-simulation';
 import { HAPTIC_CODE, HAPTIC_LEGEND_SHORT, playManeuverHaptic, playPreAlert } from '@/lib/haptics';
-import { getBuilding } from '@/lib/buildings';
+import { getBuilding, floorLabel } from '@/lib/buildings';
 import { CAMPUS_MAP, FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
 import type { RouteResult } from '@/types';
@@ -333,7 +333,7 @@ export default function NavigateScreen() {
               onCameraChange={onCamera}
               onBuildingPress={onBuildingPress}
               accessibilityLabel={`Mapa: planta del edificio ${dispB}, piso ${dispLevel}${sim.zone ? `. Estás en ${sim.zone}` : ''}. Tu destino es ${place.name}.`}
-              title={`Edificio ${dispB} | Piso ${dispLevel}${exploring ? ' · explorando' : ''}`}
+              title={`Edificio ${dispB} | ${floorLabel(dispLevel)}${exploring ? ' · explorando' : ''}`}
             />
             <View style={styles.rail}>
               <FloorRail

@@ -5,6 +5,7 @@ import { Keyboard, type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Te
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
+import { floorLabel } from '@/lib/buildings';
 import { Button } from '@/components/Button';
 import { CampusMap, type MapBarrier, type MapCamera } from '@/components/CampusMap';
 import { ElevatorStatus } from '@/components/ElevatorStatus';
@@ -36,7 +37,7 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s-]/g, '');
-const placeSub = (p: Place) => `${p.building ? `Edif. ${p.building} · ` : ''}Piso ${p.floor}`;
+const placeSub = (p: Place) => `${p.building ? `Edif. ${p.building} · ` : ''}${floorLabel(p.floor)}`;
 
 /** Misma correspondencia sala-lugar que usa la navegación */
 const roomMatchesPlace = (roomId: string, b: string, p: Place) => {
@@ -143,7 +144,7 @@ export default function MapScreen() {
   const sheetTitle = freePlace
     ? freePlace.name
     : bid
-      ? `${buildingName(bid)}${hasPlan && level != null ? ` · Piso ${level}` : ''}`
+      ? `${buildingName(bid)}${hasPlan && level != null ? ` · ${floorLabel(level)}` : ''}`
       : '';
 
   const onLayout = (e: LayoutChangeEvent) => {
@@ -284,7 +285,7 @@ export default function MapScreen() {
               ) : (
                 <>
                   {elevator ? <ElevatorStatus elevator={elevator} /> : null}
-                  <AppText variant="label" color="textMuted">Salas del piso {level}</AppText>
+                  <AppText variant="label" color="textMuted">Salas · {floorLabel(level)}</AppText>
                   {rooms.length === 0 ? (
                     <ScreenState variant="empty" title="Sin salas en este piso" message="Prueba con otro piso." />
                   ) : (
