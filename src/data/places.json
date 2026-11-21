@@ -153,6 +153,24 @@
       "floor": -1,
       "category": "servicio",
       "icon": "toilet"
+    },
+    {
+      "id": "p-401",
+      "name": "P401",
+      "nodeId": "p_401",
+      "building": "P",
+      "floor": 4,
+      "category": "sala",
+      "icon": "school"
+    },
+    {
+      "id": "bano-p",
+      "name": "Baño accesible Edif. P",
+      "nodeId": "p_bano",
+      "building": "P",
+      "floor": 1,
+      "category": "servicio",
+      "icon": "human-wheelchair"
     }
   ]
 }

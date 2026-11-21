@@ -241,6 +241,81 @@
           "label": "Desde el patio interior (hacia D/E)"
         }
       ]
+    },
+    {
+      "id": "P",
+      "name": "Edificio P",
+      "floors": [
+        {
+          "level": -1,
+          "label": "Subterráneo",
+          "rooms": [
+            "Túnel al campus",
+            "P002",
+            "P013",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 1,
+          "label": "Piso 1",
+          "rooms": [
+            "Hall de acceso",
+            "P101",
+            "P108",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 2,
+          "label": "Piso 2",
+          "rooms": [
+            "P201",
+            "P204",
+            "P209",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 3,
+          "label": "Piso 3",
+          "rooms": [
+            "P301",
+            "P304",
+            "P309",
+            "Baño accesible"
+          ]
+        },
+        {
+          "level": 4,
+          "label": "Piso 4",
+          "rooms": [
+            "P401",
+            "P404",
+            "P409",
+            "Baño accesible"
+          ]
+        }
+      ],
+      "elevator": {
+        "id": "elev-p",
+        "x": 0.62
+      },
+      "stairs": {
+        "x": 0.4
+      },
+      "entrances": [
+        {
+          "level": 1,
+          "side": "left",
+          "label": "Desde Av. Placeres (a nivel)"
+        },
+        {
+          "level": -1,
+          "side": "right",
+          "label": "Túnel bajo Av. Placeres (desde el campus)"
+        }
+      ]
     }
   ]
 }

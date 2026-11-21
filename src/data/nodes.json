@@ -517,6 +517,160 @@
       "building": "F",
       "floor": -1,
       "zone": "Edificio F · Subterráneo"
+    },
+    {
+      "id": "p_elev_m1",
+      "label": "Ascensor Edif. P (Subterráneo)",
+      "x": 60.9,
+      "y": 25.2,
+      "building": "P",
+      "floor": -1,
+      "zone": "Edificio P · Subterráneo",
+      "arrivalCue": "Puerta metálica del ascensor, con botonera en braille a la derecha"
+    },
+    {
+      "id": "p_st_m1",
+      "label": "Escalera Edif. P (Subterráneo)",
+      "x": 59.5,
+      "y": 25.2,
+      "building": "P",
+      "floor": -1,
+      "zone": "Edificio P · Subterráneo"
+    },
+    {
+      "id": "p_elev_1",
+      "label": "Ascensor Edif. P (piso 1)",
+      "x": 60.9,
+      "y": 25.2,
+      "building": "P",
+      "floor": 1,
+      "zone": "Edificio P · Piso 1",
+      "arrivalCue": "Puerta metálica del ascensor, con botonera en braille a la derecha"
+    },
+    {
+      "id": "p_st_1",
+      "label": "Escalera Edif. P (piso 1)",
+      "x": 59.5,
+      "y": 25.2,
+      "building": "P",
+      "floor": 1,
+      "zone": "Edificio P · Piso 1"
+    },
+    {
+      "id": "p_elev_2",
+      "label": "Ascensor Edif. P (piso 2)",
+      "x": 60.9,
+      "y": 25.2,
+      "building": "P",
+      "floor": 2,
+      "zone": "Edificio P · Piso 2",
+      "arrivalCue": "Puerta metálica del ascensor, con botonera en braille a la derecha"
+    },
+    {
+      "id": "p_st_2",
+      "label": "Escalera Edif. P (piso 2)",
+      "x": 59.5,
+      "y": 25.2,
+      "building": "P",
+      "floor": 2,
+      "zone": "Edificio P · Piso 2"
+    },
+    {
+      "id": "p_elev_3",
+      "label": "Ascensor Edif. P (piso 3)",
+      "x": 60.9,
+      "y": 25.2,
+      "building": "P",
+      "floor": 3,
+      "zone": "Edificio P · Piso 3",
+      "arrivalCue": "Puerta metálica del ascensor, con botonera en braille a la derecha"
+    },
+    {
+      "id": "p_st_3",
+      "label": "Escalera Edif. P (piso 3)",
+      "x": 59.5,
+      "y": 25.2,
+      "building": "P",
+      "floor": 3,
+      "zone": "Edificio P · Piso 3"
+    },
+    {
+      "id": "p_elev_4",
+      "label": "Ascensor Edif. P (piso 4)",
+      "x": 60.9,
+      "y": 25.2,
+      "building": "P",
+      "floor": 4,
+      "zone": "Edificio P · Piso 4",
+      "arrivalCue": "Puerta metálica del ascensor, con botonera en braille a la derecha"
+    },
+    {
+      "id": "p_st_4",
+      "label": "Escalera Edif. P (piso 4)",
+      "x": 59.5,
+      "y": 25.2,
+      "building": "P",
+      "floor": 4,
+      "zone": "Edificio P · Piso 4"
+    },
+    {
+      "id": "p_acc",
+      "label": "Hall de acceso Edif. P",
+      "x": 59.67,
+      "y": 26.08,
+      "building": "P",
+      "floor": 1,
+      "zone": "Edificio P · Piso 1",
+      "arrivalCue": "Puertas de vidrio sobre la vereda de Av. Placeres; el ascensor queda a la derecha del hall"
+    },
+    {
+      "id": "p_calle",
+      "label": "Vereda de Av. Placeres frente a P",
+      "x": 59.7,
+      "y": 27.3
+    },
+    {
+      "id": "p_bano",
+      "label": "Baño accesible Edif. P",
+      "x": 62.25,
+      "y": 24.43,
+      "building": "P",
+      "floor": 1,
+      "zone": "Edificio P · Piso 1"
+    },
+    {
+      "id": "p_401",
+      "label": "P401",
+      "x": 58.98,
+      "y": 20.91,
+      "building": "P",
+      "floor": 4,
+      "zone": "Edificio P · Piso 4",
+      "arrivalCue": "Al fondo del pasillo norte, última puerta a la izquierda"
+    },
+    {
+      "id": "p_hub_4",
+      "label": "Pasillo norte Edif. P (piso 4)",
+      "x": 60.2,
+      "y": 20.95,
+      "building": "P",
+      "floor": 4,
+      "zone": "Edificio P · Piso 4"
+    },
+    {
+      "id": "p_tun_in",
+      "label": "Entrada al túnel (Edif. P)",
+      "x": 59.67,
+      "y": 26.08,
+      "building": "P",
+      "floor": -1,
+      "zone": "Edificio P · Subterráneo"
+    },
+    {
+      "id": "p_tun_out",
+      "label": "Salida del túnel bajo Av. Placeres (campus)",
+      "x": 59.7,
+      "y": 32.0
     }
   ]
 }

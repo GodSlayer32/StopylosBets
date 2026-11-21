@@ -961,6 +961,265 @@
       "distanceM": 6,
       "type": "flat",
       "covered": true
+    },
+    {
+      "id": "acc_placeres>p_calle:flat",
+      "from": "acc_placeres",
+      "to": "p_calle",
+      "distanceM": 12,
+      "type": "flat",
+      "name": "Cruce peatonal Av. Placeres",
+      "cues": [
+        {
+          "at": "start",
+          "side": "ahead",
+          "text": "el paso de cebra con rebaje en la vereda"
+        }
+      ]
+    },
+    {
+      "id": "p_calle>p_acc:flat",
+      "from": "p_calle",
+      "to": "p_acc",
+      "distanceM": 5,
+      "type": "flat",
+      "name": "Acceso Edif. P"
+    },
+    {
+      "id": "p_acc>p_elev_1:flat",
+      "from": "p_acc",
+      "to": "p_elev_1",
+      "distanceM": 6,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_acc>p_st_1:flat",
+      "from": "p_acc",
+      "to": "p_st_1",
+      "distanceM": 5,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_acc>p_bano:flat",
+      "from": "p_acc",
+      "to": "p_bano",
+      "distanceM": 9,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_st_m1>p_elev_m1:flat",
+      "from": "p_st_m1",
+      "to": "p_elev_m1",
+      "distanceM": 4,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_st_1>p_elev_1:flat",
+      "from": "p_st_1",
+      "to": "p_elev_1",
+      "distanceM": 4,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_st_2>p_elev_2:flat",
+      "from": "p_st_2",
+      "to": "p_elev_2",
+      "distanceM": 4,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_st_3>p_elev_3:flat",
+      "from": "p_st_3",
+      "to": "p_elev_3",
+      "distanceM": 4,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_st_4>p_elev_4:flat",
+      "from": "p_st_4",
+      "to": "p_elev_4",
+      "distanceM": 4,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_elev_m1>p_elev_1:elevator",
+      "from": "p_elev_m1",
+      "to": "p_elev_1",
+      "distanceM": 10,
+      "type": "elevator",
+      "elevatorId": "elev-p"
+    },
+    {
+      "id": "p_st_m1>p_st_1:stairs",
+      "from": "p_st_m1",
+      "to": "p_st_1",
+      "distanceM": 10,
+      "type": "stairs",
+      "steps": 20,
+      "covered": true,
+      "name": "Escalera Edif. P",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda de madera"
+        }
+      ]
+    },
+    {
+      "id": "p_elev_1>p_elev_2:elevator",
+      "from": "p_elev_1",
+      "to": "p_elev_2",
+      "distanceM": 10,
+      "type": "elevator",
+      "elevatorId": "elev-p"
+    },
+    {
+      "id": "p_st_1>p_st_2:stairs",
+      "from": "p_st_1",
+      "to": "p_st_2",
+      "distanceM": 10,
+      "type": "stairs",
+      "steps": 20,
+      "covered": true,
+      "name": "Escalera Edif. P",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda de madera"
+        }
+      ]
+    },
+    {
+      "id": "p_elev_2>p_elev_3:elevator",
+      "from": "p_elev_2",
+      "to": "p_elev_3",
+      "distanceM": 10,
+      "type": "elevator",
+      "elevatorId": "elev-p"
+    },
+    {
+      "id": "p_st_2>p_st_3:stairs",
+      "from": "p_st_2",
+      "to": "p_st_3",
+      "distanceM": 10,
+      "type": "stairs",
+      "steps": 20,
+      "covered": true,
+      "name": "Escalera Edif. P",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda de madera"
+        }
+      ]
+    },
+    {
+      "id": "p_elev_3>p_elev_4:elevator",
+      "from": "p_elev_3",
+      "to": "p_elev_4",
+      "distanceM": 10,
+      "type": "elevator",
+      "elevatorId": "elev-p"
+    },
+    {
+      "id": "p_st_3>p_st_4:stairs",
+      "from": "p_st_3",
+      "to": "p_st_4",
+      "distanceM": 10,
+      "type": "stairs",
+      "steps": 20,
+      "covered": true,
+      "name": "Escalera Edif. P",
+      "cues": [
+        {
+          "at": "start",
+          "side": "right",
+          "text": "la baranda de madera"
+        }
+      ]
+    },
+    {
+      "id": "p_elev_4>p_hub_4:flat",
+      "from": "p_elev_4",
+      "to": "p_hub_4",
+      "distanceM": 14,
+      "type": "flat",
+      "covered": true,
+      "name": "Pasillo norte Edif. P",
+      "cues": [
+        {
+          "at": "mid",
+          "side": "left",
+          "text": "puertas de salas una tras otra"
+        }
+      ]
+    },
+    {
+      "id": "p_st_4>p_hub_4:flat",
+      "from": "p_st_4",
+      "to": "p_hub_4",
+      "distanceM": 13,
+      "type": "flat",
+      "covered": true,
+      "name": "Pasillo norte Edif. P"
+    },
+    {
+      "id": "p_hub_4>p_401:flat",
+      "from": "p_hub_4",
+      "to": "p_401",
+      "distanceM": 4,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_st_m1>p_tun_in:flat",
+      "from": "p_st_m1",
+      "to": "p_tun_in",
+      "distanceM": 5,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_elev_m1>p_tun_in:flat",
+      "from": "p_elev_m1",
+      "to": "p_tun_in",
+      "distanceM": 6,
+      "type": "flat",
+      "covered": true
+    },
+    {
+      "id": "p_tun_in>p_tun_out:flat",
+      "from": "p_tun_in",
+      "to": "p_tun_out",
+      "distanceM": 45,
+      "type": "flat",
+      "covered": true,
+      "name": "Túnel bajo Av. Placeres",
+      "cues": [
+        {
+          "at": "mid",
+          "side": "left",
+          "text": "la pared con baldosas"
+        }
+      ]
+    },
+    {
+      "id": "p_tun_out>acc_placeres:flat",
+      "from": "p_tun_out",
+      "to": "acc_placeres",
+      "distanceM": 8,
+      "type": "flat"
     }
   ]
 }
