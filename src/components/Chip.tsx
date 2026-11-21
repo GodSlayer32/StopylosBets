@@ -8,26 +8,29 @@ import { useTheme } from '@/hooks/use-theme';
 type Props = {
   label: string;
   selected?: boolean;
+  role?: 'button' | 'radio' | 'checkbox';
+  checked?: boolean;
   onPress?: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
   accessibilityLabel?: string;
   accessibilityHint?: string;
 };
 
-export function Chip({ label, selected, onPress, icon, accessibilityLabel, accessibilityHint }: Props) {
+export function Chip({ label, selected, role = 'button', checked, onPress, icon, accessibilityLabel, accessibilityHint }: Props) {
   const { colors } = useTheme();
   const fg = selected ? colors.primaryText : colors.text;
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
+      accessibilityRole={role}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ selected: !!selected }}
-      style={[
+      accessibilityState={role === 'button' ? { selected: !!selected } : { checked: checked ?? !!selected }}
+      android_ripple={{ color: selected ? colors.primaryPressed : colors.primarySoft }}
+      style={({ pressed }) => [
         styles.chip,
-        { borderColor: colors.border, backgroundColor: colors.surface },
-        selected && { backgroundColor: colors.primary, borderColor: colors.primary },
+        { borderColor: colors.borderStrong, backgroundColor: pressed ? colors.surfaceAlt : colors.surface },
+        selected && { backgroundColor: pressed ? colors.primaryPressed : colors.primary, borderColor: colors.primary },
       ]}>
       {icon ? <Ionicons name={icon} size={20} color={fg} /> : null}
       <AppText variant="label" style={{ color: fg }}>

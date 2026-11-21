@@ -1,8 +1,9 @@
+import type React from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { AccessibilityInfo, Animated, findNodeHandle, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
@@ -13,12 +14,14 @@ import { InstructionCard } from '@/components/InstructionCard';
 import { ScreenState } from '@/components/ScreenState';
 import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
+import { useReduceMotion } from '@/hooks/use-reduce-motion';
 import { useRouteSimulation } from '@/hooks/use-route-simulation';
 import { HAPTIC_CODE, HAPTIC_LEGEND_SHORT, playManeuverHaptic, playPreAlert } from '@/lib/haptics';
 import { getBuilding } from '@/lib/buildings';
 import { CAMPUS_MAP, FLOORPLANS, getFloorPlan } from '@/lib/campus-map';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
 import type { RouteResult } from '@/types';
+import type { LayoutChangeEvent } from 'react-native';
 
 // El mapa superior solo muestra tu posición (sin línea de ruta), estilo guía del Louvre.
 const NO_ROUTE: [number, number][] = [];
@@ -42,10 +45,14 @@ export default function NavigateScreen() {
   const [mapH, setMapH] = useState(0);
   const [cardH, setCardH] = useState(180);
   const sim = useRouteSimulation(route);
+  const reduceMotion = useReduceMotion();
+  // Ruta congelada: solo se calcula al montar y en "Reintentar"
+  const getRouteRef = useRef(getRoute);
+  useEffect(() => { getRouteRef.current = getRoute; }, [getRoute]);
 
   useEffect(() => {
     let cancelled = false;
-    getRoute(destId ?? '')
+    getRouteRef.current(destId ?? '')
       .then((r) => {
         if (cancelled) return;
         setRoute(r);
@@ -53,7 +60,7 @@ export default function NavigateScreen() {
       })
       .catch(() => !cancelled && setStatus('error'));
     return () => { cancelled = true; };
-  }, [getRoute, destId, attempt]);
+  }, [destId, attempt]);
 
   const speakOn = profile === 'lowVision' || voice;
   const step = route?.steps[sim.stepIndex];
@@ -67,9 +74,10 @@ export default function NavigateScreen() {
     return () => sub.remove();
   }, []);
 
-  const say = useCallback((text: string, force = false) => {
+  // Con lector de pantalla la tarjeta es live region; announce solo para el aviso de 15 m y acciones explícitas (force)
+  const say = useCallback((text: string, force = false, alert = false) => {
     if (screenReader) {
-      AccessibilityInfo.announceForAccessibility(text);
+      if (alert || force) AccessibilityInfo.announceForAccessibility(text);
     } else if (speakOn || force) {
       Speech.stop();
       Speech.speak(text, { language: 'es-CL' });
@@ -97,10 +105,10 @@ export default function NavigateScreen() {
   useEffect(() => {
     if (!m || sim.finished || m.type === 'straight' || m.type === 'arrive') return;
     const key = `w${sim.maneuverIndex}`;
-    if (warned.current === key || sim.distanceToManeuverM > 15 || sim.distanceToManeuverM < 8) return;
+    if (warned.current === key || sim.distanceToManeuverM > 15) return;
     warned.current = key;
     playPreAlert();
-    say(`En 15 metros, ${m.verb}`);
+    say(`En 15 metros, ${m.verb}`, false, true);
   }, [m, sim.maneuverIndex, sim.distanceToManeuverM, sim.finished, say]);
 
   const repeat = useCallback(() => {
@@ -108,6 +116,14 @@ export default function NavigateScreen() {
     playManeuverHaptic(sim.finished ? 'arrive' : m.type);
     say(sim.finished ? `Llegaste a ${place?.name ?? 'tu destino'}` : (m.spoken ?? m.text), true);
   }, [m, sim.finished, place?.name, say]);
+
+  const toggleVoice = useCallback(() => {
+    Speech.stop();
+    if (!voice && m && !sim.finished) say(m.spoken ?? m.text, true);
+    setVoice((v) => !v);
+  }, [voice, m, sim.finished, say]);
+  const goHome = useCallback(() => { Speech.stop(); router.replace('/home'); }, [router]);
+  const onCardLayout = useCallback((e: LayoutChangeEvent) => setCardH(Math.round(e.nativeEvent.layout.height)), []);
 
   useEffect(() => () => { Speech.stop(); }, []);
 
@@ -136,22 +152,31 @@ export default function NavigateScreen() {
   // Prompt de confirmación: ascensor con incidente (o evitado) a ≤20 m, una vez por ascensor
   const [answered, setAnswered] = useState<string[]>([]);
   const announced = useRef<string>('');
+  const mPerPct = useMemo(() => {
+    if (!route) return 1;
+    const lenPct = route.polyline.reduce((acc, p, i, a) => (i ? acc + Math.hypot(p.x - a[i - 1].x, p.y - a[i - 1].y) : acc), 0);
+    return lenPct > 0 ? route.distanceM / lenPct : 1;
+  }, [route]);
+  const avoidedIds = useMemo(
+    () => new Set(route ? route.avoided.filter((a) => a.kind === 'incident').map((a) => EDGES.find((e) => e.id === a.edgeId)?.elevatorId).filter(Boolean) : []),
+    [route],
+  );
+  const promptCandidates = useMemo(
+    () => elevators
+      .filter((el) => el.status !== 'ok' && !!el.incidentId && !answered.includes(el.id) && avoidedIds.has(el.id))
+      .map((el) => ({
+        el,
+        pts: EDGES.filter((e) => e.elevatorId === el.id).map((e) => getNode(e.from)).filter((n): n is NonNullable<typeof n> => !!n),
+      })),
+    [elevators, answered, avoidedIds],
+  );
   const promptElevator = useMemo(() => {
     if (!route || sim.finished) return undefined;
-    const lenPct = route.polyline.reduce((acc, p, i, a) => (i ? acc + Math.hypot(p.x - a[i - 1].x, p.y - a[i - 1].y) : acc), 0);
-    const mPerPct = lenPct > 0 ? route.distanceM / lenPct : 1;
-    const avoidedIds = new Set(
-      route.avoided.filter((a) => a.kind === 'incident').map((a) => EDGES.find((e) => e.id === a.edgeId)?.elevatorId).filter(Boolean),
-    );
-    return elevators.find((el) => {
-      if (el.status === 'ok' || !el.incidentId || answered.includes(el.id) || !avoidedIds.has(el.id)) return false;
-      if (sim.inside && sim.building === el.building) return true;
-      return EDGES.filter((e) => e.elevatorId === el.id).some((e) => {
-        const n = getNode(e.from);
-        return !!n && Math.hypot(n.x - sim.point.x, n.y - sim.point.y) * mPerPct <= 20;
-      });
-    });
-  }, [route, elevators, answered, sim.point, sim.inside, sim.building, sim.finished]);
+    return promptCandidates.find(({ el, pts }) =>
+      (sim.inside && sim.building === el.building) ||
+      pts.some((n) => Math.hypot(n.x - sim.point.x, n.y - sim.point.y) * mPerPct <= 20),
+    )?.el;
+  }, [route, promptCandidates, mPerPct, sim.point, sim.inside, sim.building, sim.finished]);
   const respond = useCallback((stillDown: boolean) => {
     if (!promptElevator?.incidentId) return;
     if (stillDown) confirmIncident(promptElevator.incidentId);
@@ -177,8 +202,6 @@ export default function NavigateScreen() {
   // Exploración manual del mapa superior
   const [explore, setExplore] = useState<{ building?: string; level?: number; camera?: MapCamera | null }>({});
   const [tip, setTip] = useState<string | null>(null);
-  const lastInteract = useRef(0);
-  const touch = () => { lastInteract.current = Date.now(); };
   const accessLevel = (id: string) => getBuilding(id)?.entrances[0]?.level ?? FLOORPLANS[id]?.levels[0] ?? 1;
   const expLevel = explore.building ? explore.level ?? accessLevel(explore.building) : undefined;
   const expHasPlan = !!explore.building && expLevel !== undefined && !!getFloorPlan(explore.building, expLevel);
@@ -201,9 +224,8 @@ export default function NavigateScreen() {
   const atUser = !exploring || (dispB === autoB && dispLevel === floorLevel);
 
   const resetExplore = useCallback(() => { setExplore({}); setTip(null); }, []);
-  const onCamera = useCallback((c: MapCamera) => { touch(); setExplore((e) => ({ ...e, camera: c })); }, []);
+  const onCamera = useCallback((c: MapCamera) => { setExplore((e) => ({ ...e, camera: c })); }, []);
   const onBuildingPress = useCallback((id: string) => {
-    touch();
     const hasAny = (FLOORPLANS[id]?.levels ?? []).length > 0;
     if (hasAny) {
       setTip(null);
@@ -217,20 +239,32 @@ export default function NavigateScreen() {
     const id = setTimeout(() => setTip(null), 2500);
     return () => clearTimeout(id);
   }, [tip]);
-  // Retoma el seguimiento al cambiar de maniobra tras >8 s sin interacción
+  // Auto-retorno: 8 s sin interacción (cada cambio de `explore` reinicia el temporizador)
   useEffect(() => {
-    if (exploring && Date.now() - lastInteract.current > 8000) resetExplore();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sim.maneuverIndex]);
+    if (!exploring) return;
+    const id = setTimeout(resetExplore, 8000);
+    return () => clearTimeout(id);
+  }, [explore, exploring, resetExplore]);
   const [fade] = useState(() => new Animated.Value(1));
   const [shown, setShown] = useState<'inside' | 'outside'>(mode);
   useEffect(() => {
     if (mode === shown) return;
-    Animated.timing(fade, { toValue: 0, duration: 160, useNativeDriver: true }).start(() => {
+    Animated.timing(fade, { toValue: 0, duration: reduceMotion ? 0 : 160, useNativeDriver: true }).start(() => {
       setShown(mode);
-      Animated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+      Animated.timing(fade, { toValue: 1, duration: reduceMotion ? 0 : 220, useNativeDriver: true }).start();
     });
-  }, [mode, shown, fade]);
+  }, [mode, shown, fade, reduceMotion]);
+
+  // Modal de vibraciones: foco al título al abrir
+  const helpTitle = useRef<React.ComponentRef<typeof View>>(null);
+  useEffect(() => {
+    if (!helpOpen) return;
+    const id = setTimeout(() => {
+      const node = helpTitle.current ? findNodeHandle(helpTitle.current) : null;
+      if (node) AccessibilityInfo.setAccessibilityFocus(node);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [helpOpen]);
 
   const close = () => { Speech.stop(); router.back(); };
 
@@ -265,7 +299,7 @@ export default function NavigateScreen() {
           <Ionicons name="close" size={26} color={t.colors.text} />
         </Pressable>
         <View style={styles.flex}>
-          <AppText variant="caption" color="textMuted" style={{ fontSize: 12, lineHeight: 16 }}>Navegando hacia</AppText>
+          <AppText variant="caption" color="textMuted">Navegando hacia</AppText>
           <AppText variant="heading" numberOfLines={1} accessibilityRole="header" style={accessibleMode ? undefined : { fontSize: 17, lineHeight: 22 }}>{place.name}</AppText>
         </View>
         <Pressable
@@ -278,7 +312,7 @@ export default function NavigateScreen() {
         </Pressable>
       </View>
 
-      <Animated.View style={[styles.top, { height: topH, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
+      <Animated.View style={[styles.top, { height: topH, opacity: fade, transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [reduceMotion ? 0 : 10, 0] }) }] }]}>
         {shown === 'inside' && dispB ? (
           <>
             <CampusMap
@@ -304,7 +338,7 @@ export default function NavigateScreen() {
                 levels={FLOORPLANS[dispB]?.levels ?? []}
                 current={dispLevel}
                 dest={place.building === dispB ? place.floor : undefined}
-                onSelect={(lv) => { touch(); setExplore((e) => ({ building: dispB, level: lv, camera: e.building === dispB ? e.camera : null })); }}
+                onSelect={(lv) => { setExplore((e) => ({ building: dispB, level: lv, camera: e.building === dispB ? e.camera : null })); }}
               />
             </View>
           </>
@@ -337,7 +371,7 @@ export default function NavigateScreen() {
             accessibilityRole="button"
             accessibilityLabel="Volver a mi posición"
             style={styles.recenter}>
-            <MaterialCommunityIcons name="crosshairs-gps" size={20} color={t.colors.primaryText} />
+            <MaterialCommunityIcons name="crosshairs-gps" size={t.typography.heading.fontSize} color={t.colors.primaryText} />
             <AppText variant="caption" style={{ color: t.colors.primaryText, fontWeight: '700' }}>Mi posición</AppText>
           </Pressable>
         ) : null}
@@ -399,16 +433,18 @@ export default function NavigateScreen() {
         place={place}
         accessibleMode={accessibleMode}
         speakOn={speakOn}
-        onToggleVoice={() => { Speech.stop(); setVoice((v) => !v); }}
+        onToggleVoice={toggleVoice}
         onRepeat={repeat}
-        onHome={() => { Speech.stop(); router.replace('/home'); }}
-        onLayout={(e) => setCardH(Math.round(e.nativeEvent.layout.height))}
+        onHome={goHome}
+        onLayout={onCardLayout}
       />
 
       <Modal visible={helpOpen} transparent animationType="fade" onRequestClose={() => setHelpOpen(false)}>
-        <View style={styles.backdrop}>
-          <View style={styles.sheet} accessibilityViewIsModal>
-            <AppText variant="title" accessibilityRole="header">Código de vibraciones</AppText>
+        <View style={[styles.backdrop, { paddingBottom: t.spacing.lg + insets.bottom }]} accessibilityViewIsModal>
+          <View style={styles.sheet}>
+            <View ref={helpTitle} accessible accessibilityRole="header">
+              <AppText variant="title">Código de vibraciones</AppText>
+            </View>
             <AppText color="textMuted" accessibilityLabel={HAPTIC_LEGEND_SHORT}>{HAPTIC_LEGEND_SHORT}</AppText>
             {Object.values(HAPTIC_CODE).map((c) => (
               <View key={c.label} accessible accessibilityLabel={`${c.label}: ${c.pattern}`} style={styles.codeRow}>
@@ -435,7 +471,7 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     divider: { height: 4 },
     tip: { position: 'absolute', bottom: t.spacing.sm, alignSelf: 'center', paddingHorizontal: t.spacing.md, paddingVertical: t.spacing.xs, borderRadius: t.radius.pill, backgroundColor: t.colors.primary },
     recenter: {
-      position: 'absolute', left: t.spacing.sm, top: t.spacing.sm + 34, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs,
+      position: 'absolute', left: t.spacing.sm, top: t.spacing.sm + t.spacing.xxl, minHeight: t.minTouch, flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs,
       paddingHorizontal: t.spacing.md, borderRadius: t.radius.pill, backgroundColor: t.colors.primary, ...t.shadow,
     },
     backdrop: { flex: 1, justifyContent: 'center', padding: t.spacing.lg, backgroundColor: t.colors.overlaySurface },

@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -37,7 +37,7 @@ function split(m: Maneuver, dist: number): { strong: string; rest: string } {
   return { strong: dist < 5 ? 'Ahora' : `En ${dist} m`, rest: m.verb };
 }
 
-export function InstructionCard({ sim, route, place, accessibleMode, speakOn, onToggleVoice, onHome, onRepeat, onLayout }: Props) {
+function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onToggleVoice, onHome, onRepeat, onLayout }: Props) {
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const compact = !accessibleMode;
@@ -68,17 +68,17 @@ export function InstructionCard({ sim, route, place, accessibleMode, speakOn, on
   const minutes = Math.max(1, Math.ceil((sim.remainingM / Math.max(1, route.distanceM)) * route.minutes));
   const then = sim.nextManeuver;
   const near = sim.nextAmenities.slice(0, 2);
-  const amenityText = near.map((a) => `${amenityShort(a.amenity.type)} a ${a.distM} m`).join(' · ');
-  const amenityLabel = near.length ? `Cerca: ${near.map((a) => `${a.amenity.name} a ${a.distM} metros`).join(', ')}` : '';
+  const amenityText = near.map((a) => (a.distM < 5 ? `${amenityShort(a.amenity.type)} aquí` : `${amenityShort(a.amenity.type)} a ${a.distM} m`)).join(' · ');
+  const amenityLabel = near.length ? `Cerca: ${near.map((a) => (a.distM < 5 ? `${a.amenity.name} aquí` : `${a.amenity.name} a ${a.distM} metros`)).join(', ')}` : '';
   const label = `${sim.zone}. ${strong} ${rest}.${then ? ` Luego: ${lueg(then)}.` : ''}${m.cue ? ` ${m.cue}.` : ''} Faltan ${sim.remainingM} metros, ${minutes} minutos.${amenityLabel ? ` ${amenityLabel}.` : ''}`;
 
   return (
     <View style={wrapStyle} onLayout={onLayout}>
-      <View accessible accessibilityLabel={label} style={styles.info}>
+      <View accessible accessibilityLabel={label} accessibilityLiveRegion={sim.playing ? 'none' : 'polite'} style={styles.info}>
         {sim.zone ? (
           <View style={styles.zoneRow}>
-            <Ionicons name="location" size={compact ? 12 : 16} color={t.colors.textMuted} />
-            <AppText variant="caption" color="textMuted" numberOfLines={1} style={[styles.flex, compact && styles.small12]}>{sim.zone}</AppText>
+            <Ionicons name="location" size={t.typography.caption.fontSize} color={t.colors.textMuted} />
+            <AppText variant="caption" color="textMuted" numberOfLines={1} style={styles.flex}>{sim.zone}</AppText>
           </View>
         ) : null}
         <View style={styles.mainRow}>
@@ -94,22 +94,21 @@ export function InstructionCard({ sim, route, place, accessibleMode, speakOn, on
           <AppText
             variant={compact ? 'caption' : 'heading'}
             color="textMuted"
-            numberOfLines={compact ? 1 : 3}
-            style={compact ? styles.small13 : undefined}>
+            numberOfLines={compact ? 1 : 3}>
             {m.cue.charAt(0).toUpperCase() + m.cue.slice(1)}
           </AppText>
         ) : null}
         {near.length ? (
           <View style={styles.amenityRow}>
             <MaterialCommunityIcons name={AMENITY_ICON[near[0].amenity.type] as Glyph} size={compact ? 16 : 28} color={t.colors.primary} />
-            <AppText variant={compact ? 'caption' : 'heading'} numberOfLines={compact ? 1 : 2} style={[styles.flex, compact && styles.small13]}>{amenityText}</AppText>
+            <AppText variant={compact ? 'caption' : 'heading'} numberOfLines={compact ? 1 : 2} style={styles.flex}>{amenityText}</AppText>
           </View>
         ) : null}
         <View style={styles.metaRow}>
           {then ? (
-            <AppText variant="label" color="textMuted" numberOfLines={1} style={[compact && styles.small13, compact && styles.flex]}>Luego: {lueg(then)}</AppText>
+            <AppText variant="label" color="textMuted" numberOfLines={compact ? 2 : undefined}>Luego: {lueg(then)}</AppText>
           ) : null}
-          <AppText variant="caption" color="textMuted" style={compact && styles.small13}>Faltan {sim.remainingM} m · {minutes} min</AppText>
+          <AppText variant="caption" color="textMuted">Faltan {sim.remainingM} m · {minutes} min</AppText>
         </View>
       </View>
       {!compact && onRepeat ? (
@@ -130,8 +129,8 @@ export function InstructionCard({ sim, route, place, accessibleMode, speakOn, on
           accessibilityRole="button"
           accessibilityLabel={sim.playing ? 'Pausar recorrido' : 'Simular recorrido'}
           style={[styles.play, { backgroundColor: t.colors.primary }]}>
-          <Ionicons name={sim.playing ? 'pause' : 'play'} size={compact ? 18 : 22} color={t.colors.primaryText} />
-          <AppText variant="label" style={{ color: t.colors.primaryText, fontSize: compact ? 14 : undefined }}>{sim.playing ? 'Pausa' : 'Simular'}</AppText>
+          <Ionicons name={sim.playing ? 'pause' : 'play'} size={22} color={t.colors.primaryText} />
+          <AppText variant="label" style={{ color: t.colors.primaryText }}>{sim.playing ? 'Pausa' : 'Simular'}</AppText>
         </Pressable>
         <Ctl compact={compact} label="Paso siguiente" icon="chevron-forward" onPress={sim.next} t={t} />
         <Ctl compact={compact}
@@ -157,17 +156,16 @@ function Ctl({ label, icon, onPress, disabled, active, t, compact }: {
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled, selected: active }}
       style={{
-        width: compact ? 44 : t.minTouch,
-        height: compact ? 44 : t.minTouch,
+        width: t.minTouch,
+        height: t.minTouch,
         borderRadius: t.radius.md,
         borderWidth: compact ? 1.5 : 2,
-        borderColor: t.colors.primary,
-        backgroundColor: active ? t.colors.primarySoft : t.colors.surface,
+        borderColor: disabled ? t.colors.textMuted : t.colors.primary,
+        backgroundColor: disabled ? 'transparent' : active ? t.colors.primarySoft : t.colors.surface,
         alignItems: 'center',
         justifyContent: 'center',
-        opacity: disabled ? 0.4 : 1,
       }}>
-      <Ionicons name={icon} size={compact ? 22 : 24} color={t.colors.primary} />
+      <Ionicons name={icon} size={compact ? 22 : 24} color={disabled ? t.colors.textMuted : t.colors.primary} />
     </Pressable>
   );
 }
@@ -194,12 +192,8 @@ const makeStyles = (t: Theme, compact: boolean) =>
       ? { width: 40, height: 40, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' }
       : { width: 64, height: 64, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' },
     bold: { fontWeight: '800' },
-    mainText: { fontSize: 19, lineHeight: 24, fontWeight: '600' },
-    small12: { fontSize: 12, lineHeight: 16 },
-    small13: { fontSize: 13, lineHeight: 18 },
-    metaRow: compact
-      ? { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.spacing.sm }
-      : { gap: t.spacing.xs },
+    mainText: { ...t.typography.heading, fontWeight: '600' },
+    metaRow: { gap: t.spacing.xs },
     amenityRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -214,7 +208,7 @@ const makeStyles = (t: Theme, compact: boolean) =>
     play: {
       flex: compact ? undefined : 1,
       paddingHorizontal: compact ? t.spacing.lg : 0,
-      minHeight: compact ? 44 : t.minTouch,
+      minHeight: t.minTouch,
       borderRadius: t.radius.md,
       flexDirection: 'row',
       alignItems: 'center',
@@ -234,3 +228,5 @@ const makeStyles = (t: Theme, compact: boolean) =>
     arrived: { gap: t.spacing.md },
     check: { width: 64, height: 64, borderRadius: t.radius.pill, alignItems: 'center', justifyContent: 'center' },
   });
+
+export const InstructionCard = memo(InstructionCardBase);

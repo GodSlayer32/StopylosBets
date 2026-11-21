@@ -11,7 +11,7 @@ const IMG_H = 980;
 const TOTAL_SECONDS = 27;
 /** Segundos que dura un tramo de ascensor */
 const ELEVATOR_SECONDS = 4.5;
-const TICK_MS = 33;
+const TICK_MS = 66;
 /** Distancia máxima a la que se avisa del próximo servicio */
 const AMENITY_ALERT_M = 60;
 

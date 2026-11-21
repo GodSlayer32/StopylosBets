@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
@@ -92,12 +92,13 @@ export default function Report() {
   }
 
   return (
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
     <Screen scroll>
       <AppText variant="title" accessibilityRole="header">¿Qué barrera encontraste?</AppText>
 
-      <View style={styles.wrap}>
+      <View style={styles.wrap} accessibilityRole="radiogroup">
         {KINDS.map((k) => (
-          <Chip key={k.key} label={k.label} icon={k.icon} selected={kind === k.key} onPress={() => setKind(k.key)} accessibilityHint="Elige el tipo de barrera" />
+          <Chip key={k.key} label={k.label} icon={k.icon} selected={kind === k.key} role="radio" checked={kind === k.key} onPress={() => setKind(k.key)} />
         ))}
       </View>
 
@@ -106,10 +107,10 @@ export default function Report() {
           <AppText variant="heading" accessibilityRole="header">
             {isElevator ? '¿Cuál ascensor?' : routeEdges.length ? '¿En qué tramo?' : '¿Dónde está?'}
           </AppText>
-          <View style={styles.wrap}>
+          <View style={styles.wrap} accessibilityRole="radiogroup">
             {isElevator
               ? elevators.map((e) => (
-                    <Chip key={e.id} label={e.status !== 'ok' ? `Edif. ${e.building} · reportado` : `Edif. ${e.building}`} icon={e.status !== 'ok' ? 'checkmark-circle' : 'business'} selected={elevatorId === e.id} onPress={() => setElevatorId(e.id)} accessibilityLabel={e.status !== 'ok' ? `Ascensor del edificio ${e.building}, ya reportado ${formatAgo(e.reportedAt ?? '')}, ${formatConfirmations(e.confirmations ?? 0)}` : `Ascensor del edificio ${e.building}`} accessibilityHint="Selecciona este ascensor" />
+                    <Chip key={e.id} label={e.status !== 'ok' ? `Edif. ${e.building} · reportado` : `Edif. ${e.building}`} icon={e.status !== 'ok' ? 'checkmark-circle' : 'business'} selected={elevatorId === e.id} role="radio" checked={elevatorId === e.id} onPress={() => setElevatorId(e.id)} accessibilityLabel={e.status !== 'ok' ? `Ascensor del edificio ${e.building}, ya reportado ${formatAgo(e.reportedAt ?? '')}, ${formatConfirmations(e.confirmations ?? 0)}` : `Ascensor del edificio ${e.building}`} />
                 ))
               : routeEdges.length
                 ? routeEdges.map((e) => (
@@ -117,7 +118,8 @@ export default function Report() {
                       key={e.id}
                       label={e.name ?? `${getNode(e.from)?.label ?? ''} → ${getNode(e.to)?.label ?? ''}`}
                       selected={edgeId === e.id}
-                      accessibilityHint="Selecciona este tramo"
+                      role="radio"
+                      checked={edgeId === e.id}
                       onPress={() => { setEdgeId(e.id); setNodeId(undefined); }}
                     />
                   ))
@@ -126,7 +128,8 @@ export default function Report() {
                       key={p.id}
                       label={p.name}
                       selected={nodeId === p.nodeId}
-                      accessibilityHint="Selecciona este lugar"
+                      role="radio"
+                      checked={nodeId === p.nodeId}
                       onPress={() => { setNodeId(p.nodeId); setEdgeId(undefined); }}
                     />
                   ))}
@@ -158,11 +161,13 @@ export default function Report() {
       />
       {!selected ? <AppText variant="caption" color="textMuted" style={styles.centerText}>Elige un tipo de barrera para continuar</AppText> : null}
     </Screen>
+    </KeyboardAvoidingView>
   );
 }
 
 const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
   StyleSheet.create({
+    flex: { flex: 1 },
     wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm },
     section: { gap: t.spacing.md },
     done: {

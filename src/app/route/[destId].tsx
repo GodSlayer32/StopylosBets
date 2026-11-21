@@ -1,9 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useFocusEffect, type Href, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, ScrollView, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Animated, Modal, Pressable, ScrollView, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
@@ -41,6 +41,7 @@ export default function RouteScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [fullMap, setFullMap] = useState(false);
   const [showAvoided, setShowAvoided] = useState(false);
+  const [recalc, setRecalc] = useState(false);
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const prevRoute = useRef<RouteResult | null>(null);
   const spokeInitial = useRef(false);
@@ -52,8 +53,10 @@ export default function RouteScreen() {
   const load = useCallback(() => {
     let cancelled = false;
     if (!prevRoute.current) setStatus('loading');
+    else if (prevRaining.current !== raining || prevAssisted.current !== assisted) setRecalc(true);
     getRoute(destId ?? '').then((r) => {
       if (cancelled) return;
+      setRecalc(false);
       if (!r) {
         prevRoute.current = null;
         setRoute(null);
@@ -104,7 +107,11 @@ export default function RouteScreen() {
       prevRoute.current = r;
       setRoute(r);
       setStatus('ready');
-    }).catch(() => !cancelled && setStatus('error'));
+    }).catch(() => {
+      if (cancelled) return;
+      setRecalc(false);
+      setStatus('error');
+    });
     return () => {
       cancelled = true;
     };
@@ -242,10 +249,10 @@ export default function RouteScreen() {
       ? `La ${diagnosis.street ?? 'calle de acceso'} tiene ${diagnosis.slopePct}% de pendiente por ${diagnosis.meters} m.`
       : `El ascensor del Edif. ${diagnosis.elevatorBuilding ?? ''} tiene cabina pequeña (100×120 cm) y no cabe una silla de ruedas (mínimo 110×140 cm).`;
     return (
-      <Screen scroll>
+      <Screen scroll contentStyle={styles.noRouteScreen}>
         <View style={styles.noRoute}>
           <View style={styles.noRouteIcon}>
-            <MaterialCommunityIcons name="wheelchair-accessibility" size={40} color={t.colors.warning} />
+            <MaterialCommunityIcons name="wheelchair-accessibility" size={t.iconSize.lg + 8} color={t.colors.primary} />
           </View>
           <AppText variant="title" accessibilityRole="header" style={styles.center}>{title}</AppText>
           <AppText color="textMuted" style={styles.center}>{message}</AppText>
@@ -258,10 +265,10 @@ export default function RouteScreen() {
             </View>
             {origin !== 'acc_placeres' ? (
               <Button
-                label="Entrar por Av. Placeres (acceso plano)"
-                icon="walk"
+                label="Entrar por Av. Placeres"
+                icon="navigate"
                 fullWidth
-                accessibilityHint="Cambia tu punto de partida y recalcula una ruta plana"
+                accessibilityLabel="Entrar por Av. Placeres, acceso plano"
                 onPress={() => {
                   setNotice('Cambiamos tu entrada a Av. Placeres: evitas la pendiente de 7% de la Calle Agustín Edwards');
                   noticeAnim.setValue(0);
@@ -273,9 +280,8 @@ export default function RouteScreen() {
             <Button
               label="Voy con acompañante"
               icon="people"
-              variant="secondary"
+              variant={origin !== 'acc_placeres' ? 'secondary' : 'primary'}
               fullWidth
-              accessibilityHint="Permite pendientes de hasta 10% porque alguien empuja la silla"
               onPress={() => {
                 setNotice(`Ruta con ayuda en la pendiente de ${diagnosis.slopePct}% de la ${diagnosis.street ?? 'calle de acceso'}`);
                 noticeAnim.setValue(0);
@@ -314,12 +320,10 @@ export default function RouteScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['bottom', 'left', 'right']}>
     <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <AppText variant="title" accessibilityRole="header">{place.name}</AppText>
-        <AppText color="textMuted">
-          {place.building ? `Edif. ${place.building} · ` : ''}Piso {place.floor}
-        </AppText>
-      </View>
+      <Stack.Screen options={{ title: place.name }} />
+      <AppText color="textMuted">
+        {place.building ? `Edif. ${place.building} · ` : ''}Piso {place.floor}
+      </AppText>
 
       {notice ? (
         <Animated.View
@@ -333,54 +337,49 @@ export default function RouteScreen() {
 
       <Card accessible
         accessibilityLabel={`${route.minutes} ${route.minutes === 1 ? 'minuto' : 'minutos'}, ${route.distanceM} metros, ${route.stairsCount === 0 ? 'sin escaleras' : `${route.stairsCount} escalones`}${route.stepsAvoided > 0 ? `, evitas ${route.stepsAvoided} escalones` : ''}`}
+        accessibilityLiveRegion="polite"
         style={styles.summary}>
-        <View style={styles.row}>
-          <View style={styles.stat}>
-            <AppText variant="display">{route.minutes}</AppText>
-            <AppText color="textMuted" variant="label">min</AppText>
+        {recalc ? (
+          <View style={styles.recalc}>
+            <ActivityIndicator color={t.colors.primary} />
+            <AppText variant="label">Recalculando…</AppText>
           </View>
-          <View style={styles.stat}>
-            <AppText variant="display">{route.distanceM}</AppText>
-            <AppText color="textMuted" variant="label">metros</AppText>
-          </View>
-        </View>
-        <View style={styles.badges}>
-          <View style={[styles.badge, { backgroundColor: route.stairsCount === 0 ? t.colors.successSoft : t.colors.warningSoft }]}>
-            <Ionicons
-              name={route.stairsCount === 0 ? 'checkmark-circle' : 'warning'}
-              size={18}
-              color={route.stairsCount === 0 ? t.colors.success : t.colors.warning}
-            />
-            <AppText variant="label" style={{ color: route.stairsCount === 0 ? t.colors.success : t.colors.warning }}>
-              {route.stairsCount} escalones
-            </AppText>
-          </View>
-          {route.stepsAvoided > 0 ? (
-            <AppText variant="label" color="textMuted">Evitas {route.stepsAvoided} escalones</AppText>
-          ) : null}
-        </View>
+        ) : (
+          <>
+            <View style={styles.row}>
+              <View style={styles.stat}>
+                <AppText variant="display">{route.minutes}</AppText>
+                <AppText color="textMuted" variant="label">min</AppText>
+              </View>
+              <View style={styles.stat}>
+                <AppText variant="display">{route.distanceM}</AppText>
+                <AppText color="textMuted" variant="label">metros</AppText>
+              </View>
+              <View style={styles.stat}>
+                <View style={styles.statNum}>
+                  {route.stairsCount === 0 ? <Ionicons name="checkmark-circle" size={t.iconSize.md} color={t.colors.success} /> : null}
+                  <AppText variant="display" style={route.stairsCount === 0 ? { color: t.colors.success } : undefined}>{route.stairsCount}</AppText>
+                </View>
+                <AppText color="textMuted" variant="label">escalones</AppText>
+              </View>
+            </View>
+            {route.stepsAvoided > 0 ? (
+              <AppText variant="caption" style={[styles.center, { color: t.colors.success }]}>Evitas {route.stepsAvoided} escalones</AppText>
+            ) : null}
+          </>
+        )}
       </Card>
 
       {profile === 'wheelchair' ? (
-        <Card style={styles.rainCard}>
-          <View style={styles.rainRow}>
-            <MaterialCommunityIcons name="account-multiple" size={28} color={assisted ? t.colors.primary : t.colors.textMuted} />
-            <View style={styles.flex}>
-              <AppText variant="label">Voy con acompañante</AppText>
-              <AppText variant="caption" color="textMuted">Permite pendientes de hasta 10%</AppText>
-            </View>
-            <Switch
-              value={assisted}
-              onValueChange={setAssisted}
-              accessibilityRole="switch"
-              accessibilityLabel="Voy con acompañante"
-              accessibilityHint="Recalcula la ruta permitiendo pendientes de hasta 10% porque alguien empuja la silla"
-              accessibilityState={{ checked: assisted }}
-              trackColor={{ false: t.colors.border, true: t.colors.primary }}
-              thumbColor={t.colors.surface}
-            />
-          </View>
-        </Card>
+        <ToggleRow
+          t={t}
+          icon="account-multiple"
+          title="Voy con acompañante"
+          caption="Permite pendientes de hasta 10%"
+          value={assisted}
+          onChange={setAssisted}
+          hint="Recalcula la ruta permitiendo pendientes de hasta 10% porque alguien empuja la silla"
+        />
       ) : null}
 
       {wcChips.length > 0 ? (
@@ -394,27 +393,17 @@ export default function RouteScreen() {
         </View>
       ) : null}
 
-      <Card style={styles.rainCard}>
-        <View style={styles.rainRow}>
-          <MaterialCommunityIcons name="weather-pouring" size={28} color={raining ? t.colors.primary : t.colors.textMuted} />
-          <View style={styles.flex}>
-            <AppText variant="label">Está lloviendo</AppText>
-            <AppText variant="caption" color="textMuted">Prioriza tramos techados</AppText>
-          </View>
-          <Switch
-            value={raining}
-            onValueChange={setRaining}
-            accessibilityRole="switch"
-            accessibilityLabel="Está lloviendo"
-            accessibilityHint="Recalcula la ruta para priorizar tramos techados"
-            accessibilityState={{ checked: raining }}
-            trackColor={{ false: t.colors.border, true: t.colors.primary }}
-            thumbColor={t.colors.surface}
-          />
-        </View>
-      </Card>
+      <ToggleRow
+        t={t}
+        icon="weather-pouring"
+        title="Está lloviendo"
+        caption="Prioriza tramos techados"
+        value={raining}
+        onChange={setRaining}
+        hint="Recalcula la ruta para priorizar tramos techados"
+      />
 
-      <Pressable onPress={() => setFullMap(true)} accessibilityRole="button" accessibilityLabel={mapLabel} accessibilityHint="Toca para ampliar el mapa">
+      <Pressable onPress={() => setFullMap(true)} accessibilityRole="button" accessibilityLabel={`${mapLabel} Ampliar mapa`}>
         <CampusMap
           mode="macro"
           routePoints={routePts}
@@ -553,28 +542,29 @@ export default function RouteScreen() {
     </ScrollView>
 
       <View style={styles.footer}>
-        <Button
-          label="Iniciar ruta"
-          icon="navigate"
-          fullWidth
-          accessibilityLabel={`Iniciar ruta hacia ${place.name}`}
-          accessibilityHint="Abre la navegación paso a paso"
-          onPress={() => {
-            Speech.stop();
-            router.push(`/navigate/${destId}` as Href);
-          }}
-        />
-        <Button
-          label="Escuchar resumen"
-          icon="volume-high"
-          variant="secondary"
-          fullWidth
+        <View style={styles.flex}>
+          <Button
+            label="Iniciar ruta"
+            icon="navigate"
+            fullWidth
+            accessibilityLabel={`Iniciar ruta hacia ${place.name}`}
+            onPress={() => {
+              Speech.stop();
+              router.push(`/navigate/${destId}` as Href);
+            }}
+          />
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Escuchar resumen"
+          style={({ pressed }) => [styles.listen, pressed && { backgroundColor: t.colors.primarySoft }]}
           onPress={() =>
             speak(
               `Ruta hacia ${place.name}. ${route.minutes} minutos, ${route.distanceM} metros, ${route.stairsCount} escalones. ${route.steps.length} pasos. Primero: ${route.steps[0]?.text ?? ''}`,
             )
-          }
-        />
+          }>
+          <Ionicons name="volume-high" size={t.iconSize.md} color={t.colors.primary} />
+        </Pressable>
       </View>
 
       <Modal visible={fullMap} animationType="fade" transparent onRequestClose={() => setFullMap(false)}>
@@ -611,6 +601,36 @@ function stepSlope(edgeIds: string[]): number {
   );
 }
 
+function ToggleRow({ t, icon, title, caption, value, onChange, hint }: {
+  t: ReturnType<typeof useAppTheme>;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  title: string;
+  caption: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+  hint: string;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.md, minHeight: t.minTouch }}>
+      <MaterialCommunityIcons name={icon} size={t.iconSize.md} color={value ? t.colors.primary : t.colors.textMuted} />
+      <View style={{ flex: 1 }}>
+        <AppText variant="label">{title}</AppText>
+        <AppText variant="caption" color="textMuted">{caption}</AppText>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        accessibilityRole="switch"
+        accessibilityLabel={title}
+        accessibilityHint={hint}
+        accessibilityState={{ checked: value }}
+        trackColor={{ false: t.colors.borderStrong, true: t.colors.primary }}
+        thumbColor={t.colors.surface}
+      />
+    </View>
+  );
+}
+
 function LegendDot({ color, children }: { color: string; children: React.ReactNode }) {
   return <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>{children}</View>;
 }
@@ -629,7 +649,9 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     root: { flex: 1, backgroundColor: t.colors.bg },
     content: { paddingHorizontal: t.spacing.lg, paddingVertical: t.spacing.lg, gap: t.spacing.lg },
     footer: {
-      gap: t.spacing.sm,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.spacing.md,
       padding: t.spacing.lg,
       borderTopWidth: 1,
       borderTopColor: t.colors.border,
@@ -639,7 +661,14 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     header: { gap: t.spacing.xs },
     row: { flexDirection: 'row', gap: t.spacing.md },
     summary: { gap: t.spacing.md },
-    stat: { flex: 1, flexDirection: 'row', alignItems: 'baseline', gap: t.spacing.sm },
+    stat: { flex: 1, alignItems: 'center' },
+    statNum: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs },
+    recalc: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md, minHeight: t.minTouch },
+    listen: {
+      width: 52, height: 52, borderRadius: t.radius.md, borderWidth: 2, borderColor: t.colors.primary,
+      backgroundColor: t.colors.surface, alignItems: 'center', justifyContent: 'center',
+    },
+    noRouteScreen: { flexGrow: 1, justifyContent: 'center' },
     badges: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md, flexWrap: 'wrap' },
     badge: {
       flexDirection: 'row',
@@ -705,7 +734,7 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     avoidRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, paddingLeft: t.spacing.xs },
     noRoute: { alignItems: 'center', gap: t.spacing.md, paddingTop: t.spacing.xl },
     noRouteIcon: {
-      width: 72, height: 72, borderRadius: t.radius.pill, backgroundColor: t.colors.warningSoft,
+      width: 72, height: 72, borderRadius: t.radius.pill, backgroundColor: t.colors.primarySoft,
       alignItems: 'center', justifyContent: 'center',
     },
     noRouteActions: { gap: t.spacing.md },

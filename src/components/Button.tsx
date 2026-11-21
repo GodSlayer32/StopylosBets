@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
@@ -18,11 +19,12 @@ type Props = {
   accessibilityHint?: string;
 };
 
-const makePalette = (colors: Colors): Record<Variant, { bg: string; fg: string; border: string }> => ({
-  primary: { bg: colors.primary, fg: colors.primaryText, border: colors.primary },
-  secondary: { bg: colors.surface, fg: colors.primary, border: colors.primary },
-  ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent' },
-  danger: { bg: colors.danger, fg: colors.primaryText, border: colors.danger },
+type Palette = { bg: string; fg: string; border: string; pressedBg: string; ripple: string };
+const makePalette = (colors: Colors): Record<Variant, Palette> => ({
+  primary: { bg: colors.primary, fg: colors.primaryText, border: colors.primary, pressedBg: colors.primaryPressed, ripple: colors.primaryPressed },
+  secondary: { bg: colors.surface, fg: colors.primary, border: colors.primary, pressedBg: colors.primarySoft, ripple: colors.primarySoft },
+  ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent', pressedBg: colors.primarySoft, ripple: colors.primarySoft },
+  danger: { bg: colors.danger, fg: colors.primaryText, border: colors.danger, pressedBg: colors.danger, ripple: colors.dangerSoft },
 });
 
 export function Button({
@@ -41,7 +43,11 @@ export function Button({
   const inactive = disabled || loading;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        if (variant === 'primary') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        onPress?.();
+      }}
+      android_ripple={{ color: p.ripple }}
       disabled={inactive}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
@@ -49,9 +55,9 @@ export function Button({
       accessibilityState={{ disabled: !!inactive, busy: !!loading }}
       style={({ pressed }) => [
         styles.base,
-        { backgroundColor: p.bg, borderColor: p.border },
+        { backgroundColor: pressed ? p.pressedBg : p.bg, borderColor: p.border },
         fullWidth && styles.full,
-        pressed && styles.pressed,
+        pressed && variant === 'danger' && styles.pressed,
         inactive && styles.disabled,
       ]}>
       <View style={styles.row}>

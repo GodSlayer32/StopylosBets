@@ -9,11 +9,11 @@ import { Card } from '@/components/Card';
 import { Screen } from '@/components/Screen';
 import { ScreenState } from '@/components/ScreenState';
 import { StatusPill } from '@/components/StatusPill';
-import { radius, spacing } from '@/constants/theme';
+import { spacing } from '@/constants/theme';
 import { useApp } from '@/context/app-context';
 import { useTheme } from '@/hooks/use-theme';
 import { computeSchedule, placeDetail, STUDENT, type ClassPlan } from '@/lib/schedule';
-import { formatClock, NOW_MINUTES } from '@/lib/time';
+import { formatClock, NOW_ISO, NOW_MINUTES } from '@/lib/time';
 import type { Profile } from '@/types';
 
 const REASON: Record<Profile, string> = {
@@ -100,26 +100,35 @@ export default function MyDay() {
 
   return (
     <Screen scroll>
-      <AppText variant="display" accessibilityRole="header">Mi día</AppText>
-      <AppText color="textMuted">
-        {STUDENT.name} · son las {formatClock(NOW_MINUTES)}
-      </AppText>
+      <View style={styles.head}>
+        <AppText color="textMuted">{TODAY} · son las {formatClock(NOW_MINUTES)}</AppText>
+        <AppText variant="heading">{STUDENT.name}</AppText>
+      </View>
       {plans.map((p) => {
         const tone = p.status === 'tarde' || p.status === 'sin-ruta' ? 'danger' : p.status === 'justo' ? 'warning' : 'success';
+        const finished = p.phase === 'terminada';
         return (
-          <View key={p.cls.id} style={styles.block}>
+          <Card key={p.cls.id} style={[styles.classCard, { minHeight: minTouch }]}>
+            <View style={styles.row}>
+              <View style={styles.flex}>
+                <AppText variant="heading" accessibilityRole="header" color={finished ? 'textMuted' : 'text'}>{p.cls.course}</AppText>
+                <AppText color="textMuted">
+                  {p.cls.start} a {p.cls.end} · {placeDetail(p.place)}
+                </AppText>
+                <AppText variant="caption" color="textMuted">{p.cls.professor}</AppText>
+              </View>
+              {finished ? (
+                <View style={styles.doneTag} accessible accessibilityLabel="Terminada">
+                  <Ionicons name="checkmark-circle" size={20} color={colors.textMuted} />
+                  <AppText variant="label" color="textMuted">Terminada</AppText>
+                </View>
+              ) : p.phase === 'en-curso' ? (
+                <StatusPill tone="neutral" label="En curso" />
+              ) : null}
+            </View>
             {p.status && p.from ? (
-              <View style={[styles.leg, { borderLeftColor: colors[tone] }]}>
+              <View style={[styles.leg, { borderTopColor: colors.border }]}>
                 <View accessible accessibilityLabel={legSentence(p)} style={styles.legText}>
-                  <View style={styles.row}>
-                    <Ionicons name="walk" size={20} color={colors.textMuted} />
-                    <AppText variant="label" style={styles.flex}>
-                      {p.status === 'sin-ruta' ? 'Sin ruta accesible' : `${p.fromOrigin ? `Desde ${p.fromLabel}: ` : ''}${p.minutes} min con ruta accesible · tienes ${p.available}`}
-                    </AppText>
-                  </View>
-                  {p.extraMinutes > 0 ? (
-                    <AppText variant="caption" color="textMuted">+{p.extraMinutes} min por ruta accesible</AppText>
-                  ) : null}
                   <StatusPill
                     tone={tone}
                     label={
@@ -130,10 +139,15 @@ export default function MyDay() {
                     }
                   />
                   {p.leaveAt != null && p.status !== 'sin-ruta' ? (
-                    <AppText variant="caption" color="textMuted">
-                      {p.fromOrigin ? `Sal a las ${formatClock(p.leaveAt)}` : `Sales ${formatClock(p.leaveAt)}`} · llegas {formatClock(p.arriveAt ?? 0)} (clase {p.cls.start})
+                    <AppText variant="label">
+                      {p.fromOrigin ? `Sal a las ${formatClock(p.leaveAt)}` : `Sales ${formatClock(p.leaveAt)}`} · llegas {formatClock(p.arriveAt ?? 0)}
                     </AppText>
                   ) : null}
+                  <AppText variant="caption" color="textMuted">
+                    {p.status === 'sin-ruta'
+                      ? 'Sin ruta accesible ahora'
+                      : `${p.fromOrigin ? `Desde ${p.fromLabel}: ` : ''}${p.minutes} min · tienes ${p.available}${p.extraMinutes > 0 ? ` · +${p.extraMinutes} min por ruta accesible` : ''}`}
+                  </AppText>
                 </View>
                 {p.status === 'justo' || p.status === 'tarde' ? (
                   <Button
@@ -141,7 +155,6 @@ export default function MyDay() {
                     icon="share-outline"
                     variant="secondary"
                     fullWidth
-                    accessibilityHint="Abre las opciones para compartir un mensaje cortés"
                     onPress={() => notify(p)}
                   />
                 ) : null}
@@ -160,31 +173,24 @@ export default function MyDay() {
                 />
               </View>
             ) : null}
-            <Card style={[styles.classCard, { minHeight: minTouch }, p.phase === 'terminada' && styles.done]}>
-              <View style={styles.row}>
-                <View style={styles.flex}>
-                  <AppText variant="heading" accessibilityRole="header">{p.cls.course}</AppText>
-                  <AppText color="textMuted">
-                    {p.cls.start} a {p.cls.end} · {placeDetail(p.place)}
-                  </AppText>
-                  <AppText variant="caption" color="textMuted">{p.cls.professor}</AppText>
-                </View>
-                {p.phase !== 'pendiente' ? <StatusPill tone="neutral" label={p.phase === 'en-curso' ? 'En curso' : 'Terminada'} /> : null}
-              </View>
-            </Card>
-          </View>
+          </Card>
         );
       })}
     </Screen>
   );
 }
 
+const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const NOW_DATE = new Date(NOW_ISO);
+const TODAY = `${DAYS[NOW_DATE.getUTCDay()].replace(/^./, (c) => c.toUpperCase())} ${NOW_DATE.getUTCDate()} de ${MONTHS[NOW_DATE.getUTCMonth()]}`;
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  block: { gap: spacing.md },
-  done: { opacity: 0.6 },
-  classCard: { gap: spacing.sm },
-  leg: { gap: spacing.md, marginLeft: spacing.md, paddingLeft: spacing.lg, borderLeftWidth: 4, borderRadius: radius.sm },
+  head: { gap: spacing.xs },
+  classCard: { gap: spacing.md },
+  doneTag: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  leg: { gap: spacing.md, paddingTop: spacing.md, borderTopWidth: 1 },
   legText: { gap: spacing.sm },
 });

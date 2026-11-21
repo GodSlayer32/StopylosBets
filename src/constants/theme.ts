@@ -5,14 +5,16 @@ export const colors = {
   text: '#0F172A',
   textMuted: '#475569',
   border: '#D8DDE5',
+  borderStrong: '#7A8499',
   primary: '#1747D1',
+  primaryPressed: '#0F36A8',
   primaryText: '#FFFFFF',
   primarySoft: '#E3EAFD',
-  warning: '#B45309',
+  warning: '#9A4504',
   warningSoft: '#FEF3C7',
   danger: '#B91C1C',
   dangerSoft: '#FEE2E2',
-  success: '#15803D',
+  success: '#116A33',
   successSoft: '#DCFCE7',
   overlay: 'rgba(15, 23, 42, 0.5)',
   overlaySurface: 'rgba(255, 255, 255, 0.86)',
@@ -28,7 +30,9 @@ export const highContrast: Colors = {
   text: '#FFFFFF',
   textMuted: '#E5E5E5',
   border: '#FFFFFF',
+  borderStrong: '#E5E5E5',
   primary: '#FFD400',
+  primaryPressed: '#C9A600',
   primaryText: '#000000',
   primarySoft: '#2A2400',
   warning: '#FFB020',
@@ -138,6 +142,8 @@ export const typography: Record<TypographyVariant, TypographyStyle> = {
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48 } as const;
 
+export const iconSize = { sm: 20, md: 24, lg: 32 } as const;
+
 export const radius = { sm: 8, md: 14, lg: 20, pill: 999 } as const;
 
 export const minTouch = 52;
@@ -150,7 +156,7 @@ export const shadow = {
   elevation: 2,
 } as const;
 
-export const theme = { colors, map: mapColors, typography, spacing, radius, minTouch, shadow, accessible: false };
+export const theme = { colors, map: mapColors, typography, spacing, radius, iconSize, minTouch, shadow, accessible: false };
 export type AppTheme = Omit<typeof theme, 'colors' | 'map' | 'accessible'> & {
   colors: Colors;
   map: MapColors;

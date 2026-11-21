@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { AppText } from '@/components/AppText';
+import { useReduceMotion } from '@/hooks/use-reduce-motion';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
@@ -13,28 +14,35 @@ type Props = {
   onSelect?: (level: number) => void;
 };
 
-const ROW = 36;
+/** Fila visual 44 + hitSlop 4 por lado = 52 de área táctil */
+const ROW = 44;
+const HIT = 4;
 
-export function FloorRail({ levels, current, dest, onSelect }: Props) {
+function FloorRailBase({ levels, current, dest, onSelect }: Props) {
   const t = useTheme();
+  const reduceMotion = useReduceMotion();
   const [pulse] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
+    if (reduceMotion) {
+      pulse.setValue(1);
+      return;
+    }
     pulse.setValue(0);
     Animated.sequence([
       Animated.timing(pulse, { toValue: 1, duration: 220, useNativeDriver: true }),
       Animated.timing(pulse, { toValue: 0, duration: 420, useNativeDriver: true }),
     ]).start();
-  }, [current, pulse]);
+  }, [current, pulse, reduceMotion]);
 
   const box = [styles.rail, { backgroundColor: t.colors.surface, borderColor: t.colors.border, borderRadius: t.radius.md, padding: t.spacing.xs }];
 
   if (levels.length === 0) {
     return (
       <View style={box} accessibilityLabel="Vista exterior">
-        <View style={[styles.row, { width: ROW + 8, backgroundColor: t.colors.primary, borderRadius: t.radius.sm }]}>
+        <View style={[styles.row, { width: ROW + t.spacing.sm, backgroundColor: t.colors.primary, borderRadius: t.radius.sm }]}>
           <Ionicons name="map-outline" size={18} color={t.colors.primaryText} />
-          <AppText variant="caption" style={{ color: t.colors.primaryText, fontSize: 11, lineHeight: 14 }}>Exterior</AppText>
+          <AppText variant="caption" style={{ color: t.colors.primaryText }}>Exterior</AppText>
         </View>
       </View>
     );
@@ -51,6 +59,7 @@ export function FloorRail({ levels, current, dest, onSelect }: Props) {
           <Pressable
             key={lv}
             disabled={!onSelect}
+            hitSlop={HIT}
             onPress={() => onSelect?.(lv)}
             accessibilityRole="button"
             accessibilityLabel={`Piso ${lv}${active ? ', actual' : ''}${isDest ? ', destino' : ''}`}
@@ -62,7 +71,7 @@ export function FloorRail({ levels, current, dest, onSelect }: Props) {
                 <MaterialCommunityIcons name="elevator-passenger" size={13} color={fg} />
               </Animated.View>
             ) : null}
-            <AppText variant="label" style={{ color: fg, fontSize: 15, lineHeight: 20 }}>{lv}</AppText>
+            <AppText variant="label" style={{ color: fg }}>{lv}</AppText>
             {isDest ? (
               <Ionicons name="location" size={14} color={active ? t.colors.primaryText : t.colors.danger} style={styles.pin} />
             ) : null}
@@ -78,3 +87,5 @@ const styles = StyleSheet.create({
   row: { width: ROW, height: ROW, alignItems: 'center', justifyContent: 'center' },
   pin: { position: 'absolute', right: 3, bottom: 3 },
 });
+
+export const FloorRail = memo(FloorRailBase);

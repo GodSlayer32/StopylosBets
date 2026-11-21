@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import incidentsJson from '../data/incidents.json';
 import { BASE_ELEVATORS, compareWithShortest, explainNoRoute, findRoute } from '../lib/routing';
 import { NOW_ISO, STALE_HOURS, formatAgo, minutesSince } from '../lib/time';
@@ -52,6 +52,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [raining, setRaining] = useState(false);
   const [assisted, setAssisted] = useState(false);
   const [allIncidents, setAllIncidents] = useState<Incident[]>(incidentsJson.incidents as Incident[]);
+  const incidentsRef = useRef(allIncidents);
+  useEffect(() => {
+    incidentsRef.current = allIncidents;
+  }, [allIncidents]);
   // Solo los activos (incluye los "sin confirmar"); con minutesAgo derivado del reloj simulado.
   const incidents = useMemo<Incident[]>(
     () =>
@@ -116,7 +120,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const denyIncident = useCallback(
     (id: string) => {
-      const inc = allIncidents.find((i) => i.id === id && i.status === 'active');
+      const inc = incidentsRef.current.find((i) => i.id === id && i.status === 'active');
       if (!inc) return false;
       const denials = inc.denials + 1;
       // Con 2+ negaciones y peso suficiente frente a las confirmaciones, se da por resuelto.
@@ -128,7 +132,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       );
       return resolved;
     },
-    [allIncidents],
+    [],
   );
 
   const getRoute = useCallback(

@@ -1,8 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
-import { AccessibilityInfo, Alert, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Alert, findNodeHandle, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/AppText';
 import { Banner } from '@/components/Banner';
@@ -46,6 +47,8 @@ export default function Home() {
   const router = useRouter();
   const { profile, origin, setOrigin, raining, incidents, elevators, confirmIncident, denyIncident } = useApp();
   const { colors, minTouch, typography } = useTheme();
+  const insets = useSafeAreaInsets();
+  const sheetTitleRef = useRef<React.ComponentRef<typeof View>>(null);
   const [query, setQuery] = useState('');
   const [quick, setQuick] = useState<string | null>(null);
   const [pickingOrigin, setPickingOrigin] = useState(false);
@@ -56,6 +59,15 @@ export default function Home() {
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [thanks, setThanks] = useState<string | null>(null);
   const sheetElevator: Elevator | undefined = elevators.find((e) => e.id === sheetId);
+
+  useEffect(() => {
+    if (!sheetId) return;
+    const timer = setTimeout(() => {
+      const node = sheetTitleRef.current ? findNodeHandle(sheetTitleRef.current) : null;
+      if (node) AccessibilityInfo.setAccessibilityFocus(node);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [sheetId]);
 
   const closeSheet = () => {
     setSheetId(null);
@@ -159,13 +171,13 @@ export default function Home() {
         <Chip
           icon="person-circle"
           label={`Perfil: ${PROFILE_LABEL[profile]}`}
-          accessibilityHint="Cambiar tu perfil de movilidad"
+          accessibilityLabel={`Perfil: ${PROFILE_LABEL[profile]}. Cambiar perfil`}
           onPress={() => router.replace('/')}
         />
       </View>
 
       {nextClass && classPlace ? (
-        <Card style={[styles.gap, { borderColor: colors.primary, borderWidth: 2 }]}>
+        <Card style={[styles.gap, styles.nextCard, { borderColor: colors.primary }]}>
           <AppText variant="label" color="primary">
             Tu próxima clase
           </AppText>
@@ -199,16 +211,16 @@ export default function Home() {
           />
           <Pressable
             onPress={() => router.push('/my-day')}
-            accessibilityRole="link"
+            accessibilityRole="button"
             accessibilityLabel="Ver mi día"
-            style={[styles.row, styles.link, { minHeight: minTouch }]}>
+            style={[styles.row, styles.secondary, { minHeight: minTouch }]}>
+            <Ionicons name="calendar-outline" size={20} color={colors.primary} />
             <AppText variant="label" color="primary">Ver mi día</AppText>
-            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
           </Pressable>
           {warnPlan && warnPlan.leaveAt != null ? (
             <Pressable
               onPress={() => router.push('/my-day')}
-              accessibilityRole="link"
+              accessibilityRole="button"
               accessibilityLabel={`Ojo: a las ${formatClock(warnPlan.leaveAt)} ${warnPlan.status === 'tarde' ? 'no alcanzas' : 'vas justo'} a ${warnPlan.cls.course}. Ver mi día`}
               style={[styles.row, { minHeight: minTouch }]}>
               <Ionicons name="warning" size={18} color={colors.warning} />
@@ -222,7 +234,7 @@ export default function Home() {
       ) : null}
 
       {alerts.length > 0 ? (
-        <View style={styles.gap}>
+        <View style={[styles.gap, styles.afterCard]}>
           <Pressable
             onPress={() => setShowAlerts((v) => !v)}
             accessibilityRole="button"
@@ -265,7 +277,7 @@ export default function Home() {
       <Pressable
         onPress={() => setPickingOrigin((v) => !v)}
         accessibilityRole="button"
-        accessibilityLabel={`Desde: ${originLabel}. Toca para cambiar el punto de partida`}
+        accessibilityLabel={`Desde: ${originLabel}. Cambiar el punto de partida`}
         accessibilityState={{ expanded: pickingOrigin }}
         style={[styles.row, styles.origin, { minHeight: minTouch }]}>
         <Ionicons name="location" size={22} color={colors.primary} />
@@ -281,7 +293,6 @@ export default function Home() {
               key={id}
               label={getNode(id)?.label ?? id}
               selected={id === origin}
-              accessibilityHint="Usar como punto de partida"
               onPress={() => {
                 setOrigin(id);
                 setPickingOrigin(false);
@@ -309,7 +320,6 @@ export default function Home() {
             onPress={() => setQuery('')}
             accessibilityRole="button"
             accessibilityLabel="Borrar búsqueda"
-            hitSlop={8}
             style={styles.clear}>
             <Ionicons name="close-circle" size={22} color={colors.textMuted} />
           </Pressable>
@@ -323,7 +333,8 @@ export default function Home() {
             icon={c.icon}
             label={c.label}
             selected={quick === c.id}
-            accessibilityHint="Filtra los lugares por esta categoría"
+            role="checkbox"
+            checked={quick === c.id}
             onPress={() => setQuick(quick === c.id ? null : c.id)}
           />
         ))}
@@ -343,7 +354,6 @@ export default function Home() {
                 key={p.id}
                 onPress={() => router.push(`/route/${p.id}`)}
                 accessibilityLabel={`${p.name}, ${placeSub(p)}`}
-                accessibilityHint="Ver la ruta accesible hasta aquí"
                 style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: colors.primarySoft }]}>
                   <MaterialCommunityIcons
@@ -377,7 +387,12 @@ export default function Home() {
         <View style={[styles.backdrop, { backgroundColor: colors.overlay }]}>
           <Pressable style={styles.flex} onPress={closeSheet} accessibilityRole="button" accessibilityLabel="Cerrar detalle del ascensor" />
           {sheetElevator ? (
-            <View style={[styles.sheet, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+            <View
+              accessibilityViewIsModal
+              style={[styles.sheet, { backgroundColor: colors.bg, borderColor: colors.border, paddingBottom: spacing.xl + insets.bottom }]}>
+              <View ref={sheetTitleRef} accessible accessibilityRole="header">
+                <AppText variant="heading">Ascensor Edif. {sheetElevator.building}</AppText>
+              </View>
               <ElevatorStatus elevator={sheetElevator} />
               {thanks ? (
                 <View accessibilityRole="alert" style={[styles.thanks, { backgroundColor: colors.successSoft, borderColor: colors.success }]}>
@@ -423,7 +438,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   input: { flex: 1 },
-  link: { justifyContent: 'center' },
+  secondary: { alignSelf: 'flex-start', paddingHorizontal: spacing.xs },
+  nextCard: { borderWidth: 1 },
+  afterCard: { marginTop: spacing.xl },
   leave: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 2 },
   backdrop: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
@@ -434,6 +451,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   thanks: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.md, borderWidth: 1 },
-  clear: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  clear: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   iconWrap: { width: 48, height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
 });

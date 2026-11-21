@@ -7,5 +7,5 @@ type Props = TextProps & { variant?: TypographyVariant; color?: ColorToken };
 
 export function AppText({ variant = 'body', color = 'text', style, ...rest }: Props) {
   const t = useTheme();
-  return <Text {...rest} style={[t.typography[variant], { color: t.colors[color] }, style]} />;
+  return <Text maxFontSizeMultiplier={1.6} {...rest} style={[t.typography[variant], { color: t.colors[color] }, style]} />;
 }

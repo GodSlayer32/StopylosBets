@@ -7,7 +7,7 @@ type Props = ViewProps & { onPress?: () => void; accessibilityLabel?: string; ac
 
 export function Card({ onPress, accessibilityLabel, accessibilityHint, style, children, ...rest }: Props) {
   const { colors } = useTheme();
-  const themed = { backgroundColor: colors.surface, borderColor: colors.border };
+  const themed = { backgroundColor: colors.surface, borderColor: onPress ? colors.borderStrong : colors.border };
   if (onPress) {
     return (
       <Pressable
@@ -15,7 +15,8 @@ export function Card({ onPress, accessibilityLabel, accessibilityHint, style, ch
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         accessibilityHint={accessibilityHint}
-        style={({ pressed }) => [styles.card, themed, pressed && styles.pressed, style]}>
+        android_ripple={{ color: colors.primarySoft }}
+        style={({ pressed }) => [styles.card, themed, pressed && { backgroundColor: colors.surfaceAlt }, style]}>
         {children}
       </Pressable>
     );
@@ -34,5 +35,4 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     ...shadow,
   },
-  pressed: { opacity: 0.9 },
 });
