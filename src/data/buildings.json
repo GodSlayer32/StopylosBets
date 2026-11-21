@@ -207,18 +207,27 @@
       "name": "Edificio F",
       "floors": [
         {
+          "level": -1,
+          "label": "Subterráneo",
+          "rooms": [
+            "Laboratorio de Informática",
+            "Laboratorio",
+            "Sala de clases",
+            "Baño"
+          ]
+        },
+        {
           "level": 1,
           "label": "Piso 1",
           "rooms": [
-            "Sala de Informática",
-            "Salas de clases Informática",
-            "Sala de Estudio",
-            "Depto. de Informática"
+            "Hall de acceso",
+            "Depto. de Informática",
+            "Escalera (sube y baja)"
           ]
         }
       ],
       "stairs": {
-        "x": 0.55
+        "x": 0.75
       },
       "entrances": [
         {

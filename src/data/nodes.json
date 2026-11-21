@@ -291,15 +291,6 @@
       "arrivalCue": "Puerta metálica gris con ventana angosta, al final del pasillo a la derecha; el letrero tiene relieve y braille"
     },
     {
-      "id": "f_in",
-      "label": "Sala de Estudio (Edif. F)",
-      "x": 81.35,
-      "y": 81.45,
-      "building": "F",
-      "floor": 1,
-      "zone": "Edificio F · Piso 1"
-    },
-    {
       "id": "rd_s",
       "label": "Calle Agustín Edwards (oeste)",
       "x": 70,
@@ -446,17 +437,18 @@
     {
       "id": "f_acc",
       "label": "Acceso Edif. F (calle Edwards)",
-      "x": 80.05,
-      "y": 85.3,
+      "x": 80.06,
+      "y": 85.35,
       "building": "F",
       "floor": 1,
-      "zone": "Edificio F · Piso 1"
+      "zone": "Edificio F · Piso 1",
+      "arrivalCue": "Hall de entrada con piso rojo y el letrero 'Departamento de Informática'; la escalera queda a la derecha"
     },
     {
       "id": "f_hub",
-      "label": "Pasillo central Edif. F",
-      "x": 79.5,
-      "y": 82.35,
+      "label": "Hall Edif. F",
+      "x": 80.06,
+      "y": 82.88,
       "building": "F",
       "floor": 1,
       "zone": "Edificio F · Piso 1"
@@ -464,21 +456,67 @@
     {
       "id": "f_norte",
       "label": "Salida al patio interior Edif. F",
-      "x": 79.5,
-      "y": 81.0,
+      "x": 80.7,
+      "y": 80.91,
       "building": "F",
       "floor": 1,
       "zone": "Edificio F · Piso 1"
     },
     {
-      "id": "f_inf",
-      "label": "Sala de Informática (Edif. F)",
-      "x": 77.2,
-      "y": 81.45,
+      "id": "f_st1",
+      "label": "Escalera Edif. F (piso 1)",
+      "x": 84.99,
+      "y": 82.7,
       "building": "F",
       "floor": 1,
       "zone": "Edificio F · Piso 1",
-      "arrivalCue": "Puerta del laboratorio de Informática, a la izquierda del paso hacia el patio interior"
+      "arrivalCue": "Escalera con baranda negra; un tramo sube y el otro baja"
+    },
+    {
+      "id": "f_st0",
+      "label": "Escalera Edif. F (subterráneo)",
+      "x": 84.16,
+      "y": 82.6,
+      "building": "F",
+      "floor": -1,
+      "zone": "Edificio F · Subterráneo"
+    },
+    {
+      "id": "f_inf",
+      "label": "Laboratorio de Informática (Edif. F)",
+      "x": 81.05,
+      "y": 81.38,
+      "building": "F",
+      "floor": -1,
+      "zone": "Edificio F · Subterráneo",
+      "arrivalCue": "Pasillo de baldosa clara con sillones negros; el laboratorio está antes del baño"
+    },
+    {
+      "id": "f_bano",
+      "label": "Baño Edif. F",
+      "x": 82.35,
+      "y": 81.44,
+      "building": "F",
+      "floor": -1,
+      "zone": "Edificio F · Subterráneo"
+    },
+    {
+      "id": "f_lab2",
+      "label": "Laboratorio Edif. F",
+      "x": 86.11,
+      "y": 82.44,
+      "building": "F",
+      "floor": -1,
+      "zone": "Edificio F · Subterráneo"
+    },
+    {
+      "id": "f_sala1",
+      "label": "Sala de clases Edif. F",
+      "x": 84.2,
+      "y": 83.58,
+      "building": "F",
+      "floor": -1,
+      "zone": "Edificio F · Subterráneo"
     }
   ]
 }
