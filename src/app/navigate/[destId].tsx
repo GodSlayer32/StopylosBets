@@ -1,6 +1,6 @@
 import type React from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, findNodeHandle, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -34,21 +34,19 @@ export default function NavigateScreen() {
   const { destId, partial } = useLocalSearchParams<{ destId: string; partial?: string }>();
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const { getRoute, getNearestReachable, tickets, accessibleMode, profile, incidents, elevators, confirmIncident, denyIncident } = useApp();
+  const { getRoute, getNearestReachable, setOrigin, resolveTicket, tickets, accessibleMode, profile, incidents, elevators, confirmIncident, denyIncident } = useApp();
   const t = useAppTheme(accessibleMode);
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(t), [t]);
   const place = destId ? getPlace(destId) : undefined;
   const esParcial = partial === '1';
-  const nearest = useMemo(
-    () => (esParcial && destId ? getNearestReachable(destId) : null),
-    [esParcial, destId, getNearestReachable],
-  );
+  // Congelado al montar: al llegar cambia el origen y no debe recalcularse la guía en curso.
+  const [nearest] = useState(() => (esParcial && destId ? getNearestReachable(destId) : null));
   /** Hasta donde guia esta navegacion de verdad. */
   const destLabel = nearest ? nearest.reachedLabel : place?.name ?? 'tu destino';
 
   const ticket = useMemo(
-    () => (esParcial && place ? tickets.find((x) => x.placeId === place.id) ?? null : null),
+    () => (esParcial && place ? tickets.find((x) => x.placeId === place.id && x.status !== 'resolved') ?? null : null),
     [esParcial, place, tickets],
   );
 
@@ -83,6 +81,12 @@ export default function NavigateScreen() {
       .catch(() => !cancelled && setStatus('error'));
     return () => { cancelled = true; };
   }, [destId, attempt, esParcial]);
+
+  // Al llegar, la siguiente ruta parte desde el nodo alcanzado (destino, o el punto alcanzable si es parcial).
+  const arrivedNode = nearest?.reachedNodeId ?? place?.nodeId;
+  useEffect(() => {
+    if (sim.finished && arrivedNode) setOrigin(arrivedNode);
+  }, [sim.finished, arrivedNode, setOrigin]);
 
   const speakOn = profile === 'lowVision' || voice;
   const step = route?.steps[sim.stepIndex];
@@ -473,6 +477,12 @@ export default function NavigateScreen() {
           assignee: ticket?.status === 'assigned' ? ticket.assignee : undefined,
           etaMin: ticket?.etaMin,
           onViewTicket: close,
+          onHelped: () => {
+            Speech.stop();
+            const resume = ticket ? resolveTicket(ticket.id) : null;
+            if (!resume) return;
+            router.replace((resume === place.nodeId ? '/home' : { pathname: '/route/[destId]', params: { destId: place.id } }) as Href);
+          },
         } : undefined}
         onLayout={onCardLayout}
       />

@@ -32,6 +32,7 @@ type Props = {
     assignee?: string;
     etaMin?: number;
     onViewTicket: () => void;
+    onHelped: () => void;
   };
 };
 
@@ -76,7 +77,8 @@ function InstructionCardBase({ sim, route, place, accessibleMode, speakOn, onTog
             <Ionicons name={partial.assignee ? 'person-circle' : 'hourglass'} size={t.iconSize.sm} color={t.colors.success} />
             <AppText variant="caption" color="success" style={styles.flex}>{status}</AppText>
           </View>
-          <Button label="Volver al inicio" fullWidth onPress={onHome} />
+          <Button label="Volver al inicio" variant="secondary" fullWidth onPress={onHome} />
+          <Button label="Ya me ayudaron" icon="checkmark-circle" fullWidth onPress={partial.onHelped} />
           <Button label="Ver mi ticket" variant="secondary" fullWidth onPress={partial.onViewTicket} />
         </View>
       </View>

@@ -1,9 +1,12 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/AppText';
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import type { AppTheme } from '@/constants/theme';
 import type { PartialRoute, Place, SupportTicket } from '@/types';
@@ -23,6 +26,8 @@ type Props = {
 export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Props) {
   const t = useAppTheme(accessibleMode);
   const styles = useMemo(() => makeStyles(t), [t]);
+  const router = useRouter();
+  const { resolveTicket } = useApp();
   const [openDetail, setOpenDetail] = useState(false);
   const asignado = ticket.status === 'assigned';
 
@@ -67,9 +72,22 @@ export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Pr
       </View>
 
       <AppText variant="caption" color="textMuted">
-        Pedimos acompañamiento para los últimos {ticket.remainingM} m hasta {place.name}, desde{' '}
-        {ticket.reachedLabel}.
+        {ticket.supportText
+          ? `${ticket.supportText}.`
+          : `Pedimos acompañamiento para los últimos ${ticket.remainingM} m hasta ${place.name}, desde ${ticket.reachedLabel}.`}
       </AppText>
+
+      <Button
+        label="Ya me ayudaron"
+        icon="checkmark-circle"
+        fullWidth
+        accessibilityLabel="Ya me ayudaron: cerrar el ticket y continuar la ruta"
+        onPress={() => {
+          const resume = resolveTicket(ticket.id);
+          if (!resume) return;
+          router.replace((resume === place.nodeId ? '/home' : { pathname: '/route/[destId]', params: { destId: place.id } }) as Href);
+        }}
+      />
 
       <Pressable
         onPress={() => setOpenDetail((v) => !v)}
@@ -102,7 +120,7 @@ export function SupportTicketCard({ ticket, partial, place, accessibleMode }: Pr
         <AppText variant="caption" color="primary">Seguirlo en el portal USM</AppText>
       </Pressable>
 
-      {partial.route.steps.length === 0 ? (
+      {partial.route.steps.length === 0 && !ticket.supportText ? (
         <AppText variant="caption" color="textMuted">
           Desde donde estás no se puede avanzar sola o solo: el apoyo llega hasta tu punto de partida.
         </AppText>

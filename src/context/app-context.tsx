@@ -1,13 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import incidentsJson from '../data/incidents.json';
 import { BASE_ELEVATORS, compareWithShortest, explainNoRoute, findNearestReachable, findRoute, getPlace } from '../lib/routing';
-import { buildTicket, SUPPORT_TEAM } from '../lib/support-ticket';
+import { buildTicket, detectElevatorCause, SUPPORT_TEAM } from '../lib/support-ticket';
 import { NOW_ISO, STALE_HOURS, formatAgo, minutesSince } from '../lib/time';
 import type {
   Elevator, Incident, NoRouteDiagnosis, PartialRoute, Profile, RouteComparison, RouteResult, SupportTicket,
 } from '../types';
 
-export const DEFAULT_ORIGIN = 'acc_placeres';
+export const DEFAULT_ORIGIN = 'c_labs';
 const LATENCY_MS = 400;
 /** Demo: cuanto tarda el portal en asignar el ticket a alguien. */
 const ASSIGN_MS = 3500;
@@ -56,12 +56,14 @@ interface AppContextValue {
    * mismo trayecto devuelve el ticket que ya existe en vez de duplicarlo.
    */
   openTicket: (destPlaceId: string, partial: PartialRoute) => SupportTicket | null;
+  /** "Ya me ayudaron": cierra el ticket y fija el origen donde quedo la persona. Devuelve ese nodo. */
+  resolveTicket: (ticketId: string) => string | null;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [profile, setProfile] = useState<Profile>('crutches');
+  const [profile, setProfile] = useState<Profile>('wheelchair');
   const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
   const [raining, setRaining] = useState(false);
   const [assisted, setAssisted] = useState(false);
@@ -186,32 +188,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     (destPlaceId: string, partial: PartialRoute) => {
       const place = getPlace(destPlaceId);
       if (!place) return null;
-      const nuevo = buildTicket(partial, place, profile, origin, NOW_ISO);
-      const ya = ticketsRef.current.find((x) => x.key === nuevo.key);
-      if (ya) return ya;
-      ticketsRef.current = [nuevo, ...ticketsRef.current];
+      const cause = detectElevatorCause(origin, place, partial, elevators);
+      const nuevo = buildTicket(partial, place, profile, origin, NOW_ISO, cause);
+      const mismoDestino = ticketsRef.current.filter((x) => x.placeId === place.id && x.profile === profile);
+      // Un pedido de apoyo abierto sigue vigente aunque cambie el origen (p. ej. al llegar al punto alcanzable).
+      const abierto = mismoDestino.find((x) => x.status !== 'resolved');
+      if (abierto) return abierto;
+      // Resuelto para este destino: no se reabre solo mientras el origen sea distinto.
+      if (mismoDestino.some((x) => x.originNodeId !== origin)) return null;
+      ticketsRef.current = [nuevo, ...ticketsRef.current.filter((x) => x.key !== nuevo.key)];
       setTickets(ticketsRef.current);
       // El portal responde: queda asignado a alguien de apoyo en terreno.
       assignTimers.current.push(
         setTimeout(() => {
           setTickets((prev) =>
-            prev.map((x) => (x.id === nuevo.id ? { ...x, status: 'assigned' as const, assignee: SUPPORT_TEAM } : x)),
+            prev.map((x) => (x.id === nuevo.id && x.status === 'sent' ? { ...x, status: 'assigned' as const, assignee: SUPPORT_TEAM } : x)),
           );
         }, ASSIGN_MS),
       );
       return nuevo;
     },
-    [origin, profile],
+    [origin, profile, elevators],
   );
+
+  const resolveTicket = useCallback((ticketId: string) => {
+    const t = ticketsRef.current.find((x) => x.id === ticketId);
+    if (!t) return null;
+    ticketsRef.current = ticketsRef.current.map((x) => (x.id === ticketId ? { ...x, status: 'resolved' as const } : x));
+    setTickets(ticketsRef.current);
+    setOrigin(t.resumeNodeId);
+    return t.resumeNodeId;
+  }, []);
 
   const value = useMemo<AppContextValue>(
     () => ({
       profile, setProfile, accessibleMode: profile === 'lowVision', origin, setOrigin, raining, setRaining,
       assisted, setAssisted, getNoRouteReason, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison,
-      getNearestReachable, tickets, openTicket,
+      getNearestReachable, tickets, openTicket, resolveTicket,
     }),
     [profile, origin, raining, assisted, getNoRouteReason, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison,
-     getNearestReachable, tickets, openTicket],
+     getNearestReachable, tickets, openTicket, resolveTicket],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

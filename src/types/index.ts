@@ -188,7 +188,7 @@ export interface PartialRoute {
   remainingM: number;
 }
 
-export type TicketStatus = 'sent' | 'assigned';
+export type TicketStatus = 'sent' | 'assigned' | 'resolved';
 
 /**
  * Ticket de apoyo. Se levanta solo cuando no hay ruta: nadie deberia tener que
@@ -211,6 +211,12 @@ export interface SupportTicket {
   assignee?: string;
   /** Demo: minutos estimados hasta que llega el apoyo */
   etaMin: number;
+  /** Nodo de origen con el que se levanto el ticket */
+  originNodeId: string;
+  /** Nodo donde queda la persona cuando el apoyo termina (la ruta continua desde ahi) */
+  resumeNodeId: string;
+  /** Si la causa es un ascensor caido: frase corta de lo que se pidio */
+  supportText?: string;
   /** El texto que se envia al portal */
   detail: string;
   portalUrl: string;

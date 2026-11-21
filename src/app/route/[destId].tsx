@@ -18,6 +18,7 @@ import { useApp } from '@/context/app-context';
 import { useAppTheme } from '@/hooks/use-app-theme';
 import { AMENITY_ICON, amenitiesAlongRoute, amenityWord } from '@/lib/amenities';
 import { EDGES, getNode, getPlace } from '@/lib/routing';
+import { detectElevatorCause } from '@/lib/support-ticket';
 import { formatAgo, formatConfirmations } from '@/lib/time';
 import { floorLabel, lacksElevatorAccess } from '@/lib/buildings';
 import { accessibleRoomRequest, courseAt } from '@/lib/schedule';
@@ -242,7 +243,7 @@ export default function RouteScreen() {
     [status, destId, getNearestReachable],
   );
   const ticket = useMemo(
-    () => (partial && place ? tickets.find((x) => x.placeId === place.id) ?? null : null),
+    () => (partial && place ? tickets.find((x) => x.placeId === place.id && x.status !== 'resolved') ?? null : null),
     [partial, place, tickets],
   );
   useEffect(() => {
@@ -259,6 +260,8 @@ export default function RouteScreen() {
   }
 
 
+  const elevatorCause = partial && place ? detectElevatorCause(origin, place, partial, elevators) : null;
+  const stayLabel = getNode(origin)?.label ?? 'tu origen';
   const diagnosis = status === 'error' && profile === 'wheelchair' && destId ? getNoRouteReason(destId) : null;
   const autoPlan = partial && place ? (
     <View style={styles.noRouteActions}>
@@ -266,7 +269,11 @@ export default function RouteScreen() {
         <View style={styles.planHead}>
           <MaterialCommunityIcons name="map-marker-distance" size={t.iconSize.md} color={t.colors.primary} />
           <AppText variant="heading" style={styles.flex}>
-            {partial.route.steps.length ? 'Te llevamos lo más cerca posible' : 'Desde aquí no puedes avanzar'}
+            {partial.route.steps.length
+              ? 'Te llevamos lo más cerca posible'
+              : elevatorCause
+                ? `Quédate en ${stayLabel}: pedimos apoyo para ${elevatorCause.toFloor < elevatorCause.fromFloor ? 'bajar' : 'subir'}`
+                : `Quédate en ${stayLabel}: pedimos apoyo`}
           </AppText>
         </View>
         {partial.route.steps.length ? (
@@ -298,8 +305,9 @@ export default function RouteScreen() {
           </>
         ) : (
           <AppText color="textMuted">
-            Con este perfil todas las salidas de {getNode(origin)?.label ?? 'tu origen'} están bloqueadas,
-            así que el apoyo tiene que venir hasta aquí.
+            {elevatorCause
+              ? `El ascensor del Edif. ${elevatorCause.building} está fuera de servicio. No hay otra forma de ${elevatorCause.toFloor < elevatorCause.fromFloor ? 'bajar' : 'subir'} en silla.`
+              : `Desde ${stayLabel} no hay un camino que puedas hacer por tu cuenta con tu perfil. El equipo de apoyo viene a buscarte hasta aquí.`}
           </AppText>
         )}
       </Card>

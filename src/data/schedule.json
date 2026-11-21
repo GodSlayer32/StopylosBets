@@ -11,11 +11,11 @@
   "classes": [
     {
       "id": "cls-1",
-      "course": "Cálculo II",
+      "course": "Laboratorio de Programación",
       "professor": "Prof. Hernán Muñoz",
-      "placeId": "a-101",
-      "startOffset": -170,
-      "endOffset": -80
+      "placeId": "c-labs",
+      "startOffset": -110,
+      "endOffset": -5
     },
     {
       "id": "cls-2",
