@@ -20,7 +20,7 @@ type Option = {
 
 const OPTIONS: Option[] = [
   { id: 'crutches', name: 'Muletas o lesión temporal', desc: 'Evitamos escaleras y pendientes fuertes', icon: 'bandage' },
-  { id: 'wheelchair', name: 'Silla de ruedas', desc: 'Solo rampas, ascensores y pendientes suaves', icon: 'wheelchair-accessibility' },
+  { id: 'wheelchair', name: 'Silla de ruedas', desc: 'Rampas suaves (≤6%), puertas anchas y ascensores amplios', icon: 'wheelchair-accessibility' },
   { id: 'lowVision', name: 'Baja visión', desc: 'Te guiamos por voz y con alto contraste', icon: 'eye-outline' },
   { id: 'none', name: 'Sin necesidades especiales', desc: 'La ruta más corta', icon: 'walk' },
 ];

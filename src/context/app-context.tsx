@@ -1,8 +1,8 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import incidentsJson from '../data/incidents.json';
-import { BASE_ELEVATORS, compareWithShortest, findRoute } from '../lib/routing';
+import { BASE_ELEVATORS, compareWithShortest, explainNoRoute, findRoute } from '../lib/routing';
 import { NOW_ISO, STALE_HOURS, formatAgo, minutesSince } from '../lib/time';
-import type { Elevator, Incident, Profile, RouteComparison, RouteResult } from '../types';
+import type { Elevator, Incident, NoRouteDiagnosis, Profile, RouteComparison, RouteResult } from '../types';
 
 export const DEFAULT_ORIGIN = 'acc_espana';
 const LATENCY_MS = 400;
@@ -26,6 +26,11 @@ interface AppContextValue {
   /** Modo lluvia: la ruta prioriza tramos techados */
   raining: boolean;
   setRaining: (v: boolean) => void;
+  /** Silla de ruedas con acompañante: acepta pendientes de hasta 10% */
+  assisted: boolean;
+  setAssisted: (v: boolean) => void;
+  /** Motivo por el que una silla autónoma no tiene ruta (null si no aplica) */
+  getNoRouteReason: (destPlaceId: string) => NoRouteDiagnosis | null;
   incidents: Incident[];
   addIncident: (i: NewIncident) => Incident;
   /** Con status ok | down | unconfirmed, fuente y frescura */
@@ -45,6 +50,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile>('crutches');
   const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
   const [raining, setRaining] = useState(false);
+  const [assisted, setAssisted] = useState(false);
   const [allIncidents, setAllIncidents] = useState<Incident[]>(incidentsJson.incidents as Incident[]);
   // Solo los activos (incluye los "sin confirmar"); con minutesAgo derivado del reloj simulado.
   const incidents = useMemo<Incident[]>(
@@ -128,25 +134,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const getRoute = useCallback(
     async (destPlaceId: string) => {
       await wait(LATENCY_MS);
-      return findRoute(origin, destPlaceId, profile, incidents, routingElevators, raining);
+      return findRoute(origin, destPlaceId, profile, incidents, routingElevators, raining, assisted);
     },
-    [origin, profile, incidents, routingElevators, raining],
+    [origin, profile, incidents, routingElevators, raining, assisted],
   );
 
   const getComparison = useCallback(
     async (destPlaceId: string) => {
       await wait(LATENCY_MS);
-      return compareWithShortest(origin, destPlaceId, profile, incidents, routingElevators, raining);
+      return compareWithShortest(origin, destPlaceId, profile, incidents, routingElevators, raining, assisted);
     },
-    [origin, profile, incidents, routingElevators, raining],
+    [origin, profile, incidents, routingElevators, raining, assisted],
+  );
+
+  const getNoRouteReason = useCallback(
+    (destPlaceId: string) => explainNoRoute(origin, destPlaceId, profile, incidents, routingElevators, raining, assisted),
+    [origin, profile, incidents, routingElevators, raining, assisted],
   );
 
   const value = useMemo<AppContextValue>(
     () => ({
       profile, setProfile, accessibleMode: profile === 'lowVision', origin, setOrigin, raining, setRaining,
-      incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison,
+      assisted, setAssisted, getNoRouteReason, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison,
     }),
-    [profile, origin, raining, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison],
+    [profile, origin, raining, assisted, getNoRouteReason, incidents, addIncident, elevators, confirmIncident, denyIncident, getRoute, getComparison],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

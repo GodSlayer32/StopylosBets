@@ -4,7 +4,7 @@ import placesJson from '../data/places.json';
 import elevatorsJson from '../data/elevators.json';
 import type {
   AvoidedItem, Edge, Elevator, EdgeType, Incident, Node, Place, Profile,
-  RouteComparison, RouteResult, RouteStep,
+  NoRouteDiagnosis, RouteComparison, RouteResult, RouteStep, WheelchairChecks,
 } from '../types';
 
 export const NODES = nodesJson.nodes as Node[];
@@ -42,10 +42,56 @@ interface Blocks {
   slowEdges: Set<string>;
   /** Con lluvia se penalizan los tramos sin techo */
   raining: boolean;
+  /** Silla de ruedas con acompañante: acepta más pendiente porque alguien empuja */
+  assisted: boolean;
 }
 
-function buildBlocks(incidents: Incident[], elevators: Elevator[], raining = false): Blocks {
-  const b: Blocks = { edges: new Set(), elevators: new Set(), slowEdges: new Set(), raining };
+/**
+ * Reglas de silla de ruedas (criterios de accesibilidad universal, p. ej. DS 50 / NCh 3269):
+ * - Autónoma: pendiente sostenida <= 6% (tramos > 15 m), tramos cortos <= 8% (<= 15 m).
+ * - Con acompañante: hasta 10% sostenido (alguien empuja).
+ * - Sin escalones ni soleras sin rebaje (curbCut === false).
+ * - Puertas con ancho libre >= 80 cm.
+ * - Ascensor con cabina >= 110 x 140 cm.
+ * Muletas mantiene su regla propia (sin escaleras, pendiente <= 10%).
+ */
+export const WC_RULES = {
+  sustainedMaxPct: 6, shortMaxPct: 8, shortLenM: 15, assistedMaxPct: 10,
+  doorMinCm: 80, cabinWidthCm: 110, cabinDepthCm: 140,
+} as const;
+
+const elevatorById = new Map(BASE_ELEVATORS.map((el) => [el.id, el]));
+
+function cabinOk(elevatorId?: string): boolean {
+  const c = elevatorId ? elevatorById.get(elevatorId)?.cabinCm : undefined;
+  return !c || (c.widthCm >= WC_RULES.cabinWidthCm && c.depthCm >= WC_RULES.cabinDepthCm);
+}
+
+/** Pendiente máxima que una silla autónoma tolera en este tramo. */
+function wcSlopeLimit(e: Edge): number {
+  return e.distanceM > WC_RULES.shortLenM ? WC_RULES.sustainedMaxPct : WC_RULES.shortMaxPct;
+}
+
+/** true si el tramo exige ayuda: pasa con acompañante pero no de forma autónoma. */
+function needsHelp(e: Edge): boolean {
+  return (e.type === 'slope' || e.type === 'ramp') && (e.slopePct ?? 0) > wcSlopeLimit(e);
+}
+
+/** true si la silla de ruedas puede usar el tramo. */
+function wheelchairOk(e: Edge, assisted: boolean): boolean {
+  if (e.type === 'stairs') return false;
+  if (e.curbCut === false) return false;
+  if (e.widthCm !== undefined && e.widthCm < WC_RULES.doorMinCm) return false;
+  if (e.type === 'elevator' && !cabinOk(e.elevatorId)) return false;
+  if (e.type === 'slope' || e.type === 'ramp') {
+    const slope = e.slopePct ?? 0;
+    return assisted ? slope <= WC_RULES.assistedMaxPct : slope <= wcSlopeLimit(e);
+  }
+  return true;
+}
+
+function buildBlocks(incidents: Incident[], elevators: Elevator[], raining = false, assisted = false): Blocks {
+  const b: Blocks = { edges: new Set(), elevators: new Set(), slowEdges: new Set(), raining, assisted };
   for (const el of elevators) if (el.status === 'down') b.elevators.add(el.id);
   for (const inc of incidents) {
     if (inc.type === 'elevator' && inc.elevatorId) b.elevators.add(inc.elevatorId);
@@ -80,11 +126,8 @@ function edgeCost(e: Edge, profile: Profile, b: Blocks): number | null {
       }
       break;
     case 'wheelchair':
-      if (e.type === 'stairs') return null;
-      if (e.type === 'slope') {
-        if (slope > 8) return null;
-        cost = d * (1 + slope / 3);
-      }
+      if (!wheelchairOk(e, b.assisted)) return null;
+      if (e.type === 'slope') cost = d * (1 + slope / 3);
       break;
     case 'lowVision':
       if (e.type === 'stairs') cost = d + 25 + (e.steps ?? 0) * 2;
@@ -205,16 +248,20 @@ function avoidedReason(e: Edge, profile: Profile, b: Blocks): string {
   if (e.type === 'stairs') {
     return profile === 'lowVision' ? 'Las escaleras son un riesgo sin referencias táctiles' : 'Las escaleras son inseguras con tu movilidad';
   }
+  if (profile === 'wheelchair' && e.type === 'elevator') return 'Cabina de 100×120 cm: no cabe una silla (mínimo 110×140)';
+  if (profile === 'wheelchair' && needsHelp(e)) return `Pendiente de ${e.slopePct}% sostenida: supera el 6% que una silla sube sin ayuda`;
   if (e.type === 'slope') return `Pendiente de ${e.slopePct}%, demasiado exigente`;
   return 'Hay una alternativa más segura';
 }
 
-const noBlocks = (raining = false): Blocks => ({ edges: new Set(), elevators: new Set(), slowEdges: new Set(), raining });
+const noBlocks = (raining = false, assisted = false): Blocks => ({
+  edges: new Set(), elevators: new Set(), slowEdges: new Set(), raining, assisted,
+});
 const NO_BLOCKS: Blocks = noBlocks();
 
 function toResult(
   profile: Profile, placeId: string, path: { nodeIds: string[]; edges: Edge[] },
-  elevators: Elevator[], avoided: AvoidedItem[], stepsAvoided: number,
+  elevators: Elevator[], avoided: AvoidedItem[], stepsAvoided: number, assisted = false,
 ): RouteResult {
   const { nodeIds, edges } = path;
   const seconds = edges.reduce((s, e) => s + edgeSeconds(e, profile), 0);
@@ -232,24 +279,47 @@ function toResult(
     usesElevator: edges.some((e) => e.type === 'elevator'),
     coveredPct: totalM > 0 ? Math.round((100 * (totalM - uncoveredM)) / totalM) : 100,
     uncoveredM: Math.round(uncoveredM),
+    wheelchair: profile === 'wheelchair' ? wheelchairChecks(edges, elevators, assisted) : undefined,
+  };
+}
+
+function wheelchairChecks(edges: Edge[], elevators: Elevator[], assisted: boolean): WheelchairChecks {
+  const doors = edges.map((e) => e.widthCm).filter((w): w is number => w !== undefined);
+  const help = assisted ? edges.filter(needsHelp) : [];
+  const helpStreet = help.find((e) => e.name)?.name;
+  return {
+    minDoorCm: doors.length ? Math.min(...doors) : undefined,
+    curbCutsOk: edges.every((e) => e.curbCut !== false),
+    elevatorBuildings: edges
+      .filter((e) => e.type === 'elevator')
+      .map((e) => elevators.find((x) => x.id === e.elevatorId)?.building ?? '')
+      .filter(Boolean),
+    helpSlopePct: help.length ? Math.max(...help.map((e) => e.slopePct ?? 0)) : undefined,
+    helpSlopeM: help.length
+      ? Math.round(edges.filter((e) => helpStreet && e.name === helpStreet).reduce((s, e) => s + e.distanceM, 0))
+      : undefined,
+    helpStreet,
   };
 }
 
 export function findRoute(
   origin: string, destPlaceId: string, profile: Profile,
-  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS, raining = false,
+  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS, raining = false, assisted = false,
 ): RouteResult | null {
   const place = getPlace(destPlaceId);
   if (!place) return null;
-  const b = buildBlocks(incidents, elevators, raining);
+  const b = buildBlocks(incidents, elevators, raining, assisted);
   const path = dijkstra(origin, place.nodeId, profile, b);
   if (!path) return null;
   const used = new Set(path.edges.map((e) => e.id));
   const avoided: AvoidedItem[] = [];
   const seen = new Set<string>();
   const add = (e: Edge, reason: string) => {
+    const wc = profile === 'wheelchair';
     const text =
-      e.type === 'stairs' ? `${e.steps} escalones${e.name ? `: ${e.name}` : ''}`
+      wc && e.type === 'elevator' ? `Ascensor ${elevators.find((x) => x.id === e.elevatorId)?.building ?? ''} (cabina pequeña)`
+      : wc && needsHelp(e) ? `Pendiente ${e.slopePct}% en ${e.name ?? 'tramo'}`
+      : e.type === 'stairs' ? `${e.steps} escalones${e.name ? `: ${e.name}` : ''}`
       : e.type === 'elevator' ? `Ascensor Edif. ${elevators.find((x) => x.id === e.elevatorId)?.building ?? ''}`
       : `${e.name ?? 'Tramo'} (${e.slopePct ?? 0}% de pendiente)`;
     const kind: AvoidedItem['kind'] = isBlocked(e, b) ? 'incident' : e.type === 'stairs' ? 'stairs' : 'slope';
@@ -266,8 +336,17 @@ export function findRoute(
     if (profile !== 'none') {
       for (const e of base.edges) {
         if (used.has(e.id)) continue;
+        if (profile === 'wheelchair' && e.type === 'slope' && wheelchairOk(e, assisted)) continue;
         if (e.type === 'stairs' || e.type === 'slope') add(e, avoidedReason(e, profile, b));
       }
+    }
+  }
+  // Silla autónoma: lo que descartamos de la ruta que sí haría alguien con muletas
+  if (profile === 'wheelchair' && !assisted) {
+    const crutchPath = dijkstra(origin, place.nodeId, 'crutches', noBlocks(raining));
+    for (const e of crutchPath?.edges ?? []) {
+      if (used.has(e.id) || wheelchairOk(e, false)) continue;
+      add(e, avoidedReason(e, profile, b));
     }
   }
   // Lo que evitamos por incidentes / ascensores caídos (vs. ruta sin incidentes)
@@ -278,14 +357,36 @@ export function findRoute(
     }
   }
   const stepsAvoided = profile === 'none' ? 0 : Math.max(0, shortestSteps - stairCount(path.edges));
-  return toResult(profile, destPlaceId, path, elevators, avoided, stepsAvoided);
+  return toResult(profile, destPlaceId, path, elevators, avoided, stepsAvoided, assisted);
+}
+
+/** Explica por qué una silla de ruedas autónoma no tiene ruta (null si no aplica). */
+export function explainNoRoute(
+  origin: string, destPlaceId: string, profile: Profile,
+  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS, raining = false, assisted = false,
+): NoRouteDiagnosis | null {
+  const place = getPlace(destPlaceId);
+  if (!place || profile !== 'wheelchair' || assisted) return null;
+  const withHelp = dijkstra(origin, place.nodeId, 'wheelchair', buildBlocks(incidents, elevators, raining, true));
+  if (withHelp) {
+    const hard = withHelp.edges.filter(needsHelp);
+    const street = hard.find((e) => e.name)?.name;
+    return {
+      kind: 'slope', street, slopePct: Math.max(0, ...hard.map((e) => e.slopePct ?? 0)),
+      meters: Math.round(withHelp.edges.filter((e) => street && e.name === street).reduce((s, e) => s + e.distanceM, 0)),
+    };
+  }
+  const crutch = dijkstra(origin, place.nodeId, 'crutches', buildBlocks(incidents, elevators, raining));
+  const small = crutch?.edges.find((e) => e.type === 'elevator' && !cabinOk(e.elevatorId));
+  if (small) return { kind: 'cabin', elevatorBuilding: elevators.find((x) => x.id === small.elevatorId)?.building };
+  return { kind: 'other' };
 }
 
 export function compareWithShortest(
   origin: string, destPlaceId: string, profile: Profile,
-  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS, raining = false,
+  incidents: Incident[] = [], elevators: Elevator[] = BASE_ELEVATORS, raining = false, assisted = false,
 ): RouteComparison | null {
-  const route = findRoute(origin, destPlaceId, profile, incidents, elevators, raining);
+  const route = findRoute(origin, destPlaceId, profile, incidents, elevators, raining, assisted);
   const shortest = findRoute(origin, destPlaceId, 'none', incidents, elevators);
   if (!route || !shortest) return null;
   // La ruta más corta se recorre al ritmo del perfil del usuario

@@ -28,7 +28,10 @@ export default function RouteScreen() {
   const { destId } = useLocalSearchParams<{ destId: string }>();
   const router = useRouter();
   const { width, height } = useWindowDimensions();
-  const { getRoute, accessibleMode, profile, incidents, elevators, raining, setRaining } = useApp();
+  const {
+    getRoute, accessibleMode, profile, incidents, elevators, raining, setRaining,
+    origin, setOrigin, assisted, setAssisted, getNoRouteReason,
+  } = useApp();
   const t = useAppTheme(accessibleMode);
   const place = destId ? getPlace(destId) : undefined;
 
@@ -42,6 +45,7 @@ export default function RouteScreen() {
   const prevRoute = useRef<RouteResult | null>(null);
   const spokeInitial = useRef(false);
   const prevRaining = useRef(raining);
+  const prevAssisted = useRef(assisted);
   const [noticeAnim] = useState(() => new Animated.Value(0));
   const isLowVision = profile === 'lowVision';
 
@@ -51,12 +55,15 @@ export default function RouteScreen() {
     getRoute(destId ?? '').then((r) => {
       if (cancelled) return;
       if (!r) {
+        prevRoute.current = null;
         setRoute(null);
         setStatus('error');
         return;
       }
       const prev = prevRoute.current;
       const rainChanged = prevRaining.current !== raining;
+      const assistedChanged = prevAssisted.current !== assisted;
+      prevAssisted.current = assisted;
       prevRaining.current = raining;
       if (prev && rainChanged) {
         const delta = r.distanceM - prev.distanceM;
@@ -75,6 +82,9 @@ export default function RouteScreen() {
         setStepIdx(0);
         noticeAnim.setValue(0);
         Animated.timing(noticeAnim, { toValue: 1, duration: 450, useNativeDriver: true }).start();
+      } else if (prev && assistedChanged) {
+        setNotice(assisted ? `Ruta con ayuda: pendientes de hasta 10% (${r.distanceM} m)` : `Ruta autónoma en silla (${r.distanceM} m)`);
+        setStepIdx(0);
       } else if (prev && prev.edgeIds.join('|') !== r.edgeIds.join('|')) {
         const usedElev = prev.edgeIds
           .map((id) => EDGES.find((e) => e.id === id)?.elevatorId)
@@ -98,7 +108,7 @@ export default function RouteScreen() {
     return () => {
       cancelled = true;
     };
-  }, [getRoute, destId, elevators, noticeAnim, raining]);
+  }, [getRoute, destId, elevators, noticeAnim, raining, assisted]);
 
   useFocusEffect(load);
 
@@ -195,6 +205,18 @@ export default function RouteScreen() {
 
   const styles = useMemo(() => makeStyles(t), [t]);
 
+  /** Chips de verificación para silla de ruedas (derivados de los datos de la ruta) */
+  const wcChips = useMemo(() => {
+    const w = route?.wheelchair;
+    if (!w) return [];
+    const chips: { text: string; help?: boolean }[] = [];
+    if (w.helpSlopePct) chips.push({ text: `Con ayuda en la pendiente de ${w.helpSlopePct}%`, help: true });
+    chips.push({ text: 'Puertas ≥ 80 cm' });
+    for (const b of [...new Set(w.elevatorBuildings)]) chips.push({ text: `Ascensor ${b} apto para silla` });
+    if (w.curbCutsOk) chips.push({ text: 'Sin soleras' });
+    return chips;
+  }, [route]);
+
   const goReport = () =>
     router.push({
       pathname: '/report',
@@ -205,6 +227,65 @@ export default function RouteScreen() {
     return (
       <Screen>
         <ScreenState variant="loading" title="Buscando tu ruta accesible" message="Evitando escaleras y barreras reportadas…" />
+      </Screen>
+    );
+  }
+
+  const diagnosis = status === 'error' && profile === 'wheelchair' && destId ? getNoRouteReason(destId) : null;
+  if (diagnosis && diagnosis.kind !== 'other' && place) {
+    const originName = getNode(origin)?.zone ?? getNode(origin)?.label ?? 'tu origen';
+    const isSlope = diagnosis.kind === 'slope';
+    const title = isSlope
+      ? `Desde ${originName} no hay ruta autónoma en silla`
+      : `No hay ruta en silla hasta ${place.name}`;
+    const message = isSlope
+      ? `La ${diagnosis.street ?? 'calle de acceso'} tiene ${diagnosis.slopePct}% de pendiente por ${diagnosis.meters} m.`
+      : `El ascensor del Edif. ${diagnosis.elevatorBuilding ?? ''} tiene cabina pequeña (100×120 cm) y no cabe una silla de ruedas (mínimo 110×140 cm).`;
+    return (
+      <Screen scroll>
+        <View style={styles.noRoute}>
+          <View style={styles.noRouteIcon}>
+            <MaterialCommunityIcons name="wheelchair-accessibility" size={40} color={t.colors.warning} />
+          </View>
+          <AppText variant="title" accessibilityRole="header" style={styles.center}>{title}</AppText>
+          <AppText color="textMuted" style={styles.center}>{message}</AppText>
+        </View>
+        {isSlope ? (
+          <View style={styles.noRouteActions}>
+            <View style={styles.whyBox} accessible accessibilityLabel="En el cerro, el acceso por Placeres es casi plano">
+              <MaterialCommunityIcons name="terrain" size={22} color={t.colors.primary} />
+              <AppText variant="caption" style={styles.flex}>En el cerro, el acceso por Placeres es casi plano.</AppText>
+            </View>
+            {origin !== 'acc_placeres' ? (
+              <Button
+                label="Entrar por Av. Placeres (acceso plano)"
+                icon="walk"
+                fullWidth
+                accessibilityHint="Cambia tu punto de partida y recalcula una ruta plana"
+                onPress={() => {
+                  setNotice('Cambiamos tu entrada a Av. Placeres: evitas la pendiente de 7% de la Calle Agustín Edwards');
+                  noticeAnim.setValue(0);
+                  Animated.timing(noticeAnim, { toValue: 1, duration: 450, useNativeDriver: true }).start();
+                  setOrigin('acc_placeres');
+                }}
+              />
+            ) : null}
+            <Button
+              label="Voy con acompañante"
+              icon="people"
+              variant="secondary"
+              fullWidth
+              accessibilityHint="Permite pendientes de hasta 10% porque alguien empuja la silla"
+              onPress={() => {
+                setNotice(`Ruta con ayuda en la pendiente de ${diagnosis.slopePct}% de la ${diagnosis.street ?? 'calle de acceso'}`);
+                noticeAnim.setValue(0);
+                Animated.timing(noticeAnim, { toValue: 1, duration: 450, useNativeDriver: true }).start();
+                setAssisted(true);
+              }}
+            />
+          </View>
+        ) : null}
+        <Button label="Volver" variant="ghost" fullWidth onPress={() => router.back()} />
       </Screen>
     );
   }
@@ -279,6 +360,39 @@ export default function RouteScreen() {
           ) : null}
         </View>
       </Card>
+
+      {profile === 'wheelchair' ? (
+        <Card style={styles.rainCard}>
+          <View style={styles.rainRow}>
+            <MaterialCommunityIcons name="account-multiple" size={28} color={assisted ? t.colors.primary : t.colors.textMuted} />
+            <View style={styles.flex}>
+              <AppText variant="label">Voy con acompañante</AppText>
+              <AppText variant="caption" color="textMuted">Permite pendientes de hasta 10%</AppText>
+            </View>
+            <Switch
+              value={assisted}
+              onValueChange={setAssisted}
+              accessibilityRole="switch"
+              accessibilityLabel="Voy con acompañante"
+              accessibilityHint="Recalcula la ruta permitiendo pendientes de hasta 10% porque alguien empuja la silla"
+              accessibilityState={{ checked: assisted }}
+              trackColor={{ false: t.colors.border, true: t.colors.primary }}
+              thumbColor={t.colors.surface}
+            />
+          </View>
+        </Card>
+      ) : null}
+
+      {wcChips.length > 0 ? (
+        <View style={styles.coverRow} accessible accessibilityLabel={`Verificado para silla de ruedas: ${wcChips.map((c) => c.text).join(', ')}`}>
+          {wcChips.map((c) => (
+            <View key={c.text} style={[styles.coverChip, { backgroundColor: c.help ? t.colors.warningSoft : t.colors.successSoft }]}>
+              <Ionicons name={c.help ? 'people' : 'checkmark-circle'} size={18} color={c.help ? t.colors.warning : t.colors.success} />
+              <AppText variant="label">{c.text}</AppText>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       <Card style={styles.rainCard}>
         <View style={styles.rainRow}>
@@ -589,6 +703,17 @@ const makeStyles = (t: ReturnType<typeof useAppTheme>) =>
     },
     avoidHead: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md, minHeight: t.minTouch },
     avoidRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, paddingLeft: t.spacing.xs },
+    noRoute: { alignItems: 'center', gap: t.spacing.md, paddingTop: t.spacing.xl },
+    noRouteIcon: {
+      width: 72, height: 72, borderRadius: t.radius.pill, backgroundColor: t.colors.warningSoft,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    noRouteActions: { gap: t.spacing.md },
+    whyBox: {
+      flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm, padding: t.spacing.md,
+      borderRadius: t.radius.md, backgroundColor: t.colors.primarySoft,
+    },
+    center: { textAlign: 'center' },
     slopeChip: {
       flexDirection: 'row',
       alignItems: 'center',

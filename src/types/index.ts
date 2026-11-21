@@ -37,6 +37,10 @@ export interface Edge {
   covered?: boolean;
   name?: string;
   cues?: EdgeCue[];
+  /** Ancho libre de la puerta/paso en cm */
+  widthCm?: number;
+  /** Rebaje de solera presente (false = solera sin rebaje) */
+  curbCut?: boolean;
 }
 
 export interface Place {
@@ -71,6 +75,8 @@ export interface Elevator {
   lastConfirmedAt?: string;
   confirmations?: number;
   denials?: number;
+  /** Medidas interiores de la cabina en cm */
+  cabinCm?: { widthCm: number; depthCm: number };
 }
 
 export type IncidentType = 'blocked' | 'obstacle' | 'elevator' | 'slippery' | 'crowd';
@@ -141,6 +147,29 @@ export interface RouteResult {
   coveredPct: number;
   /** Metros a la intemperie */
   uncoveredM: number;
+  /** Verificaciones de accesibilidad (solo silla de ruedas) */
+  wheelchair?: WheelchairChecks;
+}
+
+export interface WheelchairChecks {
+  /** Ancho mínimo de puerta anotado en la ruta (cm); undefined si no hay datos */
+  minDoorCm?: number;
+  curbCutsOk: boolean;
+  /** Edificios de los ascensores usados (todos con cabina apta) */
+  elevatorBuildings: string[];
+  /** Ruta con acompañante: pendiente máxima que requiere ayuda (%) y metros */
+  helpSlopePct?: number;
+  helpSlopeM?: number;
+  helpStreet?: string;
+}
+
+/** Por qué no hay ruta autónoma en silla de ruedas */
+export interface NoRouteDiagnosis {
+  kind: 'slope' | 'cabin' | 'other';
+  street?: string;
+  slopePct?: number;
+  meters?: number;
+  elevatorBuilding?: string;
 }
 
 export interface RouteComparison {
