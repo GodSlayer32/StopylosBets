@@ -36,10 +36,10 @@
       "covered": true
     },
     {
-      "id": "patio>c_plaza:stairs",
+      "id": "patio>c_stairs_mid:stairs",
       "from": "patio",
-      "to": "c_plaza",
-      "distanceM": 55,
+      "to": "c_stairs_mid",
+      "distanceM": 30,
       "type": "stairs",
       "steps": 16,
       "name": "Escalera Patio Central – Edif. C"
@@ -417,6 +417,14 @@
       "type": "slope",
       "slopePct": 3,
       "name": "Camino a la cancha"
+    },
+    {
+      "id": "c_stairs_mid>c_plaza",
+      "from": "c_stairs_mid",
+      "to": "c_plaza",
+      "distanceM": 25,
+      "type": "flat",
+      "name": "Explanada Edif. C"
     }
   ]
 }

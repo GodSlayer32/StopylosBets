@@ -353,6 +353,13 @@
       "x": 47,
       "y": 60,
       "zone": "Cancha 8007"
+    },
+    {
+      "id": "c_stairs_mid",
+      "label": "Escalera Patio Central – Edif. C",
+      "x": 58.3,
+      "y": 58.0,
+      "zone": "Patio Central"
     }
   ]
 }
